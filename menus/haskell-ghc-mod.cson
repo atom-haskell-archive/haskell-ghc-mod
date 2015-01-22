@@ -1,0 +1,30 @@
+# See https://atom.io/docs/latest/creating-a-package#menus for more details
+'context-menu':
+  'atom-text-editor': [
+    {
+      'label': 'Toggle haskell-ghc-mod'
+      'command': 'haskell-ghc-mod:toggle'
+    }
+  ]
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'Haskell Ghc-mod'
+      'submenu': [
+        {
+          'label': 'Type'
+          'command': 'haskell-ghc-mod:type'
+        },
+        {
+          'label': 'Info'
+          'command': 'haskell-ghc-mod:info'
+        },
+        {
+          'label': 'Check'
+          'command': 'haskell-ghc-mod:check'
+        }
+      ]
+    ]
+  }
+]
