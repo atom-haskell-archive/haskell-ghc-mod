@@ -31,13 +31,15 @@ class EditorController
   destroy: ->
     @clearError()
     @subscriptions.dispose()
-    @messageDecoration.destroy()
+    @messageDecoration?.destroy()
+    @messageItem?.destroy()
 
   showMessage: (cursor, message) ->
     message="undefined" if message==""
     if @messageDecoration then (
       @messageItem.setMessage(message)
     ) else (
+      @messageItem?.destroy()
       @messageItem=new HaskellGhcModMessage message
       marker=cursor.getMarker()
       @messageDecoration = @editor.decorateMarker marker,

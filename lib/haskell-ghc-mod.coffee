@@ -5,13 +5,14 @@ GhcModiProcess = require './ghc-modi-process'
 EditorController = require './editor-controller'
 
 module.exports = HaskellGhcMod =
-  haskellGhcModView: null
-  modalPanel: null
+  process: null
   subscriptions: null
+  numInstances: 0
 
   activate: (state) ->
-    @process = new GhcModiProcess
     @subscriptions = new CompositeDisposable
+    @process=null
+    @numInstances=0
 
     atom.views.addViewProvider
       modelConstructor: HaskellGhcModMessage
@@ -27,10 +28,20 @@ module.exports = HaskellGhcMod =
 
     @subscriptions.add atom.workspace.eachEditor (editor) =>
       return unless editor.getGrammar().scopeName=="source.haskell"
+      @numInstances += 1
+      console.log(@numInstances)
+      @process = new GhcModiProcess unless @process
       editor.haskellGhcModController = new EditorController(@process,editor)
+      editor.onDidDestroy =>
+        editor.haskellGhcModController?.destroy()
+        @numInstances -= 1
+        if @numInstances==0 then (
+          @process?.destroy()
+          @process=null
+        )
 
   deactivate: ->
     for editor in atom.workspace.getEditors()
       editor.haskellGhcModController?.destroy()
     @subscriptions.dispose()
-    @process.destroy()
+    @process?.destroy()

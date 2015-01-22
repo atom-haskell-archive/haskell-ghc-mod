@@ -1,4 +1,4 @@
-{Emitter} = require 'atom'
+{Emitter,CompositeDisposable} = require 'atom'
 
 class HaskellGhcModMessage
   constructor: (@message) ->
@@ -10,13 +10,17 @@ class HaskellGhcModMessage
   setMessage: (@message) ->
     @emitter.emit 'did-change-message', name
 
+  destroy: ->
+    @emtitter?.destroy()
+
 class HaskellGhcModMessageElement extends HTMLElement
   setModel: (@model) ->
     @pre.textContent=@model.message
-    @model.onDidChangeMessage =>
+    @subs.add @model.onDidChangeMessage =>
       @pre.textContent=@model.message
 
   createdCallback: ->
+    @subs = new CompositeDisposable
     @rootElement=this
     @classList.add 'haskell-ghc-mod'
     @pre=document.createElement('pre')
@@ -24,6 +28,7 @@ class HaskellGhcModMessageElement extends HTMLElement
 
   destroy: ->
     @rootElement.destroy()
+    @subs.dispose()
 
 HaskellGhcModMessageElement =
   document.registerElement 'haskell-ghc-mod-message',
