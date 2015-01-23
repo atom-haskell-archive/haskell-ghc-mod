@@ -26,4 +26,7 @@ Haskell sources.
 
 ghc-modi currently needs to be in your PATH for this to work.
 
+![Screencast][2]
+
 [1]: https://atom.io/packages/language-haskell
+[2]: https://raw.githubusercontent.com/lierdakil/haskell-ghc-mod/master/screencast.gif
