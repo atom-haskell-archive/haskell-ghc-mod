@@ -26,7 +26,7 @@ module.exports = HaskellGhcMod =
       'haskell-ghc-mod:check': ->
         @getModel().haskellGhcModController?.doCheck()
 
-    @subscriptions.add atom.workspace.eachEditor (editor) =>
+    @subscriptions.add atom.workspace.observeTextEditors (editor) =>
       return unless editor.getGrammar().scopeName=="source.haskell"
       @numInstances += 1
       console.log(@numInstances)
