@@ -88,13 +88,10 @@ class EditorController
     range_ = @getRange()
     indent = @editor.indentationForBufferRow(range_.start.row)
     @process.getType @getPath(), @getRange(), (range, type) =>
-      cursor=@editor.addCursorAtBufferPosition(range.start)
-      cursor.moveUp()
-      cursor.moveToEndOfLine()
-      pos=cursor.getBufferPosition()
-      cursor.destroy()
-      @editor.setTextInBufferRange([pos,pos],"\n"+symbol+" :: "+type)
-      @editor.setIndentationForBufferRow(pos.row+1,indent)
+      pos=[range.start.row,0]
+      @editor.setTextInBufferRange [pos,pos],symbol+" :: "+type+"\n"
+      @editor.setIndentationForBufferRow pos[0],indent
+      @editor.setIndentationForBufferRow pos[0]+1,indent
 
   getInfo: ->
     range=@getRange()
