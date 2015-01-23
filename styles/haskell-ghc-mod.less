@@ -7,6 +7,8 @@
 haskell-ghc-mod-message {
   font-size: small;
   white-space:pre;
+  position: relative;
+  top: 2px;
 }
 
 atom-text-editor::shadow {
@@ -14,6 +16,9 @@ atom-text-editor::shadow {
     &, .region {
       background-color: red;
     }
+  }
+  .haskell-ghc-mod-tooltip .region {
+    border-bottom: 2px dashed orange;
   }
 }
 

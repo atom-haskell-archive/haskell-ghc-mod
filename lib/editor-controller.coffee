@@ -12,9 +12,8 @@ class EditorController
       @doCheck()
 
     @removeMessageOnChange=@editor.onDidChangeCursorPosition =>
-      @messageDecoration?.destroy()
-      @messageDecoration=null
-      @messageItem=null
+      @messageMarker?.destroy()
+      @messageMarker=null
 
     @subscriptions.add @removeMessageOnChange
 
@@ -31,20 +30,28 @@ class EditorController
   destroy: ->
     @clearError()
     @subscriptions.dispose()
-    @messageDecoration?.destroy()
-    @messageItem?.destroy()
+    @messageMarker?.destroy()
 
-  showMessage: (cursor, message) ->
-    message="undefined" if message==""
-    if @messageDecoration then (
-      @messageItem.setMessage(message)
+  showMessage: (range, message, crange) =>
+    if @messageMarker?.getBufferRange()==range then (
+      @messageMarker.item.setMessage(message)
     ) else (
-      @messageItem?.destroy()
-      @messageItem=new HaskellGhcModMessage message
-      marker=cursor.getMarker()
-      @messageDecoration = @editor.decorateMarker marker,
+      @messageMarker?.destroy()
+      @messageMarker=@editor.markBufferRange(range)
+      @messageMarker.item = new HaskellGhcModMessage message
+      ( @messageMarker.tooltip=@editor.markBufferRange(crange) ) if crange
+      @editor.decorateMarker @messageMarker,
+        type: 'highlight'
+        class: 'haskell-ghc-mod-tooltip'
+      tooltipMarker = @messageMarker.tooltip
+      tooltipMarker = @messageMarker unless tooltipMarker
+      disp=@messageMarker.onDidDestroy =>
+        @messageMarker.tooltip?.destroy()
+        disp.dispose()
+      @editor.decorateMarker tooltipMarker,
         type: 'overlay'
-        item: @messageItem
+        position: 'tail'
+        item: @messageMarker.item
     )
 
   showError: (row, column, message) =>
@@ -69,24 +76,30 @@ class EditorController
       ), 100
     @errorTooltips.add @editor.onDidChangeCursorPosition (event) =>
       return unless event.newBufferPosition.isEqual([row,column])
-      @showMessage event.cursor,message
+      @showMessage range,message
 
   getType: ->
-    range = @editor.getSelectedBufferRange()
-    cursor = @editor.getCursor()
-    cpos = cursor.getBufferPosition()
-    @process.getType @getPath(), range, (data) =>
-      @showMessage cursor, data
+    crange=@getRange()
+    @process.getType @getPath(), crange, (range,data) =>
+      @showMessage range,data,crange
+
+  insertType: ->
+    symbol = @getSymbol()
+    range_ = @getRange()
+    indent = @editor.indentationForBufferRow(range_.start.row)
+    @process.getType @getPath(), @getRange(), (range, type) =>
+      cursor=@editor.addCursorAtBufferPosition(range.start)
+      cursor.moveUp()
+      cursor.moveToEndOfLine()
+      pos=cursor.getBufferPosition()
+      cursor.destroy()
+      @editor.setTextInBufferRange([pos,pos],"\n"+symbol+" :: "+type)
+      @editor.setIndentationForBufferRow(pos.row+1,indent)
 
   getInfo: ->
-    range = @getRange()
-    cursor = @editor.getCursor()
-    unless range.isEmpty() then (
-      symbol = @editor.getSelectedText()
-    ) else (
-      symbol = @editor.getTextInBufferRange cursor.getCurrentWordBufferRange()
-    )
-    @process.getInfo @getPath(), symbol, (data) => @showMessage cursor, data
+    range=@getRange()
+    @process.getInfo @getPath(), @getSymbol(), (data) =>
+      @showMessage range,data
 
   doCheck: ->
     @clearError()
@@ -97,3 +110,8 @@ class EditorController
 
   getRange: ->
     @editor.getSelectedBufferRange()
+
+  getSymbol: ->
+    range = @getRange()
+    range = @editor.getCursor().getCurrentWordBufferRange() if range.isEmpty()
+    @editor.getTextInBufferRange range

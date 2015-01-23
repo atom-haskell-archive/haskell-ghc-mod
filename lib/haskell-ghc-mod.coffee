@@ -23,6 +23,8 @@ module.exports = HaskellGhcMod =
         @getModel().haskellGhcModController?.getType()
       'haskell-ghc-mod:info': ->
         @getModel().haskellGhcModController?.getInfo()
+      'haskell-ghc-mod:insert-type': ->
+        @getModel().haskellGhcModController?.insertType()
       'haskell-ghc-mod:check': ->
         @getModel().haskellGhcModController?.doCheck()
 
