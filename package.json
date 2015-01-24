@@ -8,5 +8,8 @@
   "engines": {
     "atom": ">=0.174.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "temp": "*",
+    "fs": "*"
+  }
 }

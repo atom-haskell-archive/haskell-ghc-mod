@@ -46,10 +46,9 @@ module.exports = HaskellGhcMod =
       editor.onDidDestroy =>
         editor.haskellGhcModController?.destroy()
         @numInstances -= 1
-        if @numInstances==0 then (
+        if @numInstances==0
           @process?.destroy()
           @process=null
-        )
 
   deactivate: ->
     for editor in atom.workspace.getEditors()

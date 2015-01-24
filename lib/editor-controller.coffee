@@ -33,13 +33,13 @@ class EditorController
     @messageMarker?.destroy()
 
   showMessage: (range, message, crange) =>
-    if @messageMarker?.getBufferRange()==range then (
+    if @messageMarker?.getBufferRange()==range
       @messageMarker.item.setMessage(message)
-    ) else (
+    else
       @messageMarker?.destroy()
       @messageMarker=@editor.markBufferRange(range)
       @messageMarker.item = new HaskellGhcModMessage message
-      ( @messageMarker.tooltip=@editor.markBufferRange(crange) ) if crange
+      @messageMarker.tooltip=@editor.markBufferRange(crange) if crange
       @editor.decorateMarker @messageMarker,
         type: 'highlight'
         class: 'haskell-ghc-mod-tooltip'
@@ -52,7 +52,6 @@ class EditorController
         type: 'overlay'
         position: 'tail'
         item: @messageMarker.item
-    )
 
   showError: (row, column, message) =>
     range=[[row,column],[row,column+1]]
@@ -80,14 +79,14 @@ class EditorController
 
   getType: ->
     crange=@getRange()
-    @process.getType @getPath(), crange, (range,data) =>
+    @process.getType @getText(), crange, (range,data) =>
       @showMessage range,data,crange
 
   insertType: ->
     symbol = @getSymbol()
     range_ = @getRange()
     indent = @editor.indentationForBufferRow(range_.start.row)
-    @process.getType @getPath(), @getRange(), (range, type) =>
+    @process.getType @getText(), @getRange(), (range, type) =>
       pos=[range.start.row,0]
       @editor.setTextInBufferRange [pos,pos],symbol+" :: "+type+"\n"
       @editor.setIndentationForBufferRow pos[0],indent
@@ -95,15 +94,15 @@ class EditorController
 
   getInfo: ->
     range=@getRange()
-    @process.getInfo @getPath(), @getSymbol(), (data) =>
+    @process.getInfo @getText(), @getSymbol(), (data) =>
       @showMessage range,data
 
   doCheck: ->
     @clearError()
-    @process.doCheck @getPath(), @showError
+    @process.doCheck @getText(), @showError
 
-  getPath: ->
-    @editor.getBuffer().getPath()
+  getText: ->
+    @editor.getText()
 
   getRange: ->
     @editor.getSelectedBufferRange()
