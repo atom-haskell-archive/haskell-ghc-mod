@@ -14,11 +14,16 @@ haskell-ghc-mod-message {
 atom-text-editor::shadow {
   .haskell-ghc-mod-error {
     &, .region {
-      background-color: red;
+      background-color: darken(@background-color-error,10%);
+    }
+  }
+  .haskell-ghc-mod-warning {
+    &, .region {
+      background-color: darken(@background-color-warning,20%);
     }
   }
   .haskell-ghc-mod-tooltip .region {
-    border-bottom: 2px dashed orange;
+    border-bottom: 2px dashed @background-color-info;
   }
 }
 

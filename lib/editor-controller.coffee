@@ -59,12 +59,16 @@ class EditorController
   showError: (row, column, message) =>
     range=[[row,column],[row,column+1]]
     @errorMarkers.push marker = @editor.markBufferRange(range)
+    if message.startsWith('Warning:')
+      klass = 'haskell-ghc-mod-warning'
+    else
+      klass = 'haskell-ghc-mod-error'
     @editor.decorateMarker marker,
       type: 'gutter'
-      class: 'haskell-ghc-mod-error'
+      class: klass
     @editor.decorateMarker marker,
       type: 'highlight'
-      class: 'haskell-ghc-mod-error'
+      class: klass
     setTimeout (=>
       vi = atom.views.getView(@editor)
       line=vi.rootElement.querySelector(
