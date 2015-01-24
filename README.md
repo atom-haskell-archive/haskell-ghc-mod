@@ -1,7 +1,7 @@
 # haskell-ghc-mod atom package
 
 Haskell Ghc-Mod opens pipe to ghc-modi and queries types, info and checks
-for errors. It uses temporary files to feed them into ghc-mod (since) it does
+for errors. It uses temporary files to feed them into ghc-mod (since it does
 not read from stdin)
 
 Error check is enabled by default on saving file (can be disabled in config). It
@@ -9,7 +9,8 @@ is also possible to check file on the fly, while you are editing it. But syntax
 errors popping up all the time can be distracting, so this is disabled by
 default.
 
-You can also get type of composite expression by selecting it prior to executing 'show type', like this:
+You can also get type of composite expression by selecting it prior to executing
+'show type', like this:
 
 ![Get type of composite expression][3]
 
