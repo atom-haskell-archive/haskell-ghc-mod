@@ -9,6 +9,16 @@ module.exports = HaskellGhcMod =
   subscriptions: null
   numInstances: 0
 
+  config:
+    checkOnSave:
+      type: 'boolean'
+      default: true
+      description: 'Run ghc-mod check on file save'
+    ghcModiPath:
+      type: 'string'
+      default: 'ghc-modi'
+      description: 'Path to ghc-modi'
+
   activate: (state) ->
     @subscriptions = new CompositeDisposable
     @process=null
@@ -31,7 +41,6 @@ module.exports = HaskellGhcMod =
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
       return unless editor.getGrammar().scopeName=="source.haskell"
       @numInstances += 1
-      console.log(@numInstances)
       @process = new GhcModiProcess unless @process
       editor.haskellGhcModController = new EditorController(@process,editor)
       editor.onDidDestroy =>

@@ -3,7 +3,7 @@
 Haskell Ghc-Mod opens pipe to ghc-modi and queries types, info and checks
 for errors.
 
-Error check is enabled by default on saving file.
+Error check is enabled by default on saving file (can be disabled in config)
 
 File needs to be saved before querying types.
 
@@ -24,7 +24,7 @@ Default shortcuts:
 Haskell-ghc-mod depends on [language-haskell][1] to detect
 Haskell sources.
 
-ghc-modi currently needs to be in your PATH for this to work.
+If ghc-modi is not in your PATH, set full path to it in config.
 
 ![Screencast][2]
 

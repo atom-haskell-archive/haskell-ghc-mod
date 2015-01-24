@@ -9,7 +9,7 @@ class EditorController
     @subscriptions = new CompositeDisposable
 
     @subscriptions.add @editor.onDidSave =>
-      @doCheck()
+      @doCheck() if atom.config.get('haskell-ghc-mod.checkOnSave')
 
     @removeMessageOnChange=@editor.onDidChangeCursorPosition =>
       @messageMarker?.destroy()

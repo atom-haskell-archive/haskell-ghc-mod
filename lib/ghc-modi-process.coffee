@@ -3,7 +3,8 @@
 module.exports =
 class GhcModiProcess
   constructor: ->
-    @process = require('child_process').spawn('ghc-modi',['-b\r'])
+    @path = atom.config.get('haskell-ghc-mod.ghcModiPath')
+    @process = require('child_process').spawn(@path,['-b\r'])
 
   # Tear down any state and detach
   destroy: ->

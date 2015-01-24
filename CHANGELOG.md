@@ -1,3 +1,6 @@
+## 0.1.5
+* Add options for check on save and ghc-mod path
+
 ## 0.1.4
 * BUGFIX: Sometimes, inserting type destroyed main cursor. Avoid that.
 
