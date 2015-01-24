@@ -1,3 +1,7 @@
+## 0.2.0
+* Use temp-files to feed buffer to ghc-mod directly
+* Add option to check file while editing (disabled by default)
+
 ## 0.1.5
 * Add options for check on save and ghc-mod path
 

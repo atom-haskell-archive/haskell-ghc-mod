@@ -1,11 +1,13 @@
 # haskell-ghc-mod atom package
 
 Haskell Ghc-Mod opens pipe to ghc-modi and queries types, info and checks
-for errors.
+for errors. It uses temporary files to feed them into ghc-mod (since) it does
+not read from stdin)
 
-Error check is enabled by default on saving file (can be disabled in config)
-
-File needs to be saved before querying types.
+Error check is enabled by default on saving file (can be disabled in config). It
+is also possible to check file on the fly, while you are editing it. But syntax
+errors popping up all the time can be distracting, so this is disabled by
+default.
 
 Current features:
 
