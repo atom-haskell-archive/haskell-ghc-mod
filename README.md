@@ -7,6 +7,10 @@ Error check is enabled by default on saving file (can be disabled in config)
 
 File needs to be saved before querying types.
 
+You can also get type of composite expression by selecting it prior to executing 'show type', like this:
+
+![Get type of composite expression][3]
+
 Current features:
 
 * Show type (ghc-mod type)
@@ -30,3 +34,4 @@ If ghc-modi is not in your PATH, set full path to it in config.
 
 [1]: https://atom.io/packages/language-haskell
 [2]: https://raw.githubusercontent.com/lierdakil/haskell-ghc-mod/master/screencast.gif
+[3]: https://raw.githubusercontent.com/lierdakil/haskell-ghc-mod/master/composite.jpg
