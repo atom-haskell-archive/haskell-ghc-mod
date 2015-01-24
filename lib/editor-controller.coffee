@@ -11,6 +11,9 @@ class EditorController
     @subscriptions.add @editor.onDidSave =>
       @doCheck() if atom.config.get('haskell-ghc-mod.checkOnSave')
 
+    @subscriptions.add @editor.onDidStopChanging =>
+      @doCheck() if atom.config.get('haskell-ghc-mod.checkOnEdit')
+
     @removeMessageOnChange=@editor.onDidChangeCursorPosition =>
       @messageMarker?.destroy()
       @messageMarker=null
@@ -94,6 +97,7 @@ class EditorController
 
   getInfo: ->
     range=@getRange()
+    range=@editor.getCursor().getCurrentWordBufferRange() if range.isEmpty()
     @process.getInfo @getText(), @getSymbol(), (data) =>
       @showMessage range,data
 
