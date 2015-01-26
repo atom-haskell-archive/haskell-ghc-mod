@@ -2,14 +2,6 @@
 'context-menu':
   'atom-text-editor': [
     {
-      'label': 'Toggle haskell-ghc-mod'
-      'command': 'haskell-ghc-mod:toggle'
-    }
-  ]
-'menu': [
-  {
-    'label': 'Packages'
-    'submenu': [
       'label': 'Haskell Ghc-mod'
       'submenu': [
         {
@@ -25,6 +17,5 @@
           'command': 'haskell-ghc-mod:check'
         }
       ]
-    ]
-  }
-]
+    }
+  ]
