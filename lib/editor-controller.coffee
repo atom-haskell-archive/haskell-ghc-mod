@@ -84,25 +84,24 @@ class EditorController
       return unless event.newBufferPosition.isEqual([row,column])
       @showMessage range,message
 
+  getTypeCallback: (callback) ->
+    @process.getType @getText(), @getRange(), callback
+
   getType: ->
-    crange=@getRange()
-    @process.getType @getText(), crange, (range,data) =>
-      @showMessage range,data,crange
+    @getTypeCallback @showMessage
 
   insertType: ->
     symbol = @getSymbol()
-    range_ = @getRange()
-    indent = @editor.indentationForBufferRow(range_.start.row)
-    @process.getType @getText(), @getRange(), (range, type) =>
+    @getTypeCallback (range, type, crange) =>
+      indent = @editor.indentationForBufferRow(crange.start.row)
       pos=[range.start.row,0]
       @editor.setTextInBufferRange [pos,pos],symbol+" :: "+type+"\n"
       @editor.setIndentationForBufferRow pos[0],indent
       @editor.setIndentationForBufferRow pos[0]+1,indent
 
   getInfo: ->
-    range=@getRange()
-    range=@editor.getCursor().getCurrentWordBufferRange() if range.isEmpty()
-    @process.getInfo @getText(), @getSymbol(), (data) =>
+    range=@getSymbolRange()
+    @process.getInfo @getText(), @getSymbol(range), (data) =>
       @showMessage range,data
 
   doCheck: ->
@@ -115,7 +114,11 @@ class EditorController
   getRange: ->
     @editor.getSelectedBufferRange()
 
-  getSymbol: ->
+  getSymbolRange: ->
     range = @getRange()
     range = @editor.getCursor().getCurrentWordBufferRange() if range.isEmpty()
+    return range
+
+  getSymbol: (range) ->
+    range=@getSymbolRange() unless range
     @editor.getTextInBufferRange range

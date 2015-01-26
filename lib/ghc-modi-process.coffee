@@ -16,7 +16,7 @@ class GhcModiProcess
     @process.stdout.once 'data', callback
     @process.stdin.write(command)
 
-  getType: (text, range, callback) ->
+  getType: (text, crange, callback) ->
     Temp.open
       prefix:'haskell-ghc-mod',
       suffix:'.hs',
@@ -25,7 +25,7 @@ class GhcModiProcess
           console.log(err)
           return
         FS.writeSync info.fd,text
-        cpos = range.start
+        cpos = crange.start
         command = "type "+info.path+" "+(cpos.row+1)+
           " "+(cpos.column+1)+"\n"
         @runCmd command, (data) ->
@@ -38,10 +38,10 @@ class GhcModiProcess
             pos=tokens[0].trim().split(' ').map (i)->i-1
             type=tokens[1]
             myrange = new Range [pos[0],pos[1]],[pos[2],pos[3]]
-            return acc unless myrange.containsRange(range)
+            return acc unless myrange.containsRange(crange)
             return [myrange,type]),
             ''
-          callback range,type.replace(/\r/g,'\n') if type
+          callback range,type.replace(/\r/g,'\n'),crange if type
 
   getInfo: (text,symbol,callback) ->
     Temp.open
