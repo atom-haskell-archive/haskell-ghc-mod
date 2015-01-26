@@ -41,7 +41,9 @@ class GhcModiProcess
             return acc unless myrange.containsRange(crange)
             return [myrange,type]),
             ''
-          callback range,type.replace(/\r/g,'\n'),crange if type
+          type='???' unless type
+          range=crange unless range
+          callback range,type.replace(/\r/g,'\n'),crange
 
   getInfo: (text,symbol,callback) ->
     Temp.open
