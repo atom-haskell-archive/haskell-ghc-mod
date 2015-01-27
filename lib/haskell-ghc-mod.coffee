@@ -28,9 +28,10 @@ module.exports = HaskellGhcMod =
     @process=null
     @numInstances=0
 
-    atom.views.addViewProvider
-      modelConstructor: HaskellGhcModMessage
-      viewConstructor: HaskellGhcModMessageElement
+    atom.views.addViewProvider HaskellGhcModMessage, (message)->
+      el=new HaskellGhcModMessageElement
+      el.setModel(message)
+      el
 
     @subscriptions.add atom.commands.add 'atom-text-editor',
       'haskell-ghc-mod:type': ->
