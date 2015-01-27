@@ -35,6 +35,9 @@ If ghc-modi is not in your PATH, set full path to it in config.
 
 ![Screencast][2]
 
+Since version 0.3.0, haskell-ghc-mod provides service-hub based API. Docs can be found at [wiki pages][4]
+
 [1]: https://atom.io/packages/language-haskell
 [2]: https://raw.githubusercontent.com/lierdakil/haskell-ghc-mod/master/screencast.gif
 [3]: https://raw.githubusercontent.com/lierdakil/haskell-ghc-mod/master/composite.jpg
+[4]: https://github.com/lierdakil/haskell-ghc-mod/wiki/Service-hub-API
