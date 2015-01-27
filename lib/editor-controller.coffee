@@ -73,7 +73,7 @@ class EditorController
       @errorTooltips.add d if d
 
   showError: (point, message) =>
-    range=[point,point.add([0,1])]
+    range=[point,point.traverse([0,1])]
     @errorMarkers.push marker = @editor.markBufferRange(range)
     if message.startsWith('Warning:')
       klass = 'haskell-ghc-mod-warning'
