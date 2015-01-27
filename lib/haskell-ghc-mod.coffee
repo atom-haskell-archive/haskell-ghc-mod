@@ -8,6 +8,7 @@ module.exports = HaskellGhcMod =
   process: null
   subscriptions: null
   numInstances: 0
+  editorMap: null
 
   config:
     checkOnSave:
@@ -27,6 +28,7 @@ module.exports = HaskellGhcMod =
     @subscriptions = new CompositeDisposable
     @process=null
     @numInstances=0
+    @editorMap = new WeakMap
 
     atom.views.addViewProvider HaskellGhcModMessage, (message)->
       el=new HaskellGhcModMessageElement
@@ -34,22 +36,23 @@ module.exports = HaskellGhcMod =
       el
 
     @subscriptions.add atom.commands.add 'atom-text-editor',
-      'haskell-ghc-mod:type': ->
-        @getModel().haskellGhcModController?.getType()
-      'haskell-ghc-mod:info': ->
-        @getModel().haskellGhcModController?.getInfo()
-      'haskell-ghc-mod:insert-type': ->
-        @getModel().haskellGhcModController?.insertType()
-      'haskell-ghc-mod:check': ->
-        @getModel().haskellGhcModController?.doCheck()
+      'haskell-ghc-mod:type': ({target}) =>
+        @editorMap.get(target.getModel())?.getType()
+      'haskell-ghc-mod:info': ({target}) =>
+        @editorMap.get(target.getModel())?.getInfo()
+      'haskell-ghc-mod:insert-type': ({target}) =>
+        @editorMap.get(target.getModel())?.insertType()
+      'haskell-ghc-mod:check': ({target}) =>
+        @editorMap.get(target.getModel())?.doCheck()
 
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
       return unless editor.getGrammar().scopeName=="source.haskell"
       @numInstances += 1
       @process = new GhcModiProcess unless @process
-      editor.haskellGhcModController = new EditorController(@process,editor)
+      @editorMap.set(editor,new EditorController(@process,editor))
       editor.onDidDestroy =>
-        editor.haskellGhcModController?.destroy()
+        @editorMap.get(editor)?.destroy()
+        @editorMap.delete(editor)
         @numInstances -= 1
         if @numInstances==0
           @process?.destroy()
@@ -57,6 +60,7 @@ module.exports = HaskellGhcMod =
 
   deactivate: ->
     for editor in atom.workspace.getEditors()
-      editor.haskellGhcModController?.destroy()
+      @editorMap.get(editor)?.desrtoy()
+      @editorMap.delete(editor)
     @subscriptions.dispose()
     @process?.destroy()
