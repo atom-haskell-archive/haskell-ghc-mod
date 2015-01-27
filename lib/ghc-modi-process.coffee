@@ -25,7 +25,11 @@ class GhcModiProcess
     @process.stdin.end()
 
   runCmd: (command, callback) ->
-    @process.stdout.once 'data', callback
+    @process.stdout.once 'data', (data)->
+      lines = "#{data}".split("\n").filter (line) ->
+        line!="OK" && line!=""
+      callback lines.map (line)->
+        line.replace(/\r/g,'\n')
     @process.stdin.write(command)
 
   runModCmd: (args,callback) =>
@@ -44,70 +48,55 @@ class GhcModiProcess
   runBrowse: (modules,callback) =>
     @runModCmd ['browse','-d'].concat(modules), callback
 
-  getType: (text, crange, callback) =>
+  withTempFile: (contents,callback) ->
     Temp.open
       prefix:'haskell-ghc-mod',
       suffix:'.hs',
-      (err,info) =>
+      (err,info) ->
         if err
           console.log(err)
           return
-        FS.writeSync info.fd,text
-        cpos = crange.start
-        command = "type "+info.path+" "+(cpos.row+1)+
-          " "+(cpos.column+1)+"\n"
-        @runCmd command, (data) ->
+        FS.writeSync info.fd,contents
+        callback info.path, ->
           FS.close info.fd, -> FS.unlink info.path
-          lines = "#{data}".split("\n").filter (line) ->
-            return true unless line=="OK" || line==""
-          [range,type]=lines.reduce ((acc,line) ->
-            return acc if acc!=''
-            tokens=line.split '"'
-            pos=tokens[0].trim().split(' ').map (i)->i-1
-            type=tokens[1]
-            myrange = new Range [pos[0],pos[1]],[pos[2],pos[3]]
-            return acc unless myrange.containsRange(crange)
-            return [myrange,type]),
-            ''
-          type='???' unless type
-          range=crange unless range
-          callback range,type.replace(/\r/g,'\n'),crange
+
+  getType: (text, crange, callback) =>
+    @withTempFile text, (path,close) =>
+      cpos = crange.start
+      command = "type "+path+" "+(cpos.row+1)+
+        " "+(cpos.column+1)+"\n"
+      @runCmd command, (lines) ->
+        close()
+        [range,type]=lines.reduce ((acc,line) ->
+          return acc if acc!=''
+          tokens=line.split '"'
+          pos=tokens[0].trim().split(' ').map (i)->i-1
+          type=tokens[1]
+          myrange = new Range [pos[0],pos[1]],[pos[2],pos[3]]
+          return acc unless myrange.containsRange(crange)
+          return [myrange,type]),
+          ''
+        type='???' unless type
+        range=crange unless range
+        callback range,type,crange
 
   getInfo: (text,symbol,callback) =>
-    Temp.open
-      prefix:'haskell-ghc-mod',
-      suffix:'.hs',
-      (err,info) =>
-        if err
-          console.log(err)
-          return
-        FS.writeSync info.fd,text
-        command = "info "+info.path+" "+symbol+"\n"
-        @runCmd command, (data) ->
-          FS.close info.fd, -> FS.unlink info.path
-          lines = "#{data}".split("\n").filter (line) ->
-            return true unless line=="OK" || line==""
-          callback lines.join('\n').replace(/\r/g,'\n')
+    @withTempFile text, (path,close) =>
+      command = "info "+path+" "+symbol+"\n"
+      @runCmd command, (lines) ->
+        close()
+        callback lines.join('\n')
 
   doCheck: (text, callback) =>
-    Temp.open
-      prefix:'haskell-ghc-mod',
-      suffix:'.hs',
-      (err,info) =>
-        if err
-          console.log(err)
-          return
-        FS.writeSync info.fd,text
-        command = "check "+info.path+"\n"
-        @runCmd command, (data) ->
-          FS.close info.fd, -> FS.unlink info.path
-          lines = "#{data}".split("\n").filter (line) ->
-            return true unless line=="OK" || line==""
-          lines.forEach (line) ->
-            get = (line) ->
-              idx=line.indexOf(':')
-              [line.substring(0,idx), line.substring(idx+1)]
-            [file,line]=get line
-            [row,line]=get line
-            [col,line]=get line
-            callback row-1, col-1, line.replace(/\r/g,'\n')
+    @withTempFile text, (path,close) =>
+      command = "check "+path+"\n"
+      @runCmd command, (lines) ->
+        close()
+        lines.forEach (line) ->
+          get = (line) ->
+            idx=line.indexOf(':')
+            [line.substring(0,idx), line.substring(idx+1)]
+          [file,line]=get line
+          [row,line]=get line
+          [col,line]=get line
+          callback row-1, col-1, line
