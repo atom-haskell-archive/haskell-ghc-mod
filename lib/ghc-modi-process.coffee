@@ -73,7 +73,7 @@ class GhcModiProcess
         command = "check "+info.path+"\n"
         @runCmd command, (data) ->
           FS.close info.fd, -> FS.unlink info.path
-          lines = "#{data}".split("\n").filter (line) =>
+          lines = "#{data}".split("\n").filter (line) ->
             return true unless line=="OK" || line==""
           lines.forEach (line) ->
             get = (line) ->
