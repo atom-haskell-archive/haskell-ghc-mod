@@ -1,22 +1,53 @@
 {Range} = require('atom')
 Temp = require('temp')
 FS = require('fs')
+CP = require('child_process')
 
 module.exports =
 class GhcModiProcess
   constructor: ->
-    @path = atom.config.get('haskell-ghc-mod.ghcModiPath')
-    @process = require('child_process').spawn(@path,['-b\r'])
+    @modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
+    @modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
+    @process = CP.spawn(@modiPath,['-b\r'])
+    @services=atom.services.provide "haskell-ghc-mod", "0.1.0",
+      type: @getType
+      info: @getInfo
+      check: @doCheck
+      list: @runList
+      lang: @runLang
+      flag: @runFlag
+      browse: @runBrowse
+
 
   # Tear down any state and detach
   destroy: ->
+    @services.dispose()
     @process.stdin.end()
 
   runCmd: (command, callback) ->
     @process.stdout.once 'data', callback
     @process.stdin.write(command)
 
-  getType: (text, crange, callback) ->
+  runModCmd: (args,callback) =>
+    CP.execFile @modPath, args, {}, callback
+
+  runList: (callback) =>
+    @runModCmd ['list'], (error,result) ->
+      callback result if not error
+
+  runLang: (callback) =>
+    @runModCmd ['lang'], (error,result) ->
+      callback result if not error
+
+  runFlag: (callback) =>
+    @runModCmd ['flag'], (error,result) ->
+      callback result if not error
+
+  runBrowse: (module,callback) =>
+    @runModCmd ['browse','-d',module], (error,result) ->
+      callback result if not error
+
+  getType: (text, crange, callback) =>
     Temp.open
       prefix:'haskell-ghc-mod',
       suffix:'.hs',
@@ -45,7 +76,7 @@ class GhcModiProcess
           range=crange unless range
           callback range,type.replace(/\r/g,'\n'),crange
 
-  getInfo: (text,symbol,callback) ->
+  getInfo: (text,symbol,callback) =>
     Temp.open
       prefix:'haskell-ghc-mod',
       suffix:'.hs',
@@ -61,7 +92,7 @@ class GhcModiProcess
             return true unless line=="OK" || line==""
           callback lines.join('\n').replace(/\r/g,'\n')
 
-  doCheck: (text, callback) ->
+  doCheck: (text, callback) =>
     Temp.open
       prefix:'haskell-ghc-mod',
       suffix:'.hs',
