@@ -61,7 +61,7 @@ class EditorController
   addTooltip: (message, row) =>
     vi = atom.views.getView(@editor)
     line=vi.rootElement.querySelector(
-      '.gutter .haskell-ghc-mod-error.line-number-'+row)
+      '.haskell-ghc-mod-error.line-number-'+row)
     if line && !@errorTooltipsMap.has(line)
       d=atom.tooltips.add line,
         template: '<div class="tooltip" role="tooltip">'+
@@ -80,7 +80,7 @@ class EditorController
     else
       klass = 'haskell-ghc-mod-error'
     @editor.decorateMarker marker,
-      type: 'gutter'
+      type: 'line-number'
       class: klass
     @editor.decorateMarker marker,
       type: 'highlight'
@@ -91,8 +91,11 @@ class EditorController
       return unless event.newBufferPosition.isEqual([row,column])
       @showMessage range,message
 
+  getTypeCallback: (callback) ->
+    @process.getType @getText(), @getRange(), callback
+
   getType: ->
-    @process.getType @getText(), @getRange(), @showMessage
+    @getTypeCallback @showMessage
 
   insertType: ->
     symbol = @getSymbol()
@@ -120,7 +123,8 @@ class EditorController
 
   getSymbolRange: ->
     range = @getRange()
-    range = @editor.getCursor().getCurrentWordBufferRange() if range.isEmpty()
+    if range.isEmpty()
+      range = @editor.getLastCursor().getCurrentWordBufferRange()
     return range
 
   getSymbol: (range) ->
