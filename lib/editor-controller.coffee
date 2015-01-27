@@ -72,8 +72,8 @@ class EditorController
       @errorTooltipsMap.set line,d if d
       @errorTooltips.add d if d
 
-  showError: (row, column, message) =>
-    range=[[row,column],[row,column+1]]
+  showError: (point, message) =>
+    range=[point,point.add([0,1])]
     @errorMarkers.push marker = @editor.markBufferRange(range)
     if message.startsWith('Warning:')
       klass = 'haskell-ghc-mod-warning'
@@ -85,14 +85,17 @@ class EditorController
     @editor.decorateMarker marker,
       type: 'highlight'
       class: klass
-    setTimeout (=>@addTooltip(message,row)), 100
-    @errorTooltips.add @editor.onDidChangeScrollTop => @addTooltip(message,row)
+    setTimeout (=>@addTooltip(message,point.row)), 100
+    @errorTooltips.add @editor.onDidChangeScrollTop =>
+      @addTooltip(message,point.row)
     @errorTooltips.add @editor.onDidChangeCursorPosition (event) =>
-      return unless event.newBufferPosition.isEqual([row,column])
+      return unless event.newBufferPosition.isEqual(point)
       @showMessage range,message
 
   getTypeCallback: (callback) ->
-    @process.getType @getText(), @getRange(), callback
+    crange=@getRange()
+    @process.getType @getText(), crange, (range,type) ->
+      callback(range,type,crange)
 
   getType: ->
     @getTypeCallback @showMessage

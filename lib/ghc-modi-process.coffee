@@ -1,4 +1,4 @@
-{Range} = require('atom')
+{Range,Point} = require('atom')
 Temp = require('temp')
 FS = require('fs')
 CP = require('child_process')
@@ -78,7 +78,7 @@ class GhcModiProcess
           ''
         type='???' unless type
         range=crange unless range
-        callback range,type,crange
+        callback range,type
 
   getInfo: (text,symbol,callback) =>
     @withTempFile text, (path,close) =>
@@ -99,4 +99,4 @@ class GhcModiProcess
           [file,line]=get line
           [row,line]=get line
           [col,line]=get line
-          callback row-1, col-1, line
+          callback new Point(row-1, col-1), line
