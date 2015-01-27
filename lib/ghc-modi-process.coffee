@@ -30,7 +30,7 @@ class GhcModiProcess
         line!="OK" && line!=""
       callback lines.map (line)->
         line.replace(/\r/g,'\n')
-    @process.stdin.write(command)
+    @process.stdin.write(command+'\n')
 
   runModCmd: (args,callback) =>
     CP.execFile @modPath, args, {}, (error,result) ->
@@ -64,7 +64,7 @@ class GhcModiProcess
     @withTempFile text, (path,close) =>
       cpos = crange.start
       command = "type "+path+" "+(cpos.row+1)+
-        " "+(cpos.column+1)+"\n"
+        " "+(cpos.column+1)
       @runCmd command, (lines) ->
         close()
         [range,type]=lines.reduce ((acc,line) ->
@@ -82,14 +82,14 @@ class GhcModiProcess
 
   getInfo: (text,symbol,callback) =>
     @withTempFile text, (path,close) =>
-      command = "info "+path+" "+symbol+"\n"
+      command = "info "+path+" "+symbol
       @runCmd command, (lines) ->
         close()
         callback lines.join('\n')
 
   doCheck: (text, callback) =>
     @withTempFile text, (path,close) =>
-      command = "check "+path+"\n"
+      command = "check "+path
       @runCmd command, (lines) ->
         close()
         lines.forEach (line) ->
