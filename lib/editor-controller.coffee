@@ -7,6 +7,7 @@ class EditorController
     @errorMarkers = []
     @errorTooltips = new CompositeDisposable
     @subscriptions = new CompositeDisposable
+    @errorTooltipsMap = new WeakMap
 
     @subscriptions.add @editor.onDidSave =>
       @doCheck() if atom.config.get('haskell-ghc-mod.checkOnSave')
@@ -29,6 +30,7 @@ class EditorController
     @errorMarkers = []
     @errorTooltips.dispose()
     @errorTooltips = new CompositeDisposable
+    @errorTooltipsMap = new WeakMap
 
   destroy: ->
     @clearError()
@@ -56,6 +58,20 @@ class EditorController
         position: 'tail'
         item: @messageMarker.item
 
+  addTooltip: (message, row) =>
+    vi = atom.views.getView(@editor)
+    line=vi.rootElement.querySelector(
+      '.gutter .haskell-ghc-mod-error.line-number-'+row)
+    if line && !@errorTooltipsMap.has(line)
+      d=atom.tooltips.add line,
+        template: '<div class="tooltip" role="tooltip">'+
+          '<div class="tooltip-arrow"></div>'+
+          '<pre class="tooltip-inner"></pre></div>'
+        title: message
+        placement: 'right'
+      @errorTooltipsMap.set line,d if d
+      @errorTooltips.add d if d
+
   showError: (row, column, message) =>
     range=[[row,column],[row,column+1]]
     @errorMarkers.push marker = @editor.markBufferRange(range)
@@ -69,26 +85,14 @@ class EditorController
     @editor.decorateMarker marker,
       type: 'highlight'
       class: klass
-    setTimeout (=>
-      vi = atom.views.getView(@editor)
-      line=vi.rootElement.querySelector(
-        '.gutter .haskell-ghc-mod-error.line-number-'+row)
-      atom.tooltips.add line,
-        template: '<div class="tooltip" role="tooltip">'+
-          '<div class="tooltip-arrow"></div>'+
-          '<pre class="tooltip-inner"></pre></div>'
-        title: message
-        placement: 'right'
-      ), 100
+    setTimeout (=>@addTooltip(message,row)), 100
+    @errorTooltips.add @editor.onDidChangeScrollTop => @addTooltip(message,row)
     @errorTooltips.add @editor.onDidChangeCursorPosition (event) =>
       return unless event.newBufferPosition.isEqual([row,column])
       @showMessage range,message
 
-  getTypeCallback: (callback) ->
-    @process.getType @getText(), @getRange(), callback
-
   getType: ->
-    @getTypeCallback @showMessage
+    @process.getType @getText(), @getRange(), @showMessage
 
   insertType: ->
     symbol = @getSymbol()
