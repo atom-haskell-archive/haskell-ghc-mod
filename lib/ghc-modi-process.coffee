@@ -29,23 +29,20 @@ class GhcModiProcess
     @process.stdin.write(command)
 
   runModCmd: (args,callback) =>
-    CP.execFile @modPath, args, {}, callback
+    CP.execFile @modPath, args, {}, (error,result) ->
+      callback result.split('\n') if not error
 
   runList: (callback) =>
-    @runModCmd ['list'], (error,result) ->
-      callback result if not error
+    @runModCmd ['list'], callback
 
   runLang: (callback) =>
-    @runModCmd ['lang'], (error,result) ->
-      callback result if not error
+    @runModCmd ['lang'], callback
 
   runFlag: (callback) =>
-    @runModCmd ['flag'], (error,result) ->
-      callback result if not error
+    @runModCmd ['flag'], callback
 
-  runBrowse: (module,callback) =>
-    @runModCmd ['browse','-d',module], (error,result) ->
-      callback result if not error
+  runBrowse: (modules,callback) =>
+    @runModCmd ['browse','-d'].concat(modules), callback
 
   getType: (text, crange, callback) =>
     Temp.open

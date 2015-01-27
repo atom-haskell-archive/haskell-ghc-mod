@@ -23,6 +23,10 @@ module.exports = HaskellGhcMod =
       type: 'string'
       default: 'ghc-modi'
       description: 'Path to ghc-modi'
+    ghcModPath:
+      type: 'string'
+      default: 'ghc-mod'
+      description: 'Path to ghc-mod'
 
   activate: (state) ->
     @subscriptions = new CompositeDisposable
