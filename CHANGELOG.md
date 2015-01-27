@@ -1,3 +1,13 @@
+## 0.3.0
+* Service-hub API
+* Fix more obscure deprecations
+* Don't set globals
+* Persistent gutter tootlips
+
+## 0.2.1
+* Use theme colors for decorations
+* Use different colors for warnings and errors
+
 ## 0.2.0
 * Use temp-files to feed buffer to ghc-mod directly
 * Add option to check file while editing (disabled by default)
