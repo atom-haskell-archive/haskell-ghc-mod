@@ -55,7 +55,7 @@ module.exports = HaskellGhcMod =
       @process = new GhcModiProcess unless @process
       @editorMap.set(editor,new EditorController(@process,editor))
       editor.onDidDestroy =>
-        @editorMap.get(editor)?.destroy()
+        @editorMap.get(editor)?.destroy?()
         @editorMap.delete(editor)
         @numInstances -= 1
         if @numInstances==0
@@ -64,7 +64,7 @@ module.exports = HaskellGhcMod =
 
   deactivate: ->
     for editor in atom.workspace.getEditors()
-      @editorMap.get(editor)?.desrtoy()
+      @editorMap.get(editor)?.desrtoy?()
       @editorMap.delete(editor)
     @subscriptions.dispose()
     @process?.destroy()
