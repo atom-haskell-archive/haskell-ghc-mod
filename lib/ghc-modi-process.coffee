@@ -49,7 +49,7 @@ class GhcModiProcess
       @process.stdout.once 'data', (data)->
         lines = "#{data}".split("\n")
         result = lines[lines.length-2]
-        throw new Error("Ghc-modi terminated:\n"+"#{data}")\
+        throw new Error("Ghc-modi terminated:\n"+"#{result}")\
           unless result.match(/^OK/)
         lines = lines.slice(0,-2)
         callback lines.map (line)->
