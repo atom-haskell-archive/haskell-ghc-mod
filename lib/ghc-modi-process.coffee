@@ -17,8 +17,7 @@ class GhcModiProcess
       flag: @runFlag
       browse: @runBrowse
 
-  spawnProcess: =>
-    @modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
+  processOptions: ->
     rootPath = atom.project.getRootDirectory().path
     sep = if process.platform=='win32' then ';' else ':'
     env = process.env
@@ -26,29 +25,40 @@ class GhcModiProcess
     options =
       cwd: rootPath
       env: env
-    @process = CP.spawn(@modiPath,['-b\r'],options)
+
+  spawnProcess: =>
+    return unless atom.config.get('haskell-ghc-mod.enableGhcModi')
+    @modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
+    @process = CP.spawn(@modiPath,[],@processOptions())
     @process.once 'exit', =>
       @spawnProcess()
 
   # Tear down any state and detach
   destroy: ->
-    @process.removeAllListeners 'exit'
+    @process?.removeAllListeners? 'exit'
     @services.dispose()
-    @process.stdin.end()
+    @process?.stdin?.end?()
 
   runCmd: (command, callback) ->
-    @process.stdout.once 'data', (data)->
-      lines = "#{data}".split("\n")
-      result = lines[lines.length-2]
-      throw new Error("Ghc-modi terminated:\n"+"#{data}") unless result.match(/^OK/)
-      lines = lines.slice(0,lines.length-2)
-      callback lines.map (line)->
-        line.replace(/\r/g,'\n')
-    @process.stdin.write(command+'\n')
+    unless atom.config.get('haskell-ghc-mod.enableGhcModi')
+      @runModCmd command, (lines) ->
+        callback lines.map (line)->
+          line.split('\0').join('\n')
+    else
+      @spawnProcess() unless @process
+      @process.stdout.once 'data', (data)->
+        lines = "#{data}".split("\n")
+        result = lines[lines.length-2]
+        throw new Error("Ghc-modi terminated:\n"+"#{data}")\
+          unless result.match(/^OK/)
+        lines = lines.slice(0,-2)
+        callback lines.map (line)->
+          line.split('\0').join('\n')
+      @process.stdin.write(command+'\n')
 
   runModCmd: (args,callback) =>
-    CP.execFile @modPath, args, {}, (error,result) ->
-      callback result.split('\n') if not error
+    CP.execFile @modPath, args, @processOptions(), (error,result) ->
+      callback result.split('\n').slice(0,-1) if not error
 
   runList: (callback) =>
     @runModCmd ['list'], callback
@@ -77,8 +87,12 @@ class GhcModiProcess
   getType: (text, crange, callback) =>
     @withTempFile text, (path,close) =>
       cpos = crange.start
-      command = "type "+path+" "+(cpos.row+1)+
-        " "+(cpos.column+1)
+      unless atom.config.get('haskell-ghc-mod.enableGhcModi')
+        command = ["type",path,"",cpos.row+1,cpos.column+1]
+      else
+        command = "type "+path+" "+(cpos.row+1)+
+          " "+(cpos.column+1)
+
       @runCmd command, (lines) ->
         close()
         [range,type]=lines.reduce ((acc,line) ->
@@ -96,14 +110,20 @@ class GhcModiProcess
 
   getInfo: (text,symbol,callback) =>
     @withTempFile text, (path,close) =>
-      command = "info "+path+" "+symbol
+      unless atom.config.get('haskell-ghc-mod.enableGhcModi')
+        command = ["info",path,"",symbol]
+      else
+        command = "info "+path+" "+symbol
       @runCmd command, (lines) ->
         close()
         callback lines.join('\n')
 
   doCheck: (text, callback) =>
     @withTempFile text, (path,close) =>
-      command = "check "+path
+      unless atom.config.get('haskell-ghc-mod.enableGhcModi')
+        command = ["check",path]
+      else
+        command = "check "+path
       @runCmd command, (lines) ->
         close()
         lines.forEach (line) ->

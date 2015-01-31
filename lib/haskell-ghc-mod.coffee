@@ -19,14 +19,20 @@ module.exports = HaskellGhcMod =
       type: 'boolean'
       default: false
       description: 'Run ghc-mod check when you change buffer contents'
-    ghcModiPath:
-      type: 'string'
-      default: 'ghc-modi'
-      description: 'Path to ghc-modi'
     ghcModPath:
       type: 'string'
       default: 'ghc-mod'
       description: 'Path to ghc-mod'
+    enableGhcModi:
+      type: 'boolean'
+      default: true
+      description:
+        'Disable if experiencing problems. It is noticeably slower,'+
+        ' but can help with ghc-modi bugs'
+    ghcModiPath:
+      type: 'string'
+      default: 'ghc-modi'
+      description: 'Path to ghc-modi'
 
   activate: (state) ->
     @subscriptions = new CompositeDisposable
