@@ -58,7 +58,8 @@ class GhcModiProcess
 
   runModCmd: (args,callback) =>
     CP.execFile @modPath, args, @processOptions(), (error,result) ->
-      callback result.split('\n').slice(0,-1) if not error
+      throw new Error(error) if error
+      callback result.split('\n').slice(0,-1)
 
   runList: (callback) =>
     @runModCmd ['list'], callback
