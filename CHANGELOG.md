@@ -1,3 +1,6 @@
+## 0.3.7
+* Fix windows path error
+
 ## 0.3.6
 * Fix gutter warning tooltips
 

@@ -118,10 +118,5 @@ class GhcModiProcess
       @runCmd command, (lines) ->
         close()
         lines.forEach (line) ->
-          get = (line) ->
-            idx=line.indexOf(':')
-            [line.substring(0,idx), line.substring(idx+1)]
-          [file,line]=get line
-          [row,line]=get line
-          [col,line]=get line
-          callback new Point(row-1, col-1), line
+          [m,row,col] = line.match(/^.*?:([0-9]+):([0-9]+):/)
+          callback new Point(row-1, col-1), line.replace(m,'')
