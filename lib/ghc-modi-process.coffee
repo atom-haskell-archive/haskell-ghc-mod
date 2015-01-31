@@ -32,7 +32,7 @@ class GhcModiProcess
 
   # Tear down any state and detach
   destroy: ->
-    @process.removeAllListeners 'close'
+    @process.removeAllListeners 'exit'
     @services.dispose()
     @process.stdin.end()
 
