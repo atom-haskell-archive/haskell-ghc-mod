@@ -1,3 +1,6 @@
+## 0.3.5
+* Add option to disable ghc-modi (turns out there are a couple unresolved bugs in it)
+
 ## 0.3.4
 * Bugfixes
 
