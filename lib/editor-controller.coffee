@@ -58,10 +58,10 @@ class EditorController
         position: 'tail'
         item: @messageMarker.item
 
-  addTooltip: (message, row) =>
+  addTooltip: (message, cls, row) =>
     vi = atom.views.getView(@editor)
     line=vi.rootElement.querySelector(
-      '.haskell-ghc-mod-error.line-number-'+row)
+      '.'+cls+'.line-number-'+row)
     if line && !@errorTooltipsMap.has(line)
       d=atom.tooltips.add line,
         template: '<div class="tooltip" role="tooltip">'+
@@ -76,18 +76,18 @@ class EditorController
     range=[point,point.traverse([0,1])]
     @errorMarkers.push marker = @editor.markBufferRange(range)
     if message.startsWith('Warning:')
-      klass = 'haskell-ghc-mod-warning'
+      cls = 'haskell-ghc-mod-warning'
     else
-      klass = 'haskell-ghc-mod-error'
+      cls = 'haskell-ghc-mod-error'
     @editor.decorateMarker marker,
       type: 'line-number'
-      class: klass
+      class: cls
     @editor.decorateMarker marker,
       type: 'highlight'
-      class: klass
-    setTimeout (=>@addTooltip(message,point.row)), 100
+      class: cls
+    setTimeout (=>@addTooltip(message,cls,point.row)), 100
     @errorTooltips.add @editor.onDidChangeScrollTop =>
-      @addTooltip(message,point.row)
+      @addTooltip(message,cls,point.row)
     @errorTooltips.add @editor.onDidChangeCursorPosition (event) =>
       return unless event.newBufferPosition.isEqual(point)
       @showMessage range,message
