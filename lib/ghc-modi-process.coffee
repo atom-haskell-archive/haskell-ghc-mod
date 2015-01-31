@@ -19,7 +19,14 @@ class GhcModiProcess
 
   spawnProcess: =>
     @modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
-    @process = CP.spawn(@modiPath,['-b\r'])
+    rootPath = atom.project.getRootDirectory().path
+    sep = if process.platform=='win32' then ';' else ':'
+    env = process.env
+    env.PATH = rootPath+"/.cabal-sandbox/bin"+sep+env.PATH
+    options =
+      cwd: rootPath
+      env: env
+    @process = CP.spawn(@modiPath,['-b\r'],options)
     @process.once 'exit', =>
       @spawnProcess()
 
