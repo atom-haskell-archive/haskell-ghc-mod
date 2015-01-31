@@ -1,3 +1,12 @@
+## 0.3.3
+* Preliminary support for cabal sandboxes
+
+## 0.3.2
+* Better error reporting in case of ghc-modi failure
+
+## 0.3.1
+* Fixed some deprecations
+
 ## 0.3.0
 * Service-hub API
 * Fix more obscure deprecations
