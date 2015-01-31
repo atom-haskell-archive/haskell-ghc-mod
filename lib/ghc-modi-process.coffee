@@ -7,7 +7,6 @@ module.exports =
 class GhcModiProcess
   constructor: ->
     @spawnProcess()
-    @modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     @services=atom.services.provide "haskell-ghc-mod", "0.1.0",
       type: @getType
       info: @getInfo
@@ -54,10 +53,11 @@ class GhcModiProcess
         lines = lines.slice(0,-2)
         callback lines.map (line)->
           line.split('\0').join('\n')
-      @process.stdin.write(command+'\n')
+      @process.stdin.write(command.join(' ')+'\n')
 
   runModCmd: (args,callback) =>
-    CP.execFile @modPath, args, @processOptions(), (error,result) ->
+    modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
+    CP.execFile modPath, args, @processOptions(), (error,result) ->
       throw new Error(error) if error
       callback result.split('\n').slice(0,-1)
 
@@ -88,11 +88,7 @@ class GhcModiProcess
   getType: (text, crange, callback) =>
     @withTempFile text, (path,close) =>
       cpos = crange.start
-      unless atom.config.get('haskell-ghc-mod.enableGhcModi')
-        command = ["type",path,"",cpos.row+1,cpos.column+1]
-      else
-        command = "type "+path+" "+(cpos.row+1)+
-          " "+(cpos.column+1)
+      command = ["type",path,"",cpos.row+1,cpos.column+1]
 
       @runCmd command, (lines) ->
         close()
@@ -111,20 +107,14 @@ class GhcModiProcess
 
   getInfo: (text,symbol,callback) =>
     @withTempFile text, (path,close) =>
-      unless atom.config.get('haskell-ghc-mod.enableGhcModi')
-        command = ["info",path,"",symbol]
-      else
-        command = "info "+path+" "+symbol
+      command = ["info",path,"",symbol]
       @runCmd command, (lines) ->
         close()
         callback lines.join('\n')
 
   doCheck: (text, callback) =>
     @withTempFile text, (path,close) =>
-      unless atom.config.get('haskell-ghc-mod.enableGhcModi')
-        command = ["check",path]
-      else
-        command = "check "+path
+      command = ["check",path]
       @runCmd command, (lines) ->
         close()
         lines.forEach (line) ->
