@@ -6,9 +6,8 @@ CP = require('child_process')
 module.exports =
 class GhcModiProcess
   constructor: ->
-    @modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
+    @spawnProcess()
     @modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
-    @process = CP.spawn(@modiPath,['-b\r'])
     @services=atom.services.provide "haskell-ghc-mod", "0.1.0",
       type: @getType
       info: @getInfo
@@ -18,16 +17,24 @@ class GhcModiProcess
       flag: @runFlag
       browse: @runBrowse
 
+  spawnProcess: =>
+    @modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
+    @process = CP.spawn(@modiPath,['-b\r'])
+    @process.once 'exit', =>
+      @spawnProcess()
 
   # Tear down any state and detach
   destroy: ->
+    @process.removeAllListeners 'close'
     @services.dispose()
     @process.stdin.end()
 
   runCmd: (command, callback) ->
     @process.stdout.once 'data', (data)->
-      lines = "#{data}".split("\n").filter (line) ->
-        line!="OK" && line!=""
+      lines = "#{data}".split("\n")
+      result = lines[lines.length-2]
+      throw new Error("Ghc-modi terminated:\n"+"#{data}") unless result=="OK"
+      lines = lines.slice(0,lines.length-2)
       callback lines.map (line)->
         line.replace(/\r/g,'\n')
     @process.stdin.write(command+'\n')
