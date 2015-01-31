@@ -1,3 +1,6 @@
+## 0.3.4
+* Bugfixes
+
 ## 0.3.3
 * Preliminary support for cabal sandboxes
 
