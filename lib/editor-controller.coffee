@@ -21,7 +21,7 @@ class EditorController
 
     @subscriptions.add @removeMessageOnChange
 
-    @doCheck()
+    @doCheck() if atom.config.get('haskell-ghc-mod.enableGhcModi')
 
 
   clearError: ->

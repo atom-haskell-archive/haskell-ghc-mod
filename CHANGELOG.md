@@ -1,3 +1,6 @@
+## 0.3.8
+* Check on open only if ghc-modi enabled
+
 ## 0.3.7
 * Fix windows path error
 
