@@ -5,16 +5,19 @@ CP = require('child_process')
 
 module.exports =
 class GhcModiProcess
+  editorCount: 0
+  process: null
+
   constructor: ->
+
+  addEditor: () ->
+    @editorCount+=1
     @spawnProcess()
-    @services=atom.services.provide "haskell-ghc-mod", "0.1.0",
-      type: @getType
-      info: @getInfo
-      check: @doCheck
-      list: @runList
-      lang: @runLang
-      flag: @runFlag
-      browse: @runBrowse
+
+  removeEditor: () ->
+    @editorCount-=1
+    if @editorCount==0
+      @killProcess()
 
   processOptions: ->
     rootPath = atom.project.getRootDirectory().path
@@ -27,16 +30,20 @@ class GhcModiProcess
 
   spawnProcess: =>
     return unless atom.config.get('haskell-ghc-mod.enableGhcModi')
+    return if @process?
     @modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
     @process = CP.spawn(@modiPath,[],@processOptions())
     @process.once 'exit', =>
       @spawnProcess()
 
+  killProcess: =>
+    @process?.removeAllListeners? 'exit'
+    @process?.stdin?.end?()
+    @process=null
+
   # Tear down any state and detach
   destroy: ->
-    @process?.removeAllListeners? 'exit'
-    @services.dispose()
-    @process?.stdin?.end?()
+    @killProcess()
 
   runCmd: (command, callback) ->
     unless atom.config.get('haskell-ghc-mod.enableGhcModi')

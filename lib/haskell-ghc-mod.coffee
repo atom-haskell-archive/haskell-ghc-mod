@@ -7,7 +7,6 @@ EditorController = require './editor-controller'
 module.exports = HaskellGhcMod =
   process: null
   subscriptions: null
-  numInstances: 0
   editorMap: null
 
   config:
@@ -36,8 +35,7 @@ module.exports = HaskellGhcMod =
 
   activate: (state) ->
     @subscriptions = new CompositeDisposable
-    @process=null
-    @numInstances=0
+    @process=new GhcModiProcess unless @process?
     @editorMap = new WeakMap
 
     atom.views.addViewProvider HaskellGhcModMessage, (message)->
@@ -57,20 +55,21 @@ module.exports = HaskellGhcMod =
 
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
       return unless editor.getGrammar().scopeName=="source.haskell"
-      @numInstances += 1
-      @process = new GhcModiProcess unless @process
       @editorMap.set(editor,new EditorController(@process,editor))
-      editor.onDidDestroy =>
-        @editorMap.get(editor)?.destroy?()
-        @editorMap.delete(editor)
-        @numInstances -= 1
-        if @numInstances==0
-          @process?.destroy()
-          @process=null
 
   deactivate: ->
     for editor in atom.workspace.getEditors()
       @editorMap.get(editor)?.desrtoy?()
-      @editorMap.delete(editor)
     @subscriptions.dispose()
     @process?.destroy()
+
+  provideGhcMod_0_1_0: =>
+    @process=new GhcModiProcess unless @process?
+    if @process?
+      type: @process.getType
+      info: @process.getInfo
+      check: @process.doCheck
+      list: @process.runList
+      lang: @process.runLang
+      flag: @process.runFlag
+      browse: @process.runBrowse
