@@ -1,3 +1,6 @@
+## 0.4.1
+* Fix getRootPath deprecation
+
 ## 0.4.0
 * Migrate to new json-based service provider
 * Bump atom version
