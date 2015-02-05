@@ -1,3 +1,7 @@
+## 0.4.0
+* Migrate to new json-based service provider
+* Bump atom version
+
 ## 0.3.8
 * Check on open only if ghc-modi enabled
 
