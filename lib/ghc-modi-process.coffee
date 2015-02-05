@@ -20,7 +20,8 @@ class GhcModiProcess
       @killProcess()
 
   processOptions: ->
-    rootPath = atom.project.getRootDirectory().path
+    # this is not pretty...
+    rootPath = atom.project.getPaths()[0]
     sep = if process.platform=='win32' then ';' else ':'
     env = process.env
     env.PATH = rootPath+"/.cabal-sandbox/bin"+sep+env.PATH
