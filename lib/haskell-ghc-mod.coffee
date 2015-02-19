@@ -63,8 +63,7 @@ module.exports = HaskellGhcMod =
     @subscriptions.dispose()
     @process?.destroy()
 
-  provideGhcMod_0_1_0: =>
-    @process=new GhcModiProcess unless @process?
+  provideGhcMod_0_1_0: ->
     if @process?
       type: @process.getType
       info: @process.getInfo
