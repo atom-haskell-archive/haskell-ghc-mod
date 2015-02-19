@@ -44,6 +44,7 @@ class EditorController
     @messageMarker?.destroy()
 
   showMessage: (range, message, crange) =>
+    return unless @editor.isAlive()
     if @messageMarker?.getBufferRange()==range
       @messageMarker.item.setMessage(message)
     else
@@ -65,6 +66,7 @@ class EditorController
         item: @messageMarker.item
 
   addTooltip: (message, cls, row) =>
+    return unless @editor.isAlive()
     vi = atom.views.getView(@editor)
     line=vi.rootElement.querySelector(
       '.'+cls+'.line-number-'+row)
@@ -79,6 +81,7 @@ class EditorController
       @errorTooltips.add d if d
 
   showError: (point, message) =>
+    return unless @editor.isAlive()
     range=[point,point.traverse([0,1])]
     @errorMarkers.push marker = @editor.markBufferRange(range)
     if message.startsWith('Warning:')
