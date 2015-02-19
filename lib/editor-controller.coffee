@@ -12,9 +12,6 @@ class EditorController
     @subscriptions.add @editor.onDidSave =>
       @doCheck() if atom.config.get('haskell-ghc-mod.checkOnSave')
 
-    @subscriptions.add @editor.onDidStopChanging =>
-      @doCheck() if atom.config.get('haskell-ghc-mod.checkOnEdit')
-
     @subscriptions.add @editor.onDidDestroy =>
       @destroy()
 
@@ -25,8 +22,6 @@ class EditorController
       @messageMarker=null
 
     @subscriptions.add @removeMessageOnChange
-
-    @doCheck() if atom.config.get('haskell-ghc-mod.enableGhcModi')
 
 
   clearError: ->

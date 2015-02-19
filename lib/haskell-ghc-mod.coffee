@@ -14,10 +14,6 @@ module.exports = HaskellGhcMod =
       type: 'boolean'
       default: true
       description: 'Run ghc-mod check on file save'
-    checkOnEdit:
-      type: 'boolean'
-      default: false
-      description: 'Run ghc-mod check when you change buffer contents'
     ghcModPath:
       type: 'string'
       default: 'ghc-mod'

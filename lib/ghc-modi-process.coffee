@@ -123,7 +123,7 @@ class GhcModiProcess
   doCheck: (text, callback) =>
     @withTempFile text, (path,close) =>
       command = ["check",path]
-      @runCmd command, (lines) ->
+      @runModCmd command, (lines) ->
         close()
         lines.forEach (line) ->
           [m,row,col] = line.match(/^.*?:([0-9]+):([0-9]+):/)
