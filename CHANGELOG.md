@@ -1,3 +1,9 @@
+## 0.4.2
+* BUGFIX: Fat arrow in main module
+* Force ghc-mod for file check
+* Remove checkOnEdit option
+* Don't check file on open
+
 ## 0.4.1
 * Fix getRootPath deprecation
 
