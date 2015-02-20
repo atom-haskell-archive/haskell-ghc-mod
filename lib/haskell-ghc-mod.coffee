@@ -31,7 +31,7 @@ module.exports = HaskellGhcMod =
 
   activate: (state) ->
     @subscriptions = new CompositeDisposable
-    @process=new GhcModiProcess unless @process?
+    @process=new GhcModiProcess
     @editorMap = new WeakMap
 
     atom.views.addViewProvider HaskellGhcModMessage, (message)->
