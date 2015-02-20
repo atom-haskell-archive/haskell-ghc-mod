@@ -1,7 +1,7 @@
 {
   "name": "haskell-ghc-mod",
   "main": "./lib/haskell-ghc-mod",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Haskell Ghc-Mod opens pipe to ghc-modi and queries types, info and checks for errors.",
   "repository": "https://github.com/lierdakil/haskell-ghc-mod",
   "license": "MIT",
