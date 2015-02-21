@@ -121,7 +121,8 @@ class EditorController
 
   doCheck: ->
     @clearError()
-    @process.doCheck @getText(), @showError
+    @process.doCheck @getText(), (point,message,file,path) =>
+      @showError point,message if file==path
 
   getText: ->
     @editor.getText()
