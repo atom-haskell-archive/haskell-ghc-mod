@@ -1,5 +1,6 @@
 {Range,CompositeDisposable} = require('atom')
 {HaskellGhcModMessage} = require('./haskell-ghc-mod-message')
+replaceAll = require './replace-all'
 
 module.exports =
 class EditorController
@@ -115,8 +116,8 @@ class EditorController
 
   getInfo: ->
     range=@getSymbolRange()
-    @process.getInfo @getText(), @getSymbol(range), (data) =>
-      @showMessage range,data
+    @process.getInfo @getText(), @getSymbol(range), (data,path) =>
+      @showMessage range,replaceAll(data,path,@getPath())
 
   doCheck: ->
     @clearError()
@@ -137,3 +138,6 @@ class EditorController
   getSymbol: (range) ->
     range=@getSymbolRange() unless range
     @editor.getTextInBufferRange range
+
+  getPath: ->
+    @editor.getPath()
