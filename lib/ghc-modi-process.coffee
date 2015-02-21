@@ -2,6 +2,7 @@
 Temp = require('temp')
 FS = require('fs')
 CP = require('child_process')
+replaceAll = require './replace-all'
 
 module.exports =
 class GhcModiProcess
@@ -50,7 +51,7 @@ class GhcModiProcess
     unless atom.config.get('haskell-ghc-mod.enableGhcModi')
       @runModCmd command, (lines) ->
         callback lines.map (line)->
-          line.split('\0').join('\n')
+          replaceAll(line,'\0','\n')
     else
       @spawnProcess() unless @process
       @process.stdout.once 'data', (data)->
@@ -60,7 +61,7 @@ class GhcModiProcess
           unless result.match(/^OK/)
         lines = lines.slice(0,-2)
         callback lines.map (line)->
-          line.split('\0').join('\n')
+          replaceAll(line,'\0','\n')
       @process.stdin.write(command.join(' ')+'\n')
 
   runModCmd: (args,callback) =>
@@ -68,7 +69,7 @@ class GhcModiProcess
     CP.execFile modPath, args, @processOptions(), (error,result) ->
       throw new Error(error) if error
       callback result.split('\n').slice(0,-1).map (line)->
-        line.split('\0').join('\n')
+        replaceAll(line,'\0','\n')
 
   runList: (callback) =>
     @runModCmd ['list'], callback
