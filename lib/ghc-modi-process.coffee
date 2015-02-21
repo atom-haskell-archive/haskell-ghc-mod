@@ -128,5 +128,5 @@ class GhcModiProcess
       @runModCmd command, (lines) ->
         close()
         lines.forEach (line) ->
-          [m,row,col] = line.match(/^.*?:([0-9]+):([0-9]+):/)
-          callback new Point(row-1, col-1), line.replace(m,'')
+          [m,file,row,col] = line.match(/^(.*?):([0-9]+):([0-9]+):/)
+          callback new Point(row-1, col-1), line.replace(m,''), file, path
