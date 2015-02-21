@@ -120,7 +120,7 @@ class GhcModiProcess
       command = ["info",path,"",symbol]
       @runCmd command, (lines) ->
         close()
-        callback lines.join('\n')
+        callback lines.join('\n'), path
 
   doCheck: (text, callback) =>
     @withTempFile text, (path,close) =>
