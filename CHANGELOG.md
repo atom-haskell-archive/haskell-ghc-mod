@@ -1,3 +1,12 @@
+## 0.4.3
+* code cleanup
+* add filename and path to doCheck callback
+* Filter current file in doCheck
+* Add tempfile path as getInfo callback parameter
+* Replace tempfile path with actual path in getInfo
+* Fix newlines in ghc-mod check
+* README update
+
 ## 0.4.2
 * BUGFIX: Fat arrow in main module
 * Force ghc-mod for file check
