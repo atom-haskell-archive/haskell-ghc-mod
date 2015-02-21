@@ -67,7 +67,8 @@ class GhcModiProcess
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     CP.execFile modPath, args, @processOptions(), (error,result) ->
       throw new Error(error) if error
-      callback result.split('\n').slice(0,-1)
+      callback result.split('\n').slice(0,-1).map (line)->
+        line.split('\0').join('\n')
 
   runList: (callback) =>
     @runModCmd ['list'], callback
