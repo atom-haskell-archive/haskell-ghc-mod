@@ -29,17 +29,14 @@ module.exports = HaskellGhcMod =
       default: 'ghc-modi'
       description: 'Path to ghc-modi'
 
-  activate: (state) ->
-    @subscriptions = new CompositeDisposable
-    @process=new GhcModiProcess
+  registerEditorCommands: ->
+    if atom.packages.isPackageActive('ide-haskell')
+      return
+
+    @subscriptions_editor = new CompositeDisposable
     @editorMap = new WeakMap
 
-    atom.views.addViewProvider HaskellGhcModMessage, (message)->
-      el=new HaskellGhcModMessageElement
-      el.setModel(message)
-      el
-
-    @subscriptions.add atom.commands.add 'atom-text-editor',
+    @subscriptions_editor.add atom.commands.add 'atom-text-editor',
       'haskell-ghc-mod:type': ({target}) =>
         @editorMap.get(target.getModel())?.getType()
       'haskell-ghc-mod:info': ({target}) =>
@@ -49,14 +46,34 @@ module.exports = HaskellGhcMod =
       'haskell-ghc-mod:check': ({target}) =>
         @editorMap.get(target.getModel())?.doCheck()
 
-    @subscriptions.add atom.workspace.observeTextEditors (editor) =>
+    @subscriptions_editor.add atom.workspace.observeTextEditors (editor) =>
       return unless editor.getGrammar().scopeName=="source.haskell"
       @editorMap.set(editor,new EditorController(@process,editor))
 
-  deactivate: ->
+  unregisterEdtiorCommands: ->
     for editor in atom.workspace.getEditors()
-      @editorMap.get(editor)?.desrtoy?()
-    @subscriptions.dispose()
+      @editorMap?.get(editor)?.desrtoy?()
+    @subscriptions_editor?.dispose()
+
+  activate: (state) ->
+    @process=new GhcModiProcess
+    @subscriptions = new CompositeDisposable
+
+    atom.views.addViewProvider HaskellGhcModMessage, (message)->
+      el=new HaskellGhcModMessageElement
+      el.setModel(message)
+      el
+
+    atom.packages.onDidActivatePackage (p) =>
+      @unregisterEditorCommands() if p.name=='ide-haskell'
+
+    atom.packages.onDidDeactivatePackage (p) =>
+      @registerEditorCommands() if p.name=='ide-haskell'
+
+    @registerEditorCommands()
+
+  deactivate: ->
+    @unregisterEdtiorCommands()
     @process?.destroy()
 
   provideGhcMod_0_1_0: ->
