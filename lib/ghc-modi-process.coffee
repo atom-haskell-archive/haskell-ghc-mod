@@ -1,4 +1,4 @@
-{Range,Point} = require('atom')
+{BufferedProcess,Range,Point} = require('atom')
 Temp = require('temp')
 FS = require('fs')
 CP = require('child_process')
@@ -8,6 +8,8 @@ module.exports =
 class GhcModiProcess
   editorCount: 0
   process: null
+  commandQueue: []
+  commandRunning: false
 
   constructor: ->
 
@@ -22,6 +24,7 @@ class GhcModiProcess
 
   processOptions: ->
     # this is not pretty...
+    # TODO: depend on file path
     rootPath = atom.project.getPaths()[0]
     sep = if process.platform=='win32' then ';' else ':'
     env = process.env
@@ -33,31 +36,46 @@ class GhcModiProcess
   spawnProcess: =>
     return unless atom.config.get('haskell-ghc-mod.enableGhcModi')
     return if @process?
-    @modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
-    @process = CP.spawn(@modiPath,[],@processOptions())
-    @process.once 'exit', =>
-      @spawnProcess()
+    modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
+    @process = CP.spawn(modiPath,[],@processOptions())
+    @process.on 'stderr', (data) ->
+      console.error(data)
+    @process.on 'exit', (code) ->
+      @spawnProcess() if code!=0
 
   killProcess: =>
-    @process?.removeAllListeners? 'exit'
     @process?.stdin?.end?()
+    @process.kill()
     @process=null
 
   # Tear down any state and detach
   destroy: ->
     @killProcess()
 
-  runCmd: (command, callback) ->
+  queueCmd: (runFunc, command, callback) =>
+    @commandQueue.push({f:runFunc,cmd:command,cb:callback})
+    @runQueuedCommands()
+
+  runQueuedCommands: =>
+    return if @commandQueue.length==0 or @commandRunning
+    @commandRunning = true
+    {f,cmd,cb}=@commandQueue.shift()
+    f cmd, (lines) =>
+      cb lines
+      @commandRunning=false
+      @runQueuedCommands()
+
+  runCmd: (command, callback) =>
     unless atom.config.get('haskell-ghc-mod.enableGhcModi')
       @runModCmd command, (lines) ->
-        callback lines.map (line)->
+        callback lines.map (line) ->
           replaceAll(line,'\0','\n')
     else
       @spawnProcess() unless @process
       @process.stdout.once 'data', (data)->
         lines = "#{data}".split("\n")
         result = lines[lines.length-2]
-        throw new Error("Ghc-modi terminated:\n"+"#{result}")\
+        console.error ("Ghc-modi terminated:\n"+"#{result}")\
           unless result.match(/^OK/)
         lines = lines.slice(0,-2)
         callback lines.map (line)->
@@ -66,22 +84,34 @@ class GhcModiProcess
 
   runModCmd: (args,callback) =>
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
-    CP.execFile modPath, args, @processOptions(), (error,result) ->
-      throw new Error(error) if error
-      callback result.split('\n').slice(0,-1).map (line)->
-        replaceAll(line,'\0','\n')
+    result = []
+    err = []
+    process=new BufferedProcess
+      command: modPath
+      args: args
+      options: @processOptions()
+      stdout: (data) ->
+        result=result.concat(data.split('\n'))
+      stderr: (data) ->
+        err=err.concat(data.split('\n'))
+      exit: (code) ->
+        if code!=0
+          console.error err.join('\n')
+        else
+          callback result.slice(0,-1).map (line)->
+            replaceAll(line,'\0','\n')
 
   runList: (callback) =>
-    @runModCmd ['list'], callback
+    @queueCmd @runModCmd, ['list'], callback
 
   runLang: (callback) =>
-    @runModCmd ['lang'], callback
+    @queueCmd @runModCmd, ['lang'], callback
 
   runFlag: (callback) =>
-    @runModCmd ['flag'], callback
+    @queueCmd @runModCmd, ['flag'], callback
 
   runBrowse: (modules,callback) =>
-    @runModCmd ['browse','-d'].concat(modules), callback
+    @queueCmd @runModCmd, ['browse','-d'].concat(modules), callback
 
   withTempFile: (contents,callback) ->
     Temp.open
@@ -100,7 +130,7 @@ class GhcModiProcess
       cpos = crange.start
       command = ["type",path,"",cpos.row+1,cpos.column+1]
 
-      @runCmd command, (lines) ->
+      @queueCmd @runCmd, command, (lines) ->
         close()
         [range,type]=lines.reduce ((acc,line) ->
           return acc if acc!=''
@@ -118,14 +148,14 @@ class GhcModiProcess
   getInfo: (text,symbol,callback) =>
     @withTempFile text, (path,close) =>
       command = ["info",path,"",symbol]
-      @runCmd command, (lines) ->
+      @queueCmd @runCmd, command, (lines) ->
         close()
         callback lines.join('\n'), path
 
   doCheck: (text, callback) =>
     @withTempFile text, (path,close) =>
       command = ["check",path]
-      @runModCmd command, (lines) ->
+      @queueCmd @runModCmd, command, (lines) ->
         close()
         lines.forEach (line) ->
           [m,file,row,col] = line.match(/^(.*?):([0-9]+):([0-9]+):/)
