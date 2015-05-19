@@ -114,9 +114,9 @@ module.exports = HaskellGhcMod =
 
   provideCompletionBackend_0_1_0: ->
     if @process?
-      listModules: (buffer) =>
+      listModules: (rootDir) =>
         new Promise (resolve) =>
-          @process.runList @process.getRootDir(buffer), resolve
+          @process.runList rootDir, resolve
       listLanguagePragmas: () =>
         new Promise (resolve) =>
           @process.runLang resolve
