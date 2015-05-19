@@ -124,7 +124,10 @@ module.exports = HaskellGhcMod =
         new Promise (resolve) =>
           @process.runFlag resolve
       listImportedSymbols: (buffer) =>
-        modules = []
+        modules = [{
+          q: false
+          n: 'Prelude'
+          }]
         regex= ///
           ^import
           \s+(qualified\s+)? #qualified
