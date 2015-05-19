@@ -114,6 +114,10 @@ module.exports = HaskellGhcMod =
 
   provideCompletionBackend_0_1_0: ->
     if @process?
+      getType: (buffer, range) =>
+        new Promise (resolve) =>
+          @process.getTypeInBuffer buffer,range,(range,type) ->
+            resolve type
       listModules: (rootDir) =>
         new Promise (resolve) =>
           @process.runList rootDir, resolve
