@@ -6,17 +6,30 @@
   "repository": "https://github.com/lierdakil/haskell-ghc-mod",
   "license": "MIT",
   "engines": {
-    "atom": ">=0.177.0"
+    "atom": ">=0.199.0"
   },
   "dependencies": {
     "temp": "*",
-    "fs": "*"
+    "fs": "*",
+    "grim": "*"
   },
   "providedServices": {
     "haskell-ghc-mod": {
-      "description": "Provides interface to Ghc-Mod and Ghc-Modi",
+      "description": "Provides interface to Ghc-Mod and Ghc-Modi. Deprecated",
       "versions": {
         "0.1.0": "provideGhcMod_0_1_0"
+      }
+    },
+    "haskell-ide-backend": {
+      "description": "Implements general haskell-ide-backend spec",
+      "versions": {
+        "0.1.0": "provideIdeBackend_0_1_0"
+      }
+    },
+    "haskell-completion-backend": {
+      "description": "Implements general haskell-completion-backend spec",
+      "versions": {
+        "0.1.0": "provideCompletionBackend_0_1_0"
       }
     }
   }

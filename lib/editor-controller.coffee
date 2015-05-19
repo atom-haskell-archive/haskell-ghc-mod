@@ -99,7 +99,7 @@ class EditorController
 
   getTypeCallback: (callback) ->
     crange=@getRange()
-    @process.getType @getText(), crange, (range,type) ->
+    @process.getTypeInBuffer @editor.getBuffer(), crange, (range,type) ->
       callback(range,type,crange)
 
   getType: ->
@@ -115,17 +115,14 @@ class EditorController
       @editor.setIndentationForBufferRow pos[0]+1,indent
 
   getInfo: ->
-    range=@getSymbolRange()
-    @process.getInfo @getText(), @getSymbol(range), (data,path) =>
-      @showMessage range,replaceAll(data,path,@getPath())
+    crange=@getRange()
+    @process.getInfoInBuffer @editor.getBuffer(), crange, (range,data) =>
+      @showMessage range,data
 
   doCheck: ->
     @clearError()
-    @process.doCheck @getText(), (point,message,file,path) =>
-      @showError point,message if file==path
-
-  getText: ->
-    @editor.getText()
+    @process.doCheckBuffer @editor.getBuffer(), (point,message,file) =>
+      @showError point,message if file==@editor.getBuffer().getUri()
 
   getRange: ->
     @editor.getSelectedBufferRange()

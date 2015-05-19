@@ -2,6 +2,7 @@ GhcModiProcess = require './ghc-modi-process'
 {HaskellGhcModMessage,HaskellGhcModMessageElement} =
   require('./haskell-ghc-mod-message')
 {CompositeDisposable} = require 'atom'
+Grim = require 'grim'
 EditorController = require './editor-controller'
 
 module.exports = HaskellGhcMod =
@@ -78,10 +79,76 @@ module.exports = HaskellGhcMod =
 
   provideGhcMod_0_1_0: ->
     if @process?
-      type: @process.getType
-      info: @process.getInfo
-      check: @process.doCheck
-      list: @process.runList
-      lang: @process.runLang
-      flag: @process.runFlag
-      browse: @process.runBrowse
+      type: (text,range,callback) =>
+        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
+        @process.getType text,range,callback
+      info: (text,symbol,callback) =>
+        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
+        @process.getInfo text,symbol,callback
+      check: (text,callback) =>
+        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
+        @process.doCheck text,callback
+      list: (callback) =>
+        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
+        @process.runList atom.project.getDirectories()[0], callback
+      lang: (callback) =>
+        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
+        @process.runLang callback
+      flag: (callback) =>
+        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
+        @process.runFlag callback
+      browse: (modules,callback) =>
+        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
+        @process.runBrowse atom.project.getDirectories()[0], modules, callback
+
+  provideIdeBackend_0_1_0: ->
+    if @process?
+      getType: (buffer, range, callback) =>
+        @process.getTypeInBuffer buffer,range,callback
+      getInfo: (buffer, range, callback) =>
+        @process.getInfoInBuffer buffer,range,callback
+      checkBuffer: (buffer, callback) =>
+        @process.doCheckBuffer buffer,callback
+      lintBuffer: (buffer, callback) =>
+        @process.doLintBuffer buffer, callback
+
+  provideCompletionBackend_0_1_0: ->
+    if @process?
+      listModules: (buffer) =>
+        new Promise (resolve) =>
+          @process.runList @process.getRootDir(buffer), resolve
+      listLanguagePragmas: () =>
+        new Promise (resolve) =>
+          @process.runLang resolve
+      listCompilerOptions: () =>
+        new Promise (resolve) =>
+          @process.runFlag resolve
+      listImportedSymbols: (buffer) =>
+        modules = []
+        regex= ///
+          ^import
+          \s+(qualified\s+)? #qualified
+          ([\w.]+) #name
+          (?:\s+\(([^)]+)\))? #import list
+          (?:\s+as\s+([\w.]+))? #alias
+          ///gm
+        buffer.scan regex, ({match}) ->
+          modules.push
+            q: match[1]?
+            n: match[2]
+            l: match[3]?.split(',')?.map (s) -> s.trim()
+            a: match[4]
+        Promise.all modules.map (m) =>
+          new Promise (resolve) =>
+            @process.runBrowse @process.getRootDir(buffer), [m.n], (symbols) ->
+              s = symbols.map (s) ->
+                [name, type] = s.split('::').map (s) -> s.trim()
+                {name: name, type: type}
+              if m.l?
+                s = s.filter (s) ->
+                  m.l.indexOf(s.name) >= 0
+              resolve
+                module: m.n
+                alias: m.a
+                qualified: m.q
+                symbols: s
