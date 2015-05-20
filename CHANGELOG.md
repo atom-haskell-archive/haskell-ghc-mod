@@ -1,3 +1,6 @@
+## 0.5.1
+* Deprecation fix
+
 ## 0.5.0
 * Ide-haskell compatibility (disable editor control etc)
 * Queue commands
