@@ -127,10 +127,10 @@ module.exports = HaskellGhcMod =
       listCompilerOptions: () =>
         new Promise (resolve) =>
           @process.runFlag resolve
-      listImportedSymbols: (buffer) =>
+      getImportedModules: (buffer) ->
         modules = [{
-          q: false
-          n: 'Prelude'
+          qualified: false
+          name: 'Prelude'
           }]
         regex= ///
           ^import
@@ -141,21 +141,25 @@ module.exports = HaskellGhcMod =
           ///gm
         buffer.scan regex, ({match}) ->
           modules.push
-            q: match[1]?
-            n: match[2]
-            l: match[3]?.split(',')?.map (s) -> s.trim()
-            a: match[4]
+            qualified: match[1]?
+            name: match[2]
+            importList: match[3]?.split(',')?.map (s) -> s.trim()
+            alias: match[4]
+        return modules
+      listImportedSymbols: (buffer, modules) =>
+        modules ?= @provideCompletionBackend_0_1_0().getImportedModules(buffer)
         Promise.all modules.map (m) =>
           new Promise (resolve) =>
-            @process.runBrowse @process.getRootDir(buffer), [m.n], (symbols) ->
+            rd = @process.getRootDir(buffer)
+            @process.runBrowse rd, [m.name], (symbols) ->
               s = symbols.map (s) ->
                 [name, type] = s.split('::').map (s) -> s.trim()
                 {name: name, type: type}
-              if m.l?
+              if m.importList?
                 s = s.filter (s) ->
-                  m.l.indexOf(s.name) >= 0
+                  m.importList.indexOf(s.name) >= 0
               resolve
-                module: m.n
-                alias: m.a
-                qualified: m.q
+                module: m.name
+                alias: m.alias
+                qualified: m.qualified
                 symbols: s
