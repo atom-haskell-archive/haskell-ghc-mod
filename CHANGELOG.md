@@ -1,3 +1,9 @@
+## 0.5.0
+* Ide-haskell compatibility (disable editor control etc)
+* Queue commands
+* Use BufferedProcess
+* Haskell-ghc-mod service deprecated, new services implemented
+
 ## 0.4.3
 * code cleanup
 * add filename and path to doCheck callback
