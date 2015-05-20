@@ -52,7 +52,7 @@ module.exports = HaskellGhcMod =
       @editorMap.set(editor,new EditorController(@process,editor))
 
   unregisterEdtiorCommands: ->
-    for editor in atom.workspace.getEditors()
+    for editor in atom.workspace.getTextEditors()
       @editorMap?.get(editor)?.desrtoy?()
     @subscriptions_editor?.dispose()
 
