@@ -73,11 +73,11 @@ class EditorController
       @errorTooltipsMap.set line,d if d
       @errorTooltips.add d if d
 
-  showError: (point, message) =>
+  showError: (point, message, severity) =>
     return unless @editor.isAlive()
     range=[point,point.traverse([0,1])]
     @errorMarkers.push marker = @editor.markBufferRange(range)
-    if message.startsWith('Warning:')
+    if severity == 'warning'
       cls = 'haskell-ghc-mod-warning'
     else
       cls = 'haskell-ghc-mod-error'
@@ -96,7 +96,7 @@ class EditorController
 
   getTypeCallback: (callback) ->
     crange=@getRange()
-    @process.getTypeInBuffer @editor.getBuffer(), crange, (range,type) ->
+    @process.getTypeInBuffer @editor.getBuffer(), crange, ({range,type}) ->
       callback(range,type,crange)
 
   getType: ->
@@ -118,8 +118,10 @@ class EditorController
 
   doCheck: ->
     @clearError()
-    @process.doCheckBuffer @editor.getBuffer(), (point,message,file) =>
-      @showError point,message if file==@editor.getBuffer().getUri()
+    @process.doCheckBuffer @editor.getBuffer(), (res) =>
+      res.forEach ({position,message,file,severity}) =>
+        if file==@editor.getBuffer().getUri()
+          @showError position,message,severity
 
   getRange: ->
     @editor.getSelectedBufferRange()

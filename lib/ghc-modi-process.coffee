@@ -193,7 +193,7 @@ class GhcModiProcess
           ''
         type='???' unless type
         range=crange unless range
-        callback range,type
+        callback {range,type}
 
   getInfoInBuffer: (buffer, crange, callback) =>
     @withTempFile buffer.getText(), (path,close) =>
@@ -225,10 +225,24 @@ class GhcModiProcess
       command = [cmd,path]
       @queueCmd @runModCmd, @getRootDir(buffer), command, (lines) ->
         close()
+        results = []
         lines.forEach (line) ->
-          [m,file,row,col] = line.match(/^(.*?):([0-9]+):([0-9]+):/)
+          [m,file,row,col,warning] =
+            line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
           file=buffer.getUri() if file==path
-          callback new Point(row-1, col-1), line.replace(m,''), file
+          severity =
+            if cmd=='lint'
+              'lint'
+            else if warning=='Warning'
+              'warning'
+            else
+              'error'
+          results.push
+            file: file
+            position: new Point(row-1, col-1),
+            message: line.replace(m,'')
+            severity: severity
+        callback results
 
   doCheckBuffer: (buffer,callback) =>
     @doCheckOrLintBuffer "check", buffer, callback

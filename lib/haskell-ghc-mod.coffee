@@ -122,7 +122,7 @@ module.exports = HaskellGhcMod =
     if @process?
       getType: (buffer, range) =>
         new Promise (resolve) =>
-          @process.getTypeInBuffer buffer,range,(range,type) ->
+          @process.getTypeInBuffer buffer,range,({type}) ->
             resolve type
       listModules: (rootDir) =>
         new Promise (resolve) =>
