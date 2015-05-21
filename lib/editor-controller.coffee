@@ -16,8 +16,6 @@ class EditorController
     @subscriptions.add @editor.onDidDestroy =>
       @destroy()
 
-    @process.addEditor(this)
-
     @removeMessageOnChange=@editor.onDidChangeCursorPosition =>
       @messageMarker?.destroy()
       @messageMarker=null
@@ -34,7 +32,6 @@ class EditorController
     @errorTooltipsMap = new WeakMap
 
   destroy: ->
-    @process.removeEditor(this)
     @clearError()
     @subscriptions.dispose()
     @messageMarker?.destroy()

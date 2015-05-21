@@ -6,7 +6,6 @@ replaceAll = require './replace-all'
 
 module.exports =
 class GhcModiProcess
-  editorCount: 0
   processMap: null
   commandQueue: []
   commandRunning: false
@@ -14,15 +13,6 @@ class GhcModiProcess
   constructor: ->
     @processMap = new WeakMap
     @emitter = new Emitter
-
-  addEditor: () ->
-    @editorCount+=1
-    # @spawnProcess()
-
-  removeEditor: () ->
-    @editorCount-=1
-    if @editorCount==0
-      @killProcess()
 
   getRootDir: (buffer) ->
     dirs=atom.project.getDirectories().filter (dir) ->
