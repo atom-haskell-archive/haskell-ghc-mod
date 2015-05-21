@@ -1,4 +1,4 @@
-{BufferedProcess,Range,Point} = require('atom')
+{BufferedProcess,Range,Point,Emitter} = require('atom')
 Temp = require('temp')
 FS = require('fs')
 CP = require('child_process')
@@ -13,6 +13,7 @@ class GhcModiProcess
 
   constructor: ->
     @processMap = new WeakMap
+    @emitter = new Emitter
 
   addEditor: () ->
     @editorCount+=1
@@ -29,9 +30,6 @@ class GhcModiProcess
     dirs[0]
 
   processOptions: (rootDir) ->
-    # this is not pretty...
-    # TODO: depend on file path
-    # rootPath = atom.project.getPaths()[0]
     rootPath = rootDir?.getPath()
     sep = if process.platform=='win32' then ';' else ':'
     env = process.env
@@ -64,14 +62,26 @@ class GhcModiProcess
   destroy: ->
     @killProcess()
 
+  onBackendActive: (callback) =>
+    @emitter.on 'backend-active', callback
+
+  onBackendIdle: (callback) =>
+    @emitter.on 'backend-idle', callback
+
   queueCmd: (runFunc, rootDir, command, callback) =>
     @commandQueue.push({f:runFunc,rd:rootDir,cmd:command,cb:callback})
     @runQueuedCommands()
 
   runQueuedCommands: =>
-    return if @commandQueue.length==0 or @commandRunning
+    if @commandQueue.length == 0
+      @emitter.emit 'backend-idle'
+      return
+    else if @commandRunning
+      return
+
     @commandRunning = true
     {f,rd,cmd,cb}=@commandQueue.shift()
+    @emitter.emit 'backend-active', cmd.join(' ')
     f rd, cmd, (lines) =>
       cb lines
       @commandRunning=false

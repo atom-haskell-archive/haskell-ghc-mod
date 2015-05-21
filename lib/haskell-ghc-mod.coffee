@@ -111,6 +111,10 @@ module.exports = HaskellGhcMod =
         @process.doCheckBuffer buffer,callback
       lintBuffer: (buffer, callback) =>
         @process.doLintBuffer buffer, callback
+      onBackendActive: (callback) =>
+        @process.onBackendActive callback
+      onBackendIdle: (callback) =>
+        @process.onBackendIdle callback
 
   provideCompletionBackend_0_1_0: ->
     if @process?
