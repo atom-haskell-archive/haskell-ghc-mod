@@ -3,7 +3,7 @@
   "main": "./lib/haskell-ghc-mod",
   "version": "0.5.1",
   "description": "Haskell Ghc-Mod opens pipe to ghc-modi and queries types, info and checks for errors.",
-  "repository": "https://github.com/lierdakil/haskell-ghc-mod",
+  "repository": "https://github.com/atom-haskell/haskell-ghc-mod",
   "license": "MIT",
   "engines": {
     "atom": ">=0.199.0"
