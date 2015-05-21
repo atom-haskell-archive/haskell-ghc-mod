@@ -177,6 +177,6 @@ module.exports = HaskellGhcMod =
             symbols.map (s) ->
               s.module=module
               if s.module.qualified
-                s.name=(s.module.alias ? s.module.name)+"."+s.name
+                s.qname=(s.module.alias ? s.module.name)+"."+s.name
               return s
             )...
