@@ -7,8 +7,16 @@ replaceAll = require './replace-all'
 module.exports =
 class GhcModiProcess
   processMap: null
-  commandQueue: []
-  commandRunning: false
+  commandQueues:
+    checklint:
+      running: false
+      queue: []
+    completion:
+      running: false
+      queue: []
+    typeinfo:
+      running: false
+      queue: []
 
   constructor: ->
     @processMap = new WeakMap
@@ -58,24 +66,28 @@ class GhcModiProcess
   onBackendIdle: (callback) =>
     @emitter.on 'backend-idle', callback
 
-  queueCmd: (runFunc, rootDir, command, callback) =>
-    @commandQueue.push({f:runFunc,rd:rootDir,cmd:command,cb:callback})
-    @runQueuedCommands()
+  queueCmd: (qn, runFunc, rootDir, command, callback) =>
+    @commandQueues[qn].queue.push
+      f:runFunc
+      rd:rootDir
+      cmd:command
+      cb:callback
+    @runQueuedCommands qn
 
-  runQueuedCommands: =>
-    if @commandQueue.length == 0
-      @emitter.emit 'backend-idle'
+  runQueuedCommands: (qn) =>
+    if @commandQueues[qn].queue.length == 0
+      @emitter.emit 'backend-idle', qn
       return
-    else if @commandRunning
+    else if @commandQueues[qn].running
       return
 
-    @commandRunning = true
-    {f,rd,cmd,cb}=@commandQueue.shift()
-    @emitter.emit 'backend-active', cmd.join(' ')
+    @commandQueues[qn].running = true
+    {f,rd,cmd,cb}=@commandQueues[qn].queue.shift()
+    @emitter.emit 'backend-active', {queue: qn, command: cmd.join(' ')}
     f rd, cmd, (lines) =>
       cb lines
-      @commandRunning=false
-      @runQueuedCommands()
+      @commandQueues[qn].running=false
+      @runQueuedCommands qn
 
   runCmd: (rootDir, command, callback) =>
     unless atom.config.get('haskell-ghc-mod.enableGhcModi')
@@ -114,16 +126,17 @@ class GhcModiProcess
             replaceAll(line,'\0','\n')
 
   runList: (rootDir, callback) =>
-    @queueCmd @runModCmd, rootDir, ['list'], callback
+    @queueCmd 'completion', @runModCmd, rootDir, ['list'], callback
 
   runLang: (callback) =>
-    @queueCmd @runModCmd, null, ['lang'], callback
+    @queueCmd 'completion', @runModCmd, null, ['lang'], callback
 
   runFlag: (callback) =>
-    @queueCmd @runModCmd, null, ['flag'], callback
+    @queueCmd 'completion', @runModCmd, null, ['flag'], callback
 
   runBrowse: (rootDir, modules,callback) =>
-    @queueCmd @runModCmd, rootDir, ['browse','-d'].concat(modules), callback
+    @queueCmd 'completion', @runModCmd,
+      rootDir, ['browse','-d'].concat(modules), callback
 
   withTempFile: (contents,callback) ->
     Temp.open
@@ -143,36 +156,39 @@ class GhcModiProcess
       cpos = crange.start
       command = ["type",path,"",cpos.row+1,cpos.column+1]
 
-      @queueCmd @runCmd, atom.project.getDirectories()[0], command, (lines) ->
-        close()
-        [range,type]=lines.reduce ((acc,line) ->
-          return acc if acc!=''
-          tokens=line.split '"'
-          pos=tokens[0].trim().split(' ').map (i)->i-1
-          type=tokens[1]
-          myrange = new Range [pos[0],pos[1]],[pos[2],pos[3]]
-          return acc unless myrange.containsRange(crange)
-          return [myrange,type]),
-          ''
-        type='???' unless type
-        range=crange unless range
-        callback range,type
+      @queueCmd 'typeinfo', @runCmd,
+        atom.project.getDirectories()[0], command, (lines) ->
+          close()
+          [range,type]=lines.reduce ((acc,line) ->
+            return acc if acc!=''
+            tokens=line.split '"'
+            pos=tokens[0].trim().split(' ').map (i)->i-1
+            type=tokens[1]
+            myrange = new Range [pos[0],pos[1]],[pos[2],pos[3]]
+            return acc unless myrange.containsRange(crange)
+            return [myrange,type]),
+            ''
+          type='???' unless type
+          range=crange unless range
+          callback range,type
 
   getInfo: (text,symbol,callback) =>
     @withTempFile text, (path,close) =>
       command = ["info",path,"",symbol]
-      @queueCmd @runCmd, atom.project.getDirectories()[0], command, (lines) ->
-        close()
-        callback lines.join('\n'), path
+      @queueCmd 'typeinfo', @runCmd,
+        atom.project.getDirectories()[0], command, (lines) ->
+          close()
+          callback lines.join('\n'), path
 
   doCheck: (text, callback) =>
     @withTempFile text, (path,close) =>
       command = ["check",path]
-      @queueCmd @runModCmd,atom.project.getDirectories()[0], command, (lines) ->
-        close()
-        lines.forEach (line) ->
-          [m,file,row,col] = line.match(/^(.*?):([0-9]+):([0-9]+):/)
-          callback new Point(row-1, col-1), line.replace(m,''), file, path
+      @queueCmd 'checklint', @runModCmd,
+        atom.project.getDirectories()[0], command, (lines) ->
+          close()
+          lines.forEach (line) ->
+            [m,file,row,col] = line.match(/^(.*?):([0-9]+):([0-9]+):/)
+            callback new Point(row-1, col-1), line.replace(m,''), file, path
 
   #buffer commands
   getTypeInBuffer: (buffer, crange, callback) =>
@@ -180,7 +196,7 @@ class GhcModiProcess
       cpos = crange.start
       command = ["type",path,"",cpos.row+1,cpos.column+1]
 
-      @queueCmd @runCmd, @getRootDir(buffer), command, (lines) ->
+      @queueCmd 'typeinfo', @runCmd, @getRootDir(buffer), command, (lines) ->
         close()
         [range,type]=lines.reduce ((acc,line) ->
           return acc if acc!=''
@@ -212,7 +228,7 @@ class GhcModiProcess
         crange2=crange
       symbol = buffer.getTextInRange(crange2)
       command = ["info",path,"",symbol]
-      @queueCmd @runCmd, @getRootDir(buffer), command, (lines) ->
+      @queueCmd 'typeinfo', @runCmd, @getRootDir(buffer), command, (lines) ->
         close()
         text = lines
           .map (line) ->
@@ -223,7 +239,7 @@ class GhcModiProcess
   doCheckOrLintBuffer: (cmd, buffer, callback) =>
     @withTempFile buffer.getText(), (path,close) =>
       command = [cmd,path]
-      @queueCmd @runModCmd, @getRootDir(buffer), command, (lines) ->
+      @queueCmd 'checklint',@runModCmd,@getRootDir(buffer),command,(lines) ->
         close()
         results = []
         lines.forEach (line) ->
