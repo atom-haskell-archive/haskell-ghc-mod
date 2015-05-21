@@ -115,6 +115,8 @@ module.exports = HaskellGhcMod =
         @process.onBackendActive callback
       onBackendIdle: (callback) =>
         @process.onBackendIdle callback
+      shutdownBackend: =>
+        @process.killProcess()
 
   provideCompletionBackend_0_1_0: ->
     if @process?
