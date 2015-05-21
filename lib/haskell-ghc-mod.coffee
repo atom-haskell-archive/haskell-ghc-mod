@@ -136,6 +136,7 @@ module.exports = HaskellGhcMod =
           ^import
           \s+(qualified\s+)? #qualified
           ([\w.]+) #name
+          (?:\s+(hiding))?
           (?:\s+\(([^)]+)\))? #import list
           (?:\s+as\s+([\w.]+))? #alias
           ///gm
@@ -143,8 +144,9 @@ module.exports = HaskellGhcMod =
           modules.push
             qualified: match[1]?
             name: match[2]
-            importList: match[3]?.split(',')?.map (s) -> s.trim()
-            alias: match[4]
+            hiding: match[3]?
+            importList: match[4]?.split(',')?.map (s) -> s.trim()
+            alias: match[5]
         return modules
       listImportedSymbols: (buffer, modules) =>
         modules ?= @provideCompletionBackend_0_1_0().getImportedModules(buffer)
@@ -153,13 +155,28 @@ module.exports = HaskellGhcMod =
             rd = @process.getRootDir(buffer)
             @process.runBrowse rd, [m.name], (symbols) ->
               s = symbols.map (s) ->
-                [name, type] = s.split('::').map (s) -> s.trim()
-                {name: name, type: type}
+                [name, typeSignature] = s.split('::').map (s) -> s.trim()
+                if /^(?:type|data|newtype)/.test(typeSignature)
+                  symbolType='type'
+                else if /^(?:class)/.test(typeSignature)
+                  symbolType='class'
+                else
+                  symbolType='function'
+                {name, typeSignature, symbolType}
               if m.importList?
                 s = s.filter (s) ->
-                  m.importList.indexOf(s.name) >= 0
+                  if m.hiding
+                    m.importList.indexOf(s.name) < 0
+                  else
+                    m.importList.indexOf(s.name) >= 0
               resolve
-                module: m.name
-                alias: m.alias
-                qualified: m.qualified
+                module: m
                 symbols: s
+        .then (modules) ->
+          [].concat (modules.map ({module,symbols})->
+            symbols.map (s) ->
+              s.module=module
+              if s.module.qualified
+                s.name=(s.module.alias ? s.module.name)+"."+s.name
+              return s
+            )...
