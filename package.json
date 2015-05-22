@@ -6,7 +6,7 @@
   "repository": "https://github.com/atom-haskell/haskell-ghc-mod",
   "license": "MIT",
   "engines": {
-    "atom": ">=0.199.0"
+    "atom": ">=0.174.0 <2.0.0"
   },
   "dependencies": {
     "temp": "^0.8.1",
