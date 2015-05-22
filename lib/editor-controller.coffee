@@ -113,14 +113,14 @@ class EditorController
 
   getInfo: ->
     crange=@getRange()
-    @process.getInfoInBuffer @editor.getBuffer(), crange, (range,data) =>
-      @showMessage range,data
+    @process.getInfoInBuffer @editor.getBuffer(), crange, ({range,info}) =>
+      @showMessage range,info
 
   doCheck: ->
     @clearError()
     @process.doCheckBuffer @editor.getBuffer(), (res) =>
-      res.forEach ({position,message,file,severity}) =>
-        if file==@editor.getBuffer().getUri()
+      res.forEach ({position,message,uri,severity}) =>
+        if uri==@editor.getBuffer().getUri()
           @showError position,message,severity
 
   getRange: ->

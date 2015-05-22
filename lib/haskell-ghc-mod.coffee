@@ -4,6 +4,7 @@ GhcModiProcess = require './ghc-modi-process'
 {CompositeDisposable} = require 'atom'
 Grim = require 'grim'
 EditorController = require './editor-controller'
+IdeBackend = require './ide-backend'
 
 module.exports = HaskellGhcMod =
   process: null
@@ -102,21 +103,7 @@ module.exports = HaskellGhcMod =
         @process.runBrowse atom.project.getDirectories()[0], modules, callback
 
   provideIdeBackend_0_1_0: ->
-    if @process?
-      getType: (buffer, range, callback) =>
-        @process.getTypeInBuffer buffer,range,callback
-      getInfo: (buffer, range, callback) =>
-        @process.getInfoInBuffer buffer,range,callback
-      checkBuffer: (buffer, callback) =>
-        @process.doCheckBuffer buffer,callback
-      lintBuffer: (buffer, callback) =>
-        @process.doLintBuffer buffer, callback
-      onBackendActive: (callback) =>
-        @process.onBackendActive callback
-      onBackendIdle: (callback) =>
-        @process.onBackendIdle callback
-      shutdownBackend: =>
-        @process.killProcess()
+    new IdeBackend @process
 
   provideCompletionBackend_0_1_0: ->
     if @process?

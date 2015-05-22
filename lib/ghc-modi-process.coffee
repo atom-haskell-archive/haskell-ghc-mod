@@ -66,6 +66,9 @@ class GhcModiProcess
   onBackendIdle: (callback) =>
     @emitter.on 'backend-idle', callback
 
+  onQueueIdle: (callback) =>
+    @emitter.on 'queue-idle', callback
+
   queueCmd: (qn, runFunc, rootDir, command, callback) =>
     @commandQueues[qn].queue.push
       f:runFunc
@@ -76,7 +79,10 @@ class GhcModiProcess
 
   runQueuedCommands: (qn) =>
     if @commandQueues[qn].queue.length == 0
-      @emitter.emit 'backend-idle', qn
+      @emitter.emit 'queue-idle', {queue: qn}
+      if (Object.keys(@commandQueues).every (k) =>
+        @commandQueues[k].queue.length == 0)
+        @emitter.emit 'backend-idle'
       return
     else if @commandQueues[qn].running
       return
@@ -234,7 +240,7 @@ class GhcModiProcess
           .map (line) ->
             line.replace(path,buffer.getUri())
           .join('\n')
-        callback crange,text
+        callback {range: crange, info: text}
 
   doCheckOrLintBuffer: (cmd, buffer, callback) =>
     @withTempFile buffer.getText(), (path,close) =>
@@ -254,7 +260,7 @@ class GhcModiProcess
             else
               'error'
           results.push
-            file: file
+            uri: file
             position: new Point(row-1, col-1),
             message: line.replace(m,'')
             severity: severity
