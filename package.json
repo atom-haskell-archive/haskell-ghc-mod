@@ -9,9 +9,9 @@
     "atom": ">=0.199.0"
   },
   "dependencies": {
-    "temp": "*",
-    "fs": "*",
-    "grim": "*"
+    "temp": "^0.8.1",
+    "fs": "~0.0.2",
+    "grim": "^1.4.1"
   },
   "providedServices": {
     "haskell-ghc-mod": {
