@@ -59,6 +59,10 @@ class GhcModiProcess
   # Tear down any state and detach
   destroy: ->
     @killProcess()
+    @emitter.emit 'did-destroy'
+
+  onDidDestroy: (callback) =>
+    @emitter.on 'did-destroy', callback
 
   onBackendActive: (callback) =>
     @emitter.on 'backend-active', callback

@@ -1,8 +1,16 @@
 module.exports=
 class IdeBackend
   process: null
+  destroyed: null
 
   constructor: (@process) ->
+    @process?.onDidDestroy =>
+      @process = null
+
+  isActive: =>
+    unless @process?
+      atom.notifications.addWarning "Haskell IDE Backend #{@name()} is inactive"
+    @process?
 
   ### Public interface below ###
 
@@ -15,6 +23,15 @@ class IdeBackend
   name: () -> "Ghc-Mod"
 
   ###
+  onDidDestroy(callback)
+  Destruction event subscription. Usually should be called only on
+  package deactivation.
+  callback: () ->
+  ###
+  onDidDestroy: (callback) =>
+    @process.onDidDestroy callback if @isActive
+
+  ###
   getType (buffer, range, callback)
   Get type of expression in range
   buffer: TextBuffer with source
@@ -24,7 +41,7 @@ class IdeBackend
     type: String, type signature
   ###
   getType: (buffer, range, callback) =>
-    @process.getTypeInBuffer buffer,range,callback
+    @process.getTypeInBuffer buffer,range,callback if @isActive()
 
   ###
   getInfo(buffer, range, callback)
@@ -36,7 +53,7 @@ class IdeBackend
     info: String, information
   ###
   getInfo: (buffer, range, callback) =>
-    @process.getInfoInBuffer buffer,range,callback
+    @process.getInfoInBuffer buffer,range,callback if @isActive()
 
   ###
   checkBuffer(buffer, callback)
@@ -50,7 +67,7 @@ class IdeBackend
     severity: String, one of ['error','warning']
   ###
   checkBuffer: (buffer, callback) =>
-    @process.doCheckBuffer buffer,callback
+    @process.doCheckBuffer buffer,callback if @isActive()
 
   ###
   lintBuffer(buffer, callback)
@@ -64,7 +81,7 @@ class IdeBackend
     severity: String, always 'lint'
   ###
   lintBuffer: (buffer, callback) =>
-    @process.doLintBuffer buffer, callback
+    @process.doLintBuffer buffer, callback if @isActive()
 
   ###
   onBackendActive(callback)
@@ -77,7 +94,7 @@ class IdeBackend
   Returns Disposable
   ###
   onBackendActive: (callback) =>
-    @process.onBackendActive callback
+    @process.onBackendActive callback if @isActive()
 
   ###
   onQueueIdle(callback)
@@ -89,7 +106,7 @@ class IdeBackend
   Returns Disposable
   ###
   onQueueIdle: (callback) =>
-    @process.onQueueIdle callback
+    @process.onQueueIdle callback if @isActive()
 
   ###
   onBackendIdle(callback)
@@ -100,7 +117,7 @@ class IdeBackend
   Returns disposable
   ###
   onBackendIdle: (callback) =>
-    @process.onBackendIdle callback
+    @process.onBackendIdle callback if @isActive()
 
   ###
   shutdownBackend()
@@ -109,4 +126,4 @@ class IdeBackend
   Ought to be possible to restart those on-demand.
   ###
   shutdownBackend: =>
-    @process.killProcess()
+    @process.killProcess() if @isActive()
