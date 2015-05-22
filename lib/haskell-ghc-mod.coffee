@@ -171,10 +171,7 @@ module.exports = HaskellGhcMod =
                 {name, typeSignature, symbolType}
               if m.importList?
                 s = s.filter (s) ->
-                  if m.hiding
-                    m.importList.indexOf(s.name) < 0
-                  else
-                    m.importList.indexOf(s.name) >= 0
+                  m.hiding != m.importList.some (i) -> i == s.name
               resolve
                 module: m
                 symbols: s
