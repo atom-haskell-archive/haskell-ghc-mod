@@ -202,6 +202,9 @@ class GhcModiProcess
 
   #buffer commands
   getTypeInBuffer: (buffer, crange, callback) =>
+    if crange instanceof Point
+      crange = new Range crange, crange
+
     @withTempFile buffer.getText(), (path,close) =>
       cpos = crange.start
       command = ["type",path,"",cpos.row+1,cpos.column+1]
@@ -222,6 +225,9 @@ class GhcModiProcess
         callback {range,type}
 
   getInfoInBuffer: (buffer, crange, callback) =>
+    if crange instanceof Point
+      crange = new Range crange, crange
+
     @withTempFile buffer.getText(), (path,close) =>
       if crange.isEmpty()
         {start,end}=buffer.getRange()
