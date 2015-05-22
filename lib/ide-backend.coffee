@@ -1,7 +1,6 @@
 module.exports=
 class IdeBackend
   process: null
-  destroyed: null
 
   constructor: (@process) ->
     @process?.onDidDestroy =>
