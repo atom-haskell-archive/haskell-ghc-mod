@@ -144,9 +144,22 @@ class GhcModiProcess
   runFlag: (callback) =>
     @queueCmd 'completion', @runModCmd, null, ['flag'], callback
 
-  runBrowse: (rootDir, modules,callback) =>
+  runBrowseOld: (rootDir, modules,callback) =>
     @queueCmd 'completion', @runModCmd,
       rootDir, ['browse','-d'].concat(modules), callback
+
+  runBrowse: (rootDir, modules,callback) =>
+    @queueCmd 'completion', @runModCmd,
+      rootDir, ['browse','-d'].concat(modules), (lines) ->
+        callback lines.map (s) ->
+          [name, typeSignature] = s.split('::').map (s) -> s.trim()
+          if /^(?:type|data|newtype)/.test(typeSignature)
+            symbolType='type'
+          else if /^(?:class)/.test(typeSignature)
+            symbolType='class'
+          else
+            symbolType='function'
+          {name, typeSignature, symbolType}
 
   withTempFile: (contents,callback) ->
     Temp.open

@@ -5,6 +5,7 @@ GhcModiProcess = require './ghc-modi-process'
 Grim = require 'grim'
 EditorController = require './editor-controller'
 IdeBackend = require './ide-backend'
+CompletionBackend = require './completion-backend'
 
 module.exports = HaskellGhcMod =
   process: null
@@ -100,73 +101,10 @@ module.exports = HaskellGhcMod =
         @process.runFlag callback
       browse: (modules,callback) =>
         Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
-        @process.runBrowse atom.project.getDirectories()[0], modules, callback
+        @process.runBrowseOld atom.project.getDirectories()[0],modules,callback
 
   provideIdeBackend_0_1_0: ->
     new IdeBackend @process
 
   provideCompletionBackend_0_1_0: ->
-    if @process?
-      getType: (buffer, range) =>
-        new Promise (resolve) =>
-          @process.getTypeInBuffer buffer,range,({type}) ->
-            resolve type
-      listModules: (rootDir) =>
-        new Promise (resolve) =>
-          @process.runList rootDir, resolve
-      listLanguagePragmas: () =>
-        new Promise (resolve) =>
-          @process.runLang resolve
-      listCompilerOptions: () =>
-        new Promise (resolve) =>
-          @process.runFlag resolve
-      getImportedModules: (buffer) ->
-        modules = [{
-          qualified: false
-          name: 'Prelude'
-          }]
-        regex= ///
-          ^import
-          \s+(qualified\s+)? #qualified
-          ([\w.]+) #name
-          (?:\s+(hiding))?
-          (?:\s+\(([^)]+)\))? #import list
-          (?:\s+as\s+([\w.]+))? #alias
-          ///gm
-        buffer.scan regex, ({match}) ->
-          modules.push
-            qualified: match[1]?
-            name: match[2]
-            hiding: match[3]?
-            importList: match[4]?.split(',')?.map (s) -> s.trim()
-            alias: match[5]
-        return modules
-      listImportedSymbols: (buffer, modules) =>
-        modules ?= @provideCompletionBackend_0_1_0().getImportedModules(buffer)
-        Promise.all modules.map (m) =>
-          new Promise (resolve) =>
-            rd = @process.getRootDir(buffer)
-            @process.runBrowse rd, [m.name], (symbols) ->
-              s = symbols.map (s) ->
-                [name, typeSignature] = s.split('::').map (s) -> s.trim()
-                if /^(?:type|data|newtype)/.test(typeSignature)
-                  symbolType='type'
-                else if /^(?:class)/.test(typeSignature)
-                  symbolType='class'
-                else
-                  symbolType='function'
-                {name, typeSignature, symbolType}
-              if m.importList?
-                s = s.filter (s) ->
-                  m.hiding != m.importList.some (i) -> i == s.name
-              resolve
-                module: m
-                symbols: s
-        .then (modules) ->
-          [].concat (modules.map ({module,symbols})->
-            symbols.map (s) ->
-              s.module=module
-              if s.module.qualified
-                s.qname=(s.module.alias ? s.module.name)+"."+s.name
-              return s
-            )...
+    new CompletionBackend @process
