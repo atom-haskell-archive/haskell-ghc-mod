@@ -157,21 +157,64 @@ class CompletionBackend
   onDidDestroy: (callback) =>
     @process.onDidDestroy callback if @isActive
 
+  ###
+  registerCompletionBuffer(buffer)
+  Every buffer that would be used with autocompletion functions has to
+  be registered with this function.
+
+  buffer: TextBuffer, buffer to be used in autocompletion
+
+  Returns: Disposable, which will remove buffer from autocompletion
+  ###
   registerCompletionBuffer: (buffer) =>
     @bufferMap.set(buffer, new BufferInfo(buffer, @process))
     new Disposable =>
       @unregisterCompletionBuffer buffer
 
+  ###
+  unregisterCompletionBuffer(buffer)
+  buffer: TextBuffer, buffer to be removed from autocompletion
+  ###
   unregisterCompletionBuffer: (buffer) =>
     @bufferMap.get(buffer)?.destroy()
     @bufferMap.delete buffer
 
+  ###
+  getCompletionsForSymbol(buffer,prefix,position)
+  buffer: TextBuffer, current buffer
+  prefix: String, completion prefix
+  position: Point, current cursor position
+
+  Returns: Promise([symbol])
+  symbol: Object, a completion symbol
+    name: String, symbol name
+    qname: String, qualified name, if module is qualified.
+           Otherwise, same as name
+    typeSignature: String, type signature
+    symbolType: String, one of ['type', 'class', 'function']
+    module: Object, symbol module information
+      qualified: Boolean, true if module is imported as qualified
+      name: String, module name
+      alias: String, module alias
+      hiding: Boolean, true if module is imported with hiding clause
+      importList: [String], array of explicit imports/hidden imports
+  ###
   getCompletionsForSymbol: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
     @getSymbolsForBuffer(buffer).then (symbols) ->
       FZ.filter symbols, prefix, key: 'qname'
 
+  ###
+  getCompletionsForType(buffer,prefix,position)
+  buffer: TextBuffer, current buffer
+  prefix: String, completion prefix
+  position: Point, current cursor position
+
+  Returns: Promise([symbol])
+  symbol: Same as getCompletionsForSymbol, except
+          symbolType is one of ['type', 'class']
+  ###
   getCompletionsForType: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
@@ -180,6 +223,16 @@ class CompletionBackend
         symbolType=='type' or symbolType=='class'),
         prefix, key: 'qname'
 
+  ###
+  getCompletionsForClass(buffer,prefix,position)
+  buffer: TextBuffer, current buffer
+  prefix: String, completion prefix
+  position: Point, current cursor position
+
+  Returns: Promise([symbol])
+  symbol: Same as getCompletionsForSymbol, except
+          symbolType is one of ['class']
+  ###
   getCompletionsForClass: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
@@ -187,6 +240,15 @@ class CompletionBackend
       FZ.filter (symbols.filter ({symbolType}) -> symbolType=='class'),
         prefix, key: 'qname'
 
+  ###
+  getCompletionsForModule(buffer,prefix,position)
+  buffer: TextBuffer, current buffer
+  prefix: String, completion prefix
+  position: Point, current cursor position
+
+  Returns: Promise([module])
+  module: String, module name
+  ###
   getCompletionsForModule: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
     rootDir = @process.getRootDir buffer
@@ -201,25 +263,72 @@ class CompletionBackend
           setTimeout (=> @dirMap.delete rootDir), 10*60*1000
           resolve (FZ.filter modules, prefix)
 
+  ###
+  getCompletionsForSymbolInModule(buffer,prefix,position,{module})
+  Used in import hiding/list completions
+
+  buffer: TextBuffer, current buffer
+  prefix: String, completion prefix
+  position: Point, current cursor position
+  module: String, module name (optional). If undefined, function
+          will attempt to infer module name from position and buffer.
+
+  Returns: Promise([symbol])
+  symbol: Object, symbol in given module
+    name: String, symbol name
+    typeSignature: String, type signature
+    symbolType: String, one of ['type', 'class', 'function']
+  ###
   getCompletionsForSymbolInModule: (buffer, prefix, position, {module}) =>
+    return Promise.reject("Backend inactive") unless @isActive()
     unless module?
       @editor.backwardsScanInBufferRange /^import\s+([\w.]+)/,
         @lineRange, ({match,stop}) ->
           module=match[1]
           stop()
     new Promise (resolve) =>
-      @process.runBrowse rd, [module], resolve
+      @process.runBrowse rd, [module], (symbols) ->
+        FZ.filter symbols, prefix, key: 'name'
 
+  ###
+  getCompletionsForLanguagePragmas(buffer,prefix,position)
+  buffer: TextBuffer, current buffer
+  prefix: String, completion prefix
+  position: Point, current cursor position
+
+  Returns: Promise([pragma])
+  pragma: String, language option
+  ###
   getCompletionsForLanguagePragmas: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
     Promise.resolve(FZ.filter @languagePragmas, prefix)
 
+  ###
+  getCompletionsForCompilerOptions(buffer,prefix,position)
+  buffer: TextBuffer, current buffer
+  prefix: String, completion prefix
+  position: Point, current cursor position
+
+  Returns: Promise([ghcopt])
+  ghcopt: String, compiler option (starts with '-f')
+  ###
   getCompletionsForCompilerOptions: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
     Promise.resolve(FZ.filter @compilerOptions, prefix)
 
+  ###
+  getCompletionsForHole(buffer,prefix,position)
+  Get completions based on expression type. Currently used only if prefix=='_'.
+
+  buffer: TextBuffer, current buffer
+  prefix: String, completion prefix
+  position: Point, current cursor position
+
+  Returns: Promise([symbol])
+  symbol: Same as getCompletionsForSymbol
+  ###
   getCompletionsForHole: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
     new Promise (resolve) =>
