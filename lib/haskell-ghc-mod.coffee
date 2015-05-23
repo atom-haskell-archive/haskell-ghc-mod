@@ -73,7 +73,7 @@ module.exports = HaskellGhcMod =
     atom.packages.onDidDeactivatePackage (p) =>
       @registerEditorCommands() if p.name=='ide-haskell'
 
-    @registerEditorCommands()
+    setTimeout @registerEditorCommands, 5000
 
   deactivate: ->
     @unregisterEdtiorCommands()
