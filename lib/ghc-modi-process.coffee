@@ -144,10 +144,6 @@ class GhcModiProcess
   runFlag: (callback) =>
     @queueCmd 'completion', @runModCmd, null, ['flag'], callback
 
-  runBrowseOld: (rootDir, modules,callback) =>
-    @queueCmd 'completion', @runModCmd,
-      rootDir, ['browse','-d'].concat(modules), callback
-
   runBrowse: (rootDir, modules,callback) =>
     @queueCmd 'completion', @runModCmd,
       rootDir, ['browse','-d'].concat(modules), (lines) ->
@@ -173,47 +169,6 @@ class GhcModiProcess
         callback info.path, ->
           FS.close info.fd, -> FS.unlink info.path
 
-  # leagacy commands
-  getType: (text, crange, callback) =>
-    @withTempFile text, (path,close) =>
-      cpos = crange.start
-      command = ["type",path,"",cpos.row+1,cpos.column+1]
-
-      @queueCmd 'typeinfo', @runCmd,
-        atom.project.getDirectories()[0], command, (lines) ->
-          close()
-          [range,type]=lines.reduce ((acc,line) ->
-            return acc if acc!=''
-            tokens=line.split '"'
-            pos=tokens[0].trim().split(' ').map (i)->i-1
-            type=tokens[1]
-            myrange = new Range [pos[0],pos[1]],[pos[2],pos[3]]
-            return acc unless myrange.containsRange(crange)
-            return [myrange,type]),
-            ''
-          type='???' unless type
-          range=crange unless range
-          callback range,type
-
-  getInfo: (text,symbol,callback) =>
-    @withTempFile text, (path,close) =>
-      command = ["info",path,"",symbol]
-      @queueCmd 'typeinfo', @runCmd,
-        atom.project.getDirectories()[0], command, (lines) ->
-          close()
-          callback lines.join('\n'), path
-
-  doCheck: (text, callback) =>
-    @withTempFile text, (path,close) =>
-      command = ["check",path]
-      @queueCmd 'checklint', @runModCmd,
-        atom.project.getDirectories()[0], command, (lines) ->
-          close()
-          lines.forEach (line) ->
-            [m,file,row,col] = line.match(/^(.*?):([0-9]+):([0-9]+):/)
-            callback new Point(row-1, col-1), line.replace(m,''), file, path
-
-  #buffer commands
   getTypeInBuffer: (buffer, crange, callback) =>
     if crange instanceof Point
       crange = new Range crange, crange

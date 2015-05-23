@@ -16,12 +16,6 @@
     "fuzzaldrin": "^2.1.0"
   },
   "providedServices": {
-    "haskell-ghc-mod": {
-      "description": "Provides interface to Ghc-Mod and Ghc-Modi. Deprecated",
-      "versions": {
-        "0.1.0": "provideGhcMod_0_1_0"
-      }
-    },
     "haskell-ide-backend": {
       "description": "Implements general haskell-ide-backend spec",
       "versions": {

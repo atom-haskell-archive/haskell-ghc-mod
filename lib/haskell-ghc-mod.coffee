@@ -79,30 +79,6 @@ module.exports = HaskellGhcMod =
     @unregisterEdtiorCommands()
     @process?.destroy()
 
-  provideGhcMod_0_1_0: ->
-    if @process?
-      type: (text,range,callback) =>
-        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
-        @process.getType text,range,callback
-      info: (text,symbol,callback) =>
-        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
-        @process.getInfo text,symbol,callback
-      check: (text,callback) =>
-        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
-        @process.doCheck text,callback
-      list: (callback) =>
-        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
-        @process.runList atom.project.getDirectories()[0], callback
-      lang: (callback) =>
-        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
-        @process.runLang callback
-      flag: (callback) =>
-        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
-        @process.runFlag callback
-      browse: (modules,callback) =>
-        Grim.deprecate("haskell-ghc-mod: haskell-ghc-mod service is deprecated")
-        @process.runBrowseOld atom.project.getDirectories()[0],modules,callback
-
   provideIdeBackend_0_1_0: ->
     new IdeBackend @process
 
