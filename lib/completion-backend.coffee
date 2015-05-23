@@ -101,8 +101,6 @@ class BufferInfo
         @symbols.set m, s
         resolve true
 
-
-
 module.exports =
 class CompletionBackend
   process: null
@@ -136,7 +134,6 @@ class CompletionBackend
       bi.getSymbols()
     else
       Promise.resolve([])
-
 
   ### Public interface below ###
 
