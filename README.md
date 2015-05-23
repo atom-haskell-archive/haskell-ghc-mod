@@ -1,5 +1,7 @@
 # haskell-ghc-mod atom package
 
+This package is primarily intended as backend for [ide-haskell](https://atom.io/packages/ide-haskell)
+
 Haskell Ghc-Mod opens pipe to ghc-modi and queries types, info and checks
 for errors. It uses temporary files to feed them into ghc-mod (since it does
 not read from stdin)
