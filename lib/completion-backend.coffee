@@ -1,6 +1,6 @@
 FZ = require 'fuzzaldrin'
 _ = require 'underscore-plus'
-{Disposable, CompositeDisposable} = require 'atom'
+{Disposable, CompositeDisposable, Range} = require 'atom'
 
 class BufferInfo
   buffer: null
@@ -276,16 +276,18 @@ class CompletionBackend
     typeSignature: String, type signature
     symbolType: String, one of ['type', 'class', 'function']
   ###
-  getCompletionsForSymbolInModule: (buffer, prefix, position, {module}) =>
+  getCompletionsForSymbolInModule: (buffer, prefix, position, opts) =>
     return Promise.reject("Backend inactive") unless @isActive()
+    module = opts?.module
     unless module?
-      @editor.backwardsScanInBufferRange /^import\s+([\w.]+)/,
-        @lineRange, ({match,stop}) ->
+      lineRange = new Range [0, position.row], position
+      buffer.backwardsScanInRange /^import\s+([\w.]+)/,
+        lineRange, ({match,stop}) ->
           module=match[1]
           stop()
     new Promise (resolve) =>
-      @process.runBrowse rd, [module], (symbols) ->
-        FZ.filter symbols, prefix, key: 'name'
+      @process.runBrowse @process.getRootDir(buffer), [module], (symbols) ->
+        resolve (FZ.filter symbols, prefix, key: 'name')
 
   ###
   getCompletionsForLanguagePragmas(buffer,prefix,position)
