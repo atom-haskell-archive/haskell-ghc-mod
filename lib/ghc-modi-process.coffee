@@ -218,7 +218,7 @@ class GhcModiProcess
           .map (line) ->
             line.replace(path,buffer.getUri())
           .join('\n')
-        callback {range: crange, info: text}
+        callback {range: crange2, info: text}
 
   doCheckOrLintBuffer: (cmd, buffer, callback) =>
     @withTempFile buffer.getText(), (path,close) =>
