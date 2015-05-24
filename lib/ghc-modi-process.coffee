@@ -44,8 +44,9 @@ class GhcModiProcess
     modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
     proc = CP.spawn(modiPath,[],@processOptions(rootDir))
     proc.on 'stderr', (data) ->
-      console.error(data)
+      console.error 'Ghc-modi says:',data
     proc.on 'exit', (code) ->
+      @processMap.delete(rootDir)
       @spawnProcess(rootDir) if code!=0
     @processMap.set(rootDir,proc)
     return proc
@@ -54,7 +55,7 @@ class GhcModiProcess
     atom.project.getDirectories().forEach (dir) =>
       @processMap.get(dir)?.stdin?.end?()
       @processMap.get(dir)?.kill?()
-      @processMap.set(dir,null)
+      @processMap.delete(dir)
 
   # Tear down any state and detach
   destroy: ->
@@ -109,8 +110,14 @@ class GhcModiProcess
       process.stdout.once 'data', (data)->
         lines = "#{data}".split("\n")
         result = lines[lines.length-2]
-        console.error ("Ghc-modi terminated:\n"+"#{result}")\
-          unless result.match(/^OK/)
+        unless result.match(/^OK/)
+          atom.notifications.addError "Haskell-ghc-mod: ghc-modi crashed
+              on #{command.join ' '} with message #{result}",
+            detail: rootDir.getPath()
+            dismissable: true
+          console.error lines
+          callback []
+          return
         lines = lines.slice(0,-2)
         callback lines.map (line)->
           replaceAll(line,'\0','\n')
@@ -130,10 +137,23 @@ class GhcModiProcess
         err=err.concat(data.split('\n'))
       exit: (code) ->
         if code!=0
-          console.error err.join('\n')
+          atom.notifications.addError "Haskell-ghc-mod: #{modPath}
+              #{args.join ' '} failed with error code #{code}",
+            detail: "#{err.join('\n')}"
+            dismissable: true
+          console.error err
+          callback []
         else
           callback result.slice(0,-1).map (line)->
             replaceAll(line,'\0','\n')
+
+    process.onWillThrowError ({error, handle}) ->
+      atom.notifications.addError "Haskell-ghc-mod could not spawn #{modPath}",
+        detail: "#{error}"
+        dismissable: true
+      console.error error
+      callback []
+      handle()
 
   runList: (rootDir, callback) =>
     @queueCmd 'completion', @runModCmd, rootDir, ['list'], callback
