@@ -53,10 +53,26 @@ module.exports = HaskellGhcMod =
       return unless editor.getGrammar().scopeName=="source.haskell"
       @editorMap.set(editor,new EditorController(@process,editor))
 
+    @atom_menu = atom.contextMenu.add
+      'atom-text-editor[data-grammar~="haskell"]': [
+        'label': 'Haskell Ghc-mod'
+        'submenu': [
+            'label': 'Type'
+            'command': 'haskell-ghc-mod:type'
+          ,
+            'label': 'Info'
+            'command': 'haskell-ghc-mod:info'
+          ,
+            'label': 'Check'
+            'command': 'haskell-ghc-mod:check'
+        ]
+      ]
+
   unregisterEdtiorCommands: ->
     for editor in atom.workspace.getTextEditors()
       @editorMap?.get(editor)?.desrtoy?()
     @subscriptions_editor?.dispose()
+    @atom_menu?.dispose()
 
   activate: (state) ->
     @process=new GhcModiProcess
@@ -68,7 +84,7 @@ module.exports = HaskellGhcMod =
       el
 
     atom.packages.onDidActivatePackage (p) =>
-      @unregisterEditorCommands() if p.name=='ide-haskell'
+      @unregisterEdtiorCommands() if p.name=='ide-haskell'
 
     atom.packages.onDidDeactivatePackage (p) =>
       @registerEditorCommands() if p.name=='ide-haskell'
