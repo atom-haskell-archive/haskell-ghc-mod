@@ -227,8 +227,12 @@ class GhcModiProcess
         close()
         results = []
         lines.forEach (line) ->
-          [m,file,row,col,warning] =
+          match =
             line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
+          unless match?
+            console.log("Ghc-Mod says: #{line}")
+            return
+          [m,file,row,col,warning] = match
           file=buffer.getUri() if file==path
           severity =
             if cmd=='lint'
