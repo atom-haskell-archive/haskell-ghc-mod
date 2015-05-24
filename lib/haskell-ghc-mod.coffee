@@ -39,15 +39,16 @@ module.exports = HaskellGhcMod =
     @subscriptions_editor = new CompositeDisposable
     @editorMap = new WeakMap
 
-    @subscriptions_editor.add atom.commands.add 'atom-text-editor',
-      'haskell-ghc-mod:type': ({target}) =>
-        @editorMap.get(target.getModel())?.getType()
-      'haskell-ghc-mod:info': ({target}) =>
-        @editorMap.get(target.getModel())?.getInfo()
-      'haskell-ghc-mod:insert-type': ({target}) =>
-        @editorMap.get(target.getModel())?.insertType()
-      'haskell-ghc-mod:check': ({target}) =>
-        @editorMap.get(target.getModel())?.doCheck()
+    @subscriptions_editor.add \
+      atom.commands.add 'atom-text-editor[data-grammar~="haskell"]',
+        'haskell-ghc-mod:type': ({target}) =>
+          @editorMap.get(target.getModel())?.getType()
+        'haskell-ghc-mod:info': ({target}) =>
+          @editorMap.get(target.getModel())?.getInfo()
+        'haskell-ghc-mod:insert-type': ({target}) =>
+          @editorMap.get(target.getModel())?.insertType()
+        'haskell-ghc-mod:check': ({target}) =>
+          @editorMap.get(target.getModel())?.doCheck()
 
     @subscriptions_editor.add atom.workspace.observeTextEditors (editor) =>
       return unless editor.getGrammar().scopeName=="source.haskell"
