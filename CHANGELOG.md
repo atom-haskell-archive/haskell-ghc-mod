@@ -1,6 +1,7 @@
 ## 0.6.0
 * Backend services docs and fixes
 * Near-final version of API
+* Frontend removal notice
 
 ## 0.5.1
 * Deprecation fix
