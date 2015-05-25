@@ -1,42 +1,30 @@
 # haskell-ghc-mod atom package
 
-This package is primarily intended as backend for [ide-haskell](https://atom.io/packages/ide-haskell)
+This package is primarily intended as backend for [ide-haskell](https://atom.io/packages/ide-haskell). Frontend will be completely
+removed in v0.7.0
 
 Haskell Ghc-Mod opens pipe to ghc-modi and queries types, info and checks
 for errors. It uses temporary files to feed them into ghc-mod (since it does
 not read from stdin)
 
-Error check is enabled by default on saving file (can be disabled in config).
+If ghc-mod/ghc-modi is not in your PATH, set full path to those in config.
 
-You can also get type of composite expression by selecting it prior to executing
-'show type', like this:
+## Dependencies
 
-![Get type of composite expression][3]
+You need to have `ghc-mod`, `ghc-modi` (part of Ghc-Mod) and `hlint` executables
+installed on your system. `ghc-mod` needs to be able to find `hlint` (eiter add `hlint` directory to PATH, or install both in the same cabal sandbox).
 
-Current features:
+User interface is provided by [ide-haskell](https://atom.io/packages/ide-haskell)
 
-* Show type (ghc-mod type)
-* Show symbol info (ghc-mod info)
-* Check for errors (ghc-mod check)
-* Insert type (symbol :: Type)
+## Service-hub API
 
-Default shortcuts:
+Since 0.6.0, haskell-ghc-mod provides two services, namely `haskell-ide-backend`
+and `haskell-completion-backend`.
 
-* ctrl+alt+t: show type of selection/symbol under cursor
-* ctrl+alt+i: show info on selection/symbol under cursor
-* ctrl+alt+c: check for errors (done automatically on save)
-* ctrl+alt+shift+t: insert type into buffer at line above current (experimental)
+You can find description of these services in relevant source files:
 
-Haskell-ghc-mod depends on [language-haskell][1] to detect
-Haskell sources.
+* [ide-backend.coffee][1]
+* [completion-backend.coffee][2]
 
-If ghc-modi is not in your PATH, set full path to it in config.
-
-![Screencast][2]
-
-Since version 0.3.0, haskell-ghc-mod provides service-hub based API. Docs can be found at [wiki pages][4]
-
-[1]: https://atom.io/packages/language-haskell
-[2]: https://raw.githubusercontent.com/lierdakil/haskell-ghc-mod/master/screencast.gif
-[3]: https://raw.githubusercontent.com/lierdakil/haskell-ghc-mod/master/composite.jpg
-[4]: https://github.com/lierdakil/haskell-ghc-mod/wiki/Service-hub-API
+[1]:https://github.com/atom-haskell/haskell-ghc-mod/lib/ide-backend.coffee
+[2]:https://github.com/atom-haskell/haskell-ghc-mod/lib/completion-backend.coffee
