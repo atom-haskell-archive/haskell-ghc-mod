@@ -31,10 +31,26 @@ module.exports = HaskellGhcMod =
       type: 'string'
       default: 'ghc-modi'
       description: 'Path to ghc-modi'
+    disableFrontend:
+      type: 'boolean'
+      default: false
+      description: 'Disable frontend completely. Frontent will be removed
+                    in 0.7.0'
+    suppressStartupWarning:
+      type: 'boolean'
+      default: false
 
   registerEditorCommands: ->
     if atom.packages.isPackageActive('ide-haskell')
       return
+
+    unless atom.config.get('haskell-gch-mod.suppressStartupWarning')
+      atom.notifications.addWarning "Haskell-ghc-mod package is intended to
+      be used as a backend for ide-haskell. Frontend will
+      be removed in 0.7.0, at which point ide-haskell will be preferred option.
+      All features supported by haskell-ghc-mod are now in ide-haskell.
+      Consider migrating early. You can suppress this warning in haskell-ghc-mod
+      settings.", dismissable:true
 
     @subscriptions_editor = new CompositeDisposable
     @editorMap = new WeakMap
@@ -77,23 +93,27 @@ module.exports = HaskellGhcMod =
 
   activate: (state) ->
     @process=new GhcModiProcess
-    @subscriptions = new CompositeDisposable
 
-    atom.views.addViewProvider HaskellGhcModMessage, (message)->
-      el=new HaskellGhcModMessageElement
-      el.setModel(message)
-      el
+    unless atom.config.get('haskell-gch-mod.disableFrontend')
+      @subscriptions = new CompositeDisposable
 
-    atom.packages.onDidActivatePackage (p) =>
-      @unregisterEdtiorCommands() if p.name=='ide-haskell'
+      @subscriptions.add atom.views.addViewProvider HaskellGhcModMessage,
+        (message)->
+          el=new HaskellGhcModMessageElement
+          el.setModel(message)
+          el
 
-    atom.packages.onDidDeactivatePackage (p) =>
-      @registerEditorCommands() if p.name=='ide-haskell'
+      @subscriptions.add atom.packages.onDidActivatePackage (p) =>
+        @unregisterEdtiorCommands() if p.name=='ide-haskell'
 
-    setTimeout @registerEditorCommands, 5000
+      @subscriptions.add atom.packages.onDidDeactivatePackage (p) =>
+        @registerEditorCommands() if p.name=='ide-haskell'
+
+      setTimeout @registerEditorCommands, 5000
 
   deactivate: ->
     @unregisterEdtiorCommands()
+    @subscriptions?.dispose()
     @process?.destroy()
 
   provideIdeBackend_0_1_0: ->
