@@ -319,7 +319,7 @@ class CompletionBackend
 
   ###
   getCompletionsForHole(buffer,prefix,position)
-  Get completions based on expression type. Currently used only if prefix=='_'.
+  Get completions based on expression type. Currently prefix is ignored.
 
   buffer: TextBuffer, current buffer
   prefix: String, completion prefix
