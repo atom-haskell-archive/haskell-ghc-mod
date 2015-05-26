@@ -2,7 +2,8 @@ module.exports=
 class IdeBackend
   process: null
 
-  constructor: (@process) ->
+  constructor: (@process,opts) ->
+    @version = opts?.version
     @process?.onDidDestroy =>
       @process = null
 
@@ -37,10 +38,17 @@ class IdeBackend
   range: Range or Point, signifying extent of expression
   callback: ({range, type}) ->
     range: Range, actual extent of expression
-    type: String, type signature
+    type: String, type signature; undefined if no type signature
   ###
   getType: (buffer, range, callback) =>
-    @process.getTypeInBuffer buffer,range,callback if @isActive()
+    console.log @version
+    switch @version
+      when '0.1.0'
+        if @isActive()
+          @process.getTypeInBuffer buffer,range, (o) ->
+            o.type ?= '???'
+            callback o
+      else @process.getTypeInBuffer buffer,range,callback if @isActive()
 
   ###
   getInfo(buffer, range, callback)
@@ -49,10 +57,17 @@ class IdeBackend
   range: Range or Point, signifying extent of expression
   callback: ({range,info}) ->
     range: Range, actual extent of expression
-    info: String, information
+    info: String, information; undefined if no information
   ###
   getInfo: (buffer, range, callback) =>
-    @process.getInfoInBuffer buffer,range,callback if @isActive()
+    console.log @version
+    switch @version
+      when '0.1.0'
+        if @isActive()
+          @process.getInfoInBuffer buffer,range, (o) ->
+            o.info ?= 'Cannot show info'
+            callback o
+      else @process.getInfoInBuffer buffer,range,callback if @isActive()
 
   ###
   checkBuffer(buffer, callback)

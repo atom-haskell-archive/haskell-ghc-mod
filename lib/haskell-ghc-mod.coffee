@@ -117,6 +117,9 @@ module.exports = HaskellGhcMod =
     @process?.destroy()
 
   provideIdeBackend_0_1_0: ->
+    new IdeBackend @process, version: '0.1.0'
+
+  provideIdeBackend_0_1_1: ->
     new IdeBackend @process
 
   provideCompletionBackend_0_1_0: ->

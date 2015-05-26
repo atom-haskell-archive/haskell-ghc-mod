@@ -208,7 +208,7 @@ class GhcModiProcess
           return acc unless myrange.containsRange(crange)
           return [myrange,type]),
           ''
-        type='???' unless type
+        type=undefined unless type
         range=crange unless range
         callback {range,type}
 
@@ -238,6 +238,7 @@ class GhcModiProcess
           .map (line) ->
             line.replace(path,buffer.getUri())
           .join('\n')
+        text = undefined if text is 'Cannot show info' or not text
         callback {range: crange2, info: text}
 
   doCheckOrLintBuffer: (cmd, buffer, callback) =>
