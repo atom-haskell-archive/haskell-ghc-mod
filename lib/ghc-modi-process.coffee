@@ -45,7 +45,7 @@ class GhcModiProcess
     proc = CP.spawn(modiPath,[],@processOptions(rootDir))
     proc.on 'stderr', (data) ->
       console.error 'Ghc-modi says:',data
-    proc.on 'exit', (code) ->
+    proc.on 'exit', (code) =>
       @processMap.delete(rootDir)
       @spawnProcess(rootDir) if code!=0
     @processMap.set(rootDir,proc)
