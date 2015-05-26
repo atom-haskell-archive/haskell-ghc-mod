@@ -41,7 +41,6 @@ class IdeBackend
     type: String, type signature; undefined if no type signature
   ###
   getType: (buffer, range, callback) =>
-    console.log @version
     switch @version
       when '0.1.0'
         if @isActive()
@@ -60,7 +59,6 @@ class IdeBackend
     info: String, information; undefined if no information
   ###
   getInfo: (buffer, range, callback) =>
-    console.log @version
     switch @version
       when '0.1.0'
         if @isActive()
