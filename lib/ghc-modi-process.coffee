@@ -2,7 +2,6 @@
 Temp = require('temp')
 FS = require('fs')
 CP = require('child_process')
-replaceAll = require './replace-all'
 
 module.exports =
 class GhcModiProcess
@@ -104,7 +103,7 @@ class GhcModiProcess
     unless atom.config.get('haskell-ghc-mod.enableGhcModi')
       @runModCmd rootDir, command, (lines) ->
         callback lines.map (line) ->
-          replaceAll(line,'\0','\n')
+          line.replace /\0/g,'\n'
     else
       process=@spawnProcess(rootDir)
       process.stdout.once 'data', (data)->
@@ -120,8 +119,8 @@ class GhcModiProcess
           return
         lines = lines.slice(0,-2)
         callback lines.map (line)->
-          replaceAll(line,'\0','\n')
-      process.stdin.write(command.join(' ')+'\n')
+          line.replace /\0/g,'\n'
+      process.stdin.write command.join(' ').replace(/\r|\r?\n/g,' ') + '\n'
 
   runModCmd: (rootDir,args,callback) =>
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
@@ -145,7 +144,7 @@ class GhcModiProcess
           callback []
         else
           callback result.slice(0,-1).map (line)->
-            replaceAll(line,'\0','\n')
+            line.replace /\0/g,'\n'
 
     process.onWillThrowError ({error, handle}) ->
       atom.notifications.addError "Haskell-ghc-mod could not spawn #{modPath}",

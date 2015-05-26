@@ -1,6 +1,5 @@
 {Range,CompositeDisposable} = require('atom')
 {HaskellGhcModMessage} = require('./haskell-ghc-mod-message')
-replaceAll = require './replace-all'
 
 module.exports =
 class EditorController
