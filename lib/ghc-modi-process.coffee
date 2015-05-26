@@ -217,7 +217,7 @@ class GhcModiProcess
 
     @withTempFile buffer.getText(), (path,close) =>
       if crange.isEmpty()
-        {start,end}=buffer.getRange()
+        {start,end}=buffer.rangeForRow crange.start.row
         crange2=new Range(crange.start,crange.end)
         buffer.backwardsScanInRange /[\w.]*/,new Range(start,crange.start),
           ({range,stop}) ->
