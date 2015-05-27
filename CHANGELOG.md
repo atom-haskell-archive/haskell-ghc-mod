@@ -1,3 +1,8 @@
+## 0.6.2
+* Only search for symbol in current line
+* Strip newlines from ghc-modi commands
+* Fat arrow requied in ghc-modi proc.onExit (#14)
+
 ## 0.6.1
   * haskell-ide-backend 0.1.1
 
