@@ -26,8 +26,6 @@ After this process finishes, you'll have `ghc-mod`, `ghc-modi` and `hlint` avail
 Please note, that there are some problems with `ghc-mod` and `cabal>=1.22`.
 Consult [ghc-mod wiki page][inconsistent-cabal] for more information.
 
-I've had some success with `ghc-mod-4.1.6`, `ghc-7.8` and `cabal-1.22.3.0`.
-
 User interface is provided by [ide-haskell](https://atom.io/packages/ide-haskell)
 
 [inconsistent-cabal]: https://github.com/kazu-yamamoto/ghc-mod/wiki/InconsistentCabalVersions
