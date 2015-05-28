@@ -17,14 +17,11 @@ installed on your system. `ghc-mod` needs to be able to find `hlint` (eiter add 
 Quick setup is as follows:
 
 ```
-$ mkdir ghc-mod
-$ cd ghc-mod
-$ cabal sandbox init
 $ cabal update
 $ cabal install ghc-mod hlint
 ```
 
-After this process finishes, you'll have `ghc-mod` and `ghc-modi` available in `ghc-mod/.cabal-sandbox/bin/` directory.
+After this process finishes, you'll have `ghc-mod`, `ghc-modi` and `hlint` available in `$HOME/.cabal/bin/` directory.
 
 Please note, that there are some problems with `ghc-mod` and `cabal>=1.22`.
 Consult [ghc-mod wiki page][inconsistent-cabal] for more information.
