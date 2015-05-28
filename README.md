@@ -26,7 +26,10 @@ $ cabal install ghc-mod hlint
 
 After this process finishes, you'll have `ghc-mod` and `ghc-modi` available in `ghc-mod/.cabal-sandbox/bin/` directory.
 
-Please note, that there are some problems with `ghc-mod`, `cabal>=1.22`. Consult [ghc-mod wiki page][inconsistent-cabal] for more information.
+Please note, that there are some problems with `ghc-mod` and `cabal>=1.22`.
+Consult [ghc-mod wiki page][inconsistent-cabal] for more information.
+
+I've had some success with `ghc-mod-4.1.6`, `ghc-7.8` and `cabal-1.22.3.0`.
 
 User interface is provided by [ide-haskell](https://atom.io/packages/ide-haskell)
 
