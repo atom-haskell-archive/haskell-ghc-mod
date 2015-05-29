@@ -120,6 +120,9 @@ module.exports = HaskellGhcMod =
     new IdeBackend @process, version: '0.1.0'
 
   provideIdeBackend_0_1_1: ->
+    new IdeBackend @process, version: '0.1.1'
+
+  provideIdeBackend_0_1_2: ->
     new IdeBackend @process
 
   provideCompletionBackend_0_1_0: ->

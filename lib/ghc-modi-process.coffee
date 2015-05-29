@@ -16,6 +16,9 @@ class GhcModiProcess
     typeinfo:
       running: false
       queue: []
+    find:
+      running: false
+      queue: []
 
   constructor: ->
     @processMap = new WeakMap
@@ -163,6 +166,9 @@ class GhcModiProcess
   runFlag: (callback) =>
     @queueCmd 'completion', @runModCmd, null, ['flag'], callback
 
+  runFind: (rootDir, symbol, callback) =>
+    @queueCmd 'find', @runModCmd, rootDir, ['find', symbol], callback
+
   runBrowse: (rootDir, modules,callback) =>
     @queueCmd 'completion', @runModCmd,
       rootDir, ['browse','-d'].concat(modules), (lines) ->
@@ -211,25 +217,28 @@ class GhcModiProcess
         range=crange unless range
         callback {range,type}
 
+  getSymbolInRange: (regex, buffer, crange) ->
+    if crange.isEmpty()
+      {start,end}=buffer.rangeForRow crange.start.row
+      crange2=new Range(crange.start,crange.end)
+      buffer.backwardsScanInRange regex,new Range(start,crange.start),
+        ({range,stop}) ->
+          crange2.start=range.start
+      buffer.scanInRange regex,new Range(crange.end,end),
+        ({range,stop}) ->
+          crange2.end=range.end
+    else
+      crange2=crange
+
+    symbol: buffer.getTextInRange crange2
+    range: crange2
+
   getInfoInBuffer: (buffer, crange, callback) =>
     if crange instanceof Point
       crange = new Range crange, crange
+    {symbol,range} = @getSymbolInRange(/[\w.']*/,buffer,crange)
 
     @withTempFile buffer.getText(), (path,close) =>
-      if crange.isEmpty()
-        {start,end}=buffer.rangeForRow crange.start.row
-        crange2=new Range(crange.start,crange.end)
-        buffer.backwardsScanInRange /[\w.]*/,new Range(start,crange.start),
-          ({range,stop}) ->
-            crange2.start=range.start
-            stop()
-        buffer.scanInRange /[\w.]*/,new Range(crange.end,end),
-          ({range,stop}) ->
-            crange2.end=range.end
-            stop()
-      else
-        crange2=crange
-      symbol = buffer.getTextInRange(crange2)
       command = ["info",path,"",symbol]
       @queueCmd 'typeinfo', @runCmd, @getRootDir(buffer), command, (lines) ->
         close()
@@ -238,7 +247,14 @@ class GhcModiProcess
             line.replace(path,buffer.getUri())
           .join('\n')
         text = undefined if text is 'Cannot show info' or not text
-        callback {range: crange2, info: text}
+        callback {range, info: text}
+
+  findSymbolProvidersInBuffer: (buffer, crange, callback) =>
+    if crange instanceof Point
+      crange = new Range crange, crange
+    {symbol} = @getSymbolInRange(/[\w']*/,buffer,crange)
+
+    @runFind @getRootDir(buffer), symbol, callback
 
   doCheckOrLintBuffer: (cmd, buffer, callback) =>
     @withTempFile buffer.getText(), (path,close) =>
