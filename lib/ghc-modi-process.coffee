@@ -30,8 +30,7 @@ class GhcModiProcess
       dir.contains(buffer.getUri())
     dirs[0]
 
-  processOptions: (rootDir) ->
-    rootPath = rootDir?.getPath()
+  processOptions: (rootPath) ->
     sep = if process.platform=='win32' then ';' else ':'
     env = process.env
     env.PATH = rootPath+"/.cabal-sandbox/bin"+sep+env.PATH if rootPath
@@ -45,7 +44,7 @@ class GhcModiProcess
     if proc?
       return proc
     modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
-    proc = CP.spawn(modiPath,[],@processOptions(rootDir))
+    proc = CP.spawn(modiPath,[],@processOptions(rootDir.getPath()))
     proc.on 'stderr', (data) ->
       console.error 'Ghc-modi says:',data
     proc.on 'exit', (code) =>
@@ -111,7 +110,7 @@ class GhcModiProcess
 
   runCmd: (rootDir, command, callback) =>
     unless atom.config.get('haskell-ghc-mod.enableGhcModi')
-      @runModCmd rootDir, command, (lines) ->
+      @runModCmd rootDir.getPath(), command, (lines) ->
         callback lines.map (line) ->
           line.replace /\0/g,'\n'
     else
@@ -132,14 +131,14 @@ class GhcModiProcess
           line.replace /\0/g,'\n'
       process.stdin.write command.join(' ').replace(/\r|\r?\n/g,' ') + '\n'
 
-  runModCmd: (rootDir,args,callback) =>
+  runModCmd: (rootPath,args,callback) =>
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     result = []
     err = []
     process=new BufferedProcess
       command: modPath
       args: args
-      options: @processOptions(rootDir)
+      options: @processOptions(rootPath)
       stdout: (data) ->
         result=result.concat(data.split('\n'))
       stderr: (data) ->
@@ -164,8 +163,8 @@ class GhcModiProcess
       callback []
       handle()
 
-  runList: (rootDir, callback) =>
-    @queueCmd 'completion', @runModCmd, rootDir, ['list'], callback
+  runList: (rootPath, callback) =>
+    @queueCmd 'completion', @runModCmd, rootPath, ['list'], callback
 
   runLang: (callback) =>
     @queueCmd 'completion', @runModCmd, null, ['lang'], callback
@@ -173,12 +172,12 @@ class GhcModiProcess
   runFlag: (callback) =>
     @queueCmd 'completion', @runModCmd, null, ['flag'], callback
 
-  runFind: (rootDir, symbol, callback) =>
-    @queueCmd 'find', @runModCmd, rootDir, ['find', symbol], callback
+  runFind: (rootPath, symbol, callback) =>
+    @queueCmd 'find', @runModCmd, rootPath, ['find', symbol], callback
 
-  runBrowse: (rootDir, modules,callback) =>
+  runBrowse: (rootPath, modules,callback) =>
     @queueCmd 'completion', @runModCmd,
-      rootDir, ['browse','-d'].concat(modules), (lines) ->
+      rootPath, ['browse','-d'].concat(modules), (lines) ->
         callback lines.map (s) ->
           [name, typeSignature] = s.split('::').map (s) -> s.trim()
           if /^(?:type|data|newtype)/.test(typeSignature)
@@ -261,35 +260,36 @@ class GhcModiProcess
       crange = new Range crange, crange
     {symbol} = @getSymbolInRange(/[\w']*/,buffer,crange)
 
-    @runFind @getRootDir(buffer), symbol, callback
+    @runFind @getRootDir(buffer).getPath(), symbol, callback
 
   doCheckOrLintBuffer: (cmd, buffer, callback) =>
     @withTempFile buffer.getText(), (path,close) =>
       command = [cmd,path]
-      @queueCmd 'checklint',@runModCmd,@getRootDir(buffer),command,(lines) ->
-        close()
-        results = []
-        lines.forEach (line) ->
-          match =
-            line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
-          unless match?
-            console.log("Ghc-Mod says: #{line}")
-            return
-          [m,file,row,col,warning] = match
-          file=buffer.getUri() if file==path
-          severity =
-            if cmd=='lint'
-              'lint'
-            else if warning=='Warning'
-              'warning'
-            else
-              'error'
-          results.push
-            uri: file
-            position: new Point(row-1, col-1),
-            message: line.replace(m,'')
-            severity: severity
-        callback results
+      @queueCmd 'checklint',@runModCmd,@getRootDir(buffer).getPath(),
+        command,(lines) ->
+          close()
+          results = []
+          lines.forEach (line) ->
+            match =
+              line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
+            unless match?
+              console.log("Ghc-Mod says: #{line}")
+              return
+            [m,file,row,col,warning] = match
+            file=buffer.getUri() if file==path
+            severity =
+              if cmd=='lint'
+                'lint'
+              else if warning=='Warning'
+                'warning'
+              else
+                'error'
+            results.push
+              uri: file
+              position: new Point(row-1, col-1),
+              message: line.replace(m,'')
+              severity: severity
+          callback results
 
   doCheckBuffer: (buffer,callback) =>
     @doCheckOrLintBuffer "check", buffer, callback

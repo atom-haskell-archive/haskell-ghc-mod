@@ -1,57 +1,36 @@
 FZ = require 'fuzzaldrin'
 _ = require 'underscore-plus'
-{Disposable, CompositeDisposable, Range} = require 'atom'
+{Disposable, CompositeDisposable, Range, Emitter} = require 'atom'
+
+# DEBUG = true
 
 class BufferInfo
   buffer: null
+  emitter: null
   disposables: null
-  modules: []
-  symbols: null
-  canUpdate: true
-  process: null
 
-  constructor: (@buffer,@process) ->
-    @symbols = new Map
+  constructor: (@buffer) ->
     @disposables = new CompositeDisposable
+    @disposables.add @emitter=new Emitter
 
     @disposables.add @buffer.onDidDestroy =>
       @destroy()
 
-    @disposables.add @process.onDidDestroy =>
-      @destroy()
-
-    @disposables.add @buffer.onDidSave =>
-      @update()
-
-    @update()
-
-
   destroy: () =>
+    @emitter.emit 'did-destroy'
     @disposables.dispose()
     @buffer=null
-    @process=null
-    @modules=[]
-    @symbols.clear()
-    @canUpdate=false
 
-  getSymbols: () =>
-    @update().then =>
-      res = []
-      @symbols.forEach (s,m) ->
-        res = res.concat s.map (sy) ->
-          s_ = _.clone(sy)
-          s_.module = m
-          if m.qualified
-            s_.qname = (m.alias ? m.name) + '.' + s_.name
-          else
-            s_.qname = s_.name
-          return s_
-      res
+  onDidDestroy: (callback) ->
+    return unless @emitter?
+    @emitter.on 'did-destroy', callback
 
-  update: () =>
-    return Promise.reject("No buffer") unless @buffer?
-    return Promise.reject("No process") unless @process?
+  onDidSave: (callback) ->
+    return unless @buffer
+    @buffer.onDidSave callback
 
+  getImports: () =>
+    return [] unless @buffer?
     modules = []
     regex= ///
       ^import
@@ -73,43 +52,114 @@ class BufferInfo
         qualified: false
         hiding: false
         name: 'Prelude'
+    modules
 
-    if _.isEqual(modules,@modules)
-      Promise.resolve()
-    else
-      unchanged = @modules.filter (m) ->
-        modules.some (m2) -> _.isEqual m,m2
-      changed = modules.filter (m) ->
-        not (unchanged.some (m2) -> _.isEqual m,m2)
-      deleted = @modules.filter (m) ->
-        not (unchanged.some (m2) -> _.isEqual m,m2)
+  getModuleName: =>
+    moduleName = undefined
+    @buffer.scan /^\s*module\s+([\w.']+)/, ({match}) ->
+      moduleName=match[1]
+    moduleName
 
-      @modules = modules
+class ModuleInfo
+  symbols: null #module symbols
+  process: null
+  name: ""
+  disposables: null
+  emitter: null
+  timeout: null
+  invalidateInterval: 30*60*1000 #if module is unused for 30 minutes, remove it
 
-      deleted.forEach (m) => @symbols.delete m
+  constructor: (@name, @process, rootPath, done) ->
+    unless @name?
+      throw new Error("No name set")
+    console.log @name+' created' if DEBUG?
+    @symbols = []
+    @disposables = new CompositeDisposable
+    @disposables.add @emitter = new Emitter
+    @update rootPath,done
+    @timeout = setTimeout @destroy, @invalidateInterval
 
-      Promise.all(changed.map @getModuleSymbols)
+  destroy: =>
+    console.log @name+' destroyed' if DEBUG?
+    clearTimeout @timeout
+    @timeout = null
+    @emitter.emit 'did-destroy'
+    @disposables.dispose()
+    @disposables = null
+    @symbols = null
+    @process = null
 
-  getModuleSymbols: (m) =>
-    new Promise (resolve) =>
-      rd = @process.getRootDir(@buffer)
-      @process.runBrowse rd, [m.name], (symbols) =>
-        if m.importList?
-          s = symbols.filter (s) ->
-            m.hiding != (m.importList.some (i) -> i == s.name)
-        else s=symbols
-        @symbols.set m, s
-        resolve true
+  onDidDestroy: (callback) ->
+    @emitter.on 'did-destroy', callback
+
+  update: (rootPath,done) ->
+    return unless @process?
+    console.log @name+' updating' if DEBUG?
+    @process.runBrowse rootPath, [@name], (@symbols) =>
+      console.log @name+' updated' if DEBUG?
+      done?()
+
+  setBuffer: (bufferInfo,rootPath) ->
+    unless @process.getRootDir(bufferInfo.buffer).getPath() == rootPath
+      console.log "#{@name} rootPath mismatch:
+        #{@process.getRootDir(bufferInfo.buffer).getPath()}
+        != #{rootPath}" if DEBUG?
+      return
+    unless bufferInfo.getModuleName() == @name
+      console.log "#{@name} moduleName mismatch:
+        #{bufferInfo.getModuleName()}
+        != #{@name}" if DEBUG?
+      return
+    console.log "#{@name} buffer is set" if DEBUG?
+    @disposables.add bufferInfo.onDidSave =>
+      console.log @name+' did-save triggered' if DEBUG?
+      @update(rootPath)
+    @disposables.add bufferInfo.onDidDestroy =>
+      @unsetBuffer()
+
+  unsetBuffer: ->
+    @disposables.dispose()
+    @disposables = new CompositeDisposable
+
+  select: (importDesc, symbolTypes) ->
+    clearTimeout @timeout
+    @timeout = setTimeout @destroy, @invalidateInterval
+    symbols =
+      (if importDesc.importList?
+        @symbols.filter (s) ->
+          importDesc.hiding != (importDesc.importList.some (i) -> i == s.name)
+      else
+        @symbols)
+    si=symbols.map (s) ->
+      name: s.name
+      typeSignature: s.typeSignature
+      symbolType: s.symbolType
+      module: importDesc
+      qname:
+        if importDesc.qualified
+          (importDesc.alias ? importDesc.name) + '.' + s.name
+        else
+          s.name
+    if symbolTypes?
+      si=si.filter ({symbolType}) ->
+        symbolTypes.some (st) ->
+          st == symbolType
+    si
 
 module.exports =
 class CompletionBackend
   process: null
-  bufferMap: new WeakMap
-  dirMap: new WeakMap
   languagePragmas: []
+  bufferMap: null
+  dirMap: null
+  modListMap: null
   compilerOptions: []
 
   constructor: (@process) ->
+    @bufferMap = new WeakMap # buffer => BufferInfo
+    @dirMap = new WeakMap # dir => Map ModuleName ModuleInfo
+    @modListMap = new WeakMap # dir => [ModuleName]
+
     @process?.onDidDestroy =>
       @process = null
 
@@ -122,18 +172,71 @@ class CompletionBackend
         is inactive"
     @process?
 
-  updateSymbolsForBuffer: (buffer) =>
-    if @bufferMap.has(buffer)
-      @updateBufferInfo buffer
+  getSymbolsForBuffer: (buffer, symbolTypes) =>
+    {bufferInfo} = @getBufferInfo {buffer}
+    {rootDir, moduleMap} = @getModuleMap {bufferInfo}
+    if bufferInfo? and moduleMap?
+      Promise.all bufferInfo.getImports().map (imp) =>
+        new Promise (resolve) =>
+          {moduleInfo} = @getModuleInfo
+            moduleName: imp.name
+            rootDir: rootDir
+            moduleMap: moduleMap
+            done: -> resolve moduleInfo.select(imp,symbolTypes)
+      .then (promises) ->
+        [].concat promises...
     else
-      @getBufferInfo buffer
+      Promsie.resolve []
 
-  getSymbolsForBuffer: (buffer, callback) =>
-    bi = @bufferMap.get(buffer)
-    if bi?
-      bi.getSymbols()
+  getBufferInfo: ({buffer}) ->
+    if @bufferMap.has buffer
+      bufferInfo: @bufferMap.get buffer
     else
-      Promise.resolve([])
+      @bufferMap.set buffer, bi=new BufferInfo(buffer)
+      bufferInfo: bi
+
+  getModuleMap: ({bufferInfo,rootDir}) ->
+    unless bufferInfo? or rootDir?
+      throw new Error("Neither bufferInfo nor rootDir specified")
+    rootDir ?= @process.getRootDir bufferInfo.buffer
+    unless @dirMap.has(rootDir)
+      @dirMap.set rootDir, mm=new Map
+    else
+      mm = @dirMap.get rootDir
+
+    rootDir: rootDir
+    moduleMap: mm
+
+  getModuleInfo: ({moduleName,bufferInfo,rootDir,moduleMap,done}) ->
+    unless moduleName? or bufferInfo?
+      throw new Error("No moduleName or bufferInfo specified")
+    moduleName ?= bufferInfo.getModuleName()
+    unless moduleName
+      console.log "warn: nameless module in
+        #{bufferInfo.buffer.getUri()}" if DEBUG?
+      return
+    unless moduleMap? and rootDir?
+      unless bufferInfo?
+        throw new Error("No bufferInfo specified and no moduleMap+rootDir")
+      {rootDir, moduleMap} = @getModuleMap({bufferInfo,rootDir})
+    unless moduleMap.has moduleName
+      moduleMap.set moduleName,
+        moduleInfo=new ModuleInfo(moduleName,@process,rootDir.getPath(),done)
+      if bufferInfo?
+        moduleInfo.setBuffer bufferInfo, rootDir.getPath()
+      else
+        atom.workspace.getTextEditors().forEach (editor) =>
+          {bufferInfo} = @getBufferInfo {buffer: editor.getBuffer()}
+          moduleInfo.setBuffer bufferInfo, rootDir.getPath()
+
+      moduleInfo.onDidDestroy ->
+        moduleMap.delete moduleName
+        console.log moduleName+' removed from map' if DEBUG?
+    else
+      moduleInfo = moduleMap.get moduleName
+      if done?
+        setTimeout done, 0
+    {bufferInfo,rootDir,moduleMap,moduleInfo}
 
   ### Public interface below ###
 
@@ -164,7 +267,17 @@ class CompletionBackend
   Returns: Disposable, which will remove buffer from autocompletion
   ###
   registerCompletionBuffer: (buffer) =>
-    @bufferMap.set(buffer, new BufferInfo(buffer, @process))
+    return if @bufferMap.has buffer
+
+    {bufferInfo} = @getBufferInfo {buffer}
+
+    {rootDir, moduleMap} = @getModuleMap {bufferInfo}
+
+    @getModuleInfo {bufferInfo,rootDir,moduleMap}
+
+    bufferInfo.getImports().forEach ({name}) =>
+      @getModuleInfo {moduleName: name,rootDir,moduleMap}
+
     new Disposable =>
       @unregisterCompletionBuffer buffer
 
@@ -215,10 +328,8 @@ class CompletionBackend
   getCompletionsForType: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
-    @getSymbolsForBuffer(buffer).then (symbols) ->
-      FZ.filter (symbols.filter ({symbolType}) ->
-        symbolType=='type' or symbolType=='class'),
-        prefix, key: 'qname'
+    @getSymbolsForBuffer(buffer,['type','class']).then (symbols) ->
+      FZ.filter symbols, prefix, key: 'qname'
 
   ###
   getCompletionsForClass(buffer,prefix,position)
@@ -233,9 +344,8 @@ class CompletionBackend
   getCompletionsForClass: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
-    @getSymbolsForBuffer(buffer).then (symbols) ->
-      FZ.filter (symbols.filter ({symbolType}) -> symbolType=='class'),
-        prefix, key: 'qname'
+    @getSymbolsForBuffer(buffer,['class']).then (symbols) ->
+      FZ.filter symbols, prefix, key: 'qname'
 
   ###
   getCompletionsForModule(buffer,prefix,position)
@@ -249,15 +359,15 @@ class CompletionBackend
   getCompletionsForModule: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
     rootDir = @process.getRootDir buffer
-    m = @dirMap.get(rootDir)
+    m = @modListMap.get(rootDir)
     if m?
       Promise.resolve (FZ.filter m, prefix)
     else
       new Promise (resolve) =>
-        @process.runList rootDir, (modules) =>
-          @dirMap.set rootDir, modules
-          #refresh every 10 minutes
-          setTimeout (=> @dirMap.delete rootDir), 10*60*1000
+        @process.runList rootDi.getPath(), (modules) =>
+          @modListMap.set rootDir, modules
+          #refresh every minute
+          setTimeout (=> @modListMap.delete rootDir), 60*1000
           resolve (FZ.filter modules, prefix)
 
   ###
@@ -278,16 +388,23 @@ class CompletionBackend
   ###
   getCompletionsForSymbolInModule: (buffer, prefix, position, opts) =>
     return Promise.reject("Backend inactive") unless @isActive()
-    module = opts?.module
-    unless module?
+    moduleName = opts?.module
+    unless moduleName?
       lineRange = new Range [0, position.row], position
       buffer.backwardsScanInRange /^import\s+([\w.]+)/,
-        lineRange, ({match,stop}) ->
-          module=match[1]
-          stop()
+        lineRange, ({match}) ->
+          moduleName=match[1]
+
     new Promise (resolve) =>
-      @process.runBrowse @process.getRootDir(buffer), [module], (symbols) ->
-        resolve (FZ.filter symbols, prefix, key: 'name')
+      {moduleInfo} = @getModuleInfo
+        moduleName: moduleName
+        bufferInfo: @getBufferInfo {buffer}
+        done: ->
+          symbols = moduleInfo.select
+            qualified: false
+            hiding: false
+            name: moduleName
+          resolve (FZ.filter symbols, prefix, key: 'name')
 
   ###
   getCompletionsForLanguagePragmas(buffer,prefix,position)
