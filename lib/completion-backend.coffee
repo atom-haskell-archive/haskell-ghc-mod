@@ -267,7 +267,8 @@ class CompletionBackend
   Returns: Disposable, which will remove buffer from autocompletion
   ###
   registerCompletionBuffer: (buffer) =>
-    return if @bufferMap.has buffer
+    if @bufferMap.has buffer
+      return new Disposable ->
 
     {bufferInfo} = @getBufferInfo {buffer}
 
