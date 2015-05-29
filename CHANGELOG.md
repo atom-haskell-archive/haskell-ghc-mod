@@ -1,3 +1,9 @@
+## 0.6.3
+* haskell-ide-backend 0.1.2 - adds getModulesExportingSymbolAt function
+* Add `'` to word search regular expressions
+* Properly dispose of emitters
+* Completion-backend internal revamp
+
 ## 0.6.2
 * Only search for symbol in current line
 * Strip newlines from ghc-modi commands
