@@ -59,5 +59,5 @@ You can find description of these services in relevant source files:
 * [ide-backend.coffee][1]
 * [completion-backend.coffee][2]
 
-[1]:https://github.com/atom-haskell/haskell-ghc-mod/lib/ide-backend.coffee
-[2]:https://github.com/atom-haskell/haskell-ghc-mod/lib/completion-backend.coffee
+[1]:https://github.com/atom-haskell/haskell-ghc-mod/blob/master/lib/ide-backend.coffee
+[2]:https://github.com/atom-haskell/haskell-ghc-mod/blob/master/lib/completion-backend.coffee
