@@ -11,7 +11,7 @@ class HaskellGhcModMessage
     @emitter.emit 'did-change-message', name
 
   destroy: ->
-    @emitter.destroy()
+    @emitter.dispose()
 
 class HaskellGhcModMessageElement extends HTMLElement
   setModel: (@model) ->

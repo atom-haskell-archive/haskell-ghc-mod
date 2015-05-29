@@ -1,4 +1,4 @@
-{BufferedProcess,Range,Point,Emitter} = require('atom')
+{BufferedProcess,Range,Point,Emitter,CompositeDisposable} = require('atom')
 Temp = require('temp')
 FS = require('fs')
 CP = require('child_process')
@@ -22,7 +22,8 @@ class GhcModiProcess
 
   constructor: ->
     @processMap = new WeakMap
-    @emitter = new Emitter
+    @disposables = new CompositeDisposable
+    @disposables.add @emitter=new Emitter
 
   getRootDir: (buffer) ->
     dirs=atom.project.getDirectories().filter (dir) ->
@@ -63,6 +64,12 @@ class GhcModiProcess
   destroy: ->
     @killProcess()
     @emitter.emit 'did-destroy'
+    @disposables.dispose()
+    @processMap = null
+    for k,v of @commandQueues
+      v =
+        running: false
+        queue: []
 
   onDidDestroy: (callback) =>
     @emitter.on 'did-destroy', callback
