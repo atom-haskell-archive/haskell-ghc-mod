@@ -14,6 +14,8 @@ If ghc-mod/ghc-modi is not in your PATH, set full path to those in config.
 You need to have `ghc-mod`, `ghc-modi` (part of Ghc-Mod) and `hlint` executables
 installed on your system. `ghc-mod` needs to be able to find `hlint` (eiter add `hlint` directory to PATH, or install both in the same cabal sandbox).
 
+Supported `ghc-mod` versions are from 4.1.0 to 5.2.1.2.
+
 Quick setup is as follows:
 
 ```
