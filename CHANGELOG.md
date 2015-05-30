@@ -1,3 +1,6 @@
+## 0.6.4
+* Return at least something from getRootDir (attempt at fixing #17, #18)
+
 ## 0.6.3
 * haskell-ide-backend 0.1.2 - adds getModulesExportingSymbolAt function
 * Add `'` to word search regular expressions
