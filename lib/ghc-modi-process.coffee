@@ -1,4 +1,5 @@
-{BufferedProcess,Range,Point,Emitter,CompositeDisposable} = require('atom')
+{BufferedProcess,Range,Point,Emitter,CompositeDisposable,
+Directory} = require('atom')
 Temp = require('temp')
 FS = require('fs')
 CP = require('child_process')
@@ -26,9 +27,9 @@ class GhcModiProcess
     @disposables.add @emitter=new Emitter
 
   getRootDir: (buffer) ->
-    dirs=atom.project.getDirectories().filter (dir) ->
+    [dir]=atom.project.getDirectories().filter (dir) ->
       dir.contains(buffer.getUri())
-    dirs[0]
+    dir ? atom.project.getDirectories()[0] ? new Directory
 
   processOptions: (rootPath) ->
     sep = if process.platform=='win32' then ';' else ':'
