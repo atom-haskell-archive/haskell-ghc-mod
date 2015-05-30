@@ -41,9 +41,12 @@ class GhcModiProcess
 
   spawnProcess: (rootDir)=>
     return unless atom.config.get('haskell-ghc-mod.enableGhcModi')
+    timer = setTimeout (=> @killProcessForDir rootDir), 60*60*1000
     proc = @processMap.get(rootDir)
     if proc?
-      return proc
+      clearTimeout proc.timer
+      proc.timer = timer
+      return proc.process
     modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
     proc = CP.spawn(modiPath,[],@processOptions(rootDir.getPath()))
     proc.on 'stderr', (data) ->
@@ -51,14 +54,20 @@ class GhcModiProcess
     proc.on 'exit', (code) =>
       @processMap.delete(rootDir)
       @spawnProcess(rootDir) if code!=0
-    @processMap.set(rootDir,proc)
+    @processMap.set rootDir,
+      process: proc
+      timer: timer
     return proc
 
   killProcess: =>
     atom.project.getDirectories().forEach (dir) =>
-      @processMap.get(dir)?.stdin?.end?()
-      @processMap.get(dir)?.kill?()
-      @processMap.delete(dir)
+      @killProcessForDir dir
+
+  killProcessForDir: (dir) =>
+    clearTimeout @processMap.get(dir)?.timer
+    @processMap.get(dir)?.process.stdin?.end?()
+    @processMap.get(dir)?.process.kill?()
+    @processMap.delete(dir)
 
   # Tear down any state and detach
   destroy: ->
