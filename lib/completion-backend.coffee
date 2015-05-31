@@ -365,7 +365,7 @@ class CompletionBackend
       Promise.resolve (FZ.filter m, prefix)
     else
       new Promise (resolve) =>
-        @process.runList rootDi.getPath(), (modules) =>
+        @process.runList rootDir.getPath(), (modules) =>
           @modListMap.set rootDir, modules
           #refresh every minute
           setTimeout (=> @modListMap.delete rootDir), 60*1000
