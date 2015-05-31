@@ -397,9 +397,10 @@ class CompletionBackend
           moduleName=match[1]
 
     new Promise (resolve) =>
+      {bufferInfo}= @getBufferInfo {buffer}
       {moduleInfo} = @getModuleInfo
+        bufferInfo: bufferInfo
         moduleName: moduleName
-        bufferInfo: @getBufferInfo {buffer}
         done: ->
           symbols = moduleInfo.select
             qualified: false
