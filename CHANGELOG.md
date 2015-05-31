@@ -1,3 +1,6 @@
+## 0.6.5
+* Fix typo (`rootDi` instead of `rootDir`)
+
 ## 0.6.4
 * Return at least something from getRootDir (attempt at fixing #17, #18)
 
