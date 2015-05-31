@@ -1,3 +1,6 @@
+## 0.6.6
+* Fix bug in getCompletionsForSymbolInModule
+
 ## 0.6.5
 * Fix typo (`rootDi` instead of `rootDir`)
 * After 60 minutes of inactivity, kill Ghc-Modi
