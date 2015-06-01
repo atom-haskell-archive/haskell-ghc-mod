@@ -1,3 +1,7 @@
+## 0.6.7
+* Fixed typo in completion-backend.coffee
+* Initial support for input file redirection (WIP on ghc-mod master)
+
 ## 0.6.6
 * Fix bug in getCompletionsForSymbolInModule
 
