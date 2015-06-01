@@ -186,7 +186,7 @@ class CompletionBackend
       .then (promises) ->
         [].concat promises...
     else
-      Promsie.resolve []
+      Promise.resolve []
 
   getBufferInfo: ({buffer}) ->
     if @bufferMap.has buffer
