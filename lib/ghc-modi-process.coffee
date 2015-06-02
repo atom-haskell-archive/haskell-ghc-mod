@@ -29,10 +29,15 @@ class GhcModiProcess
         if code!=0
           # no redirect support
           @backend=new GhcModiProcessTemp
-          console.log 'temp'
         else
           @backend=new GhcModiProcessRedirect
-          console.log 'redirect'
+          m="Haskell-ghc-mod:
+             Copy of this message can be found in dev. console.
+             Found master ghc-mod.
+             Thank you for testing! Bear in mind that this is highly
+             experimental option. Please report any bugs."
+          atom.notifications.addInfo m
+          console.log m
         for k,v of @commandQueues
           @runQueuedCommands k
     .onWillThrowError (error, handle) ->
