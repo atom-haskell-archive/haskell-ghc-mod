@@ -47,30 +47,35 @@ class GhcModiProcessRedirect extends GhcModiProcessBase
     process=@spawnProcess(dir,options)
     unless process
       return @run {options,command,text,uri,args,callback}
-    if text?
-      process.stdin.write "load #{uri}\n#{text}\x04\n"
-    process.stdout.once 'data', (data)->
-      if "#{data}" isnt 'OK\n'
+    parseData = (data)->
+      lines = "#{data}".split("\n")
+      result = lines[lines.length-2]
+      unless result.match(/^OK/)
+        atom.notifications.addError "Haskell-ghc-mod: ghc-modi crashed
+            on #{command} with message #{result}",
+          detail: dir.getPath()
+          dismissable: true
+        console.error lines
         callback []
         return
+      lines = lines.slice(0,-2)
+      callback lines.map (line)->
+        line.replace /\0/g,'\n'
+    if text?
+      process.stdin.write "load #{uri}\n#{text}\x04\n"
       process.stdout.once 'data', (data)->
-        lines = "#{data}".split("\n")
-        result = lines[lines.length-2]
-        unless result.match(/^OK/)
-          atom.notifications.addError "Haskell-ghc-mod: ghc-modi crashed
-              on #{command} with message #{result}",
-            detail: dir.getPath()
-            dismissable: true
-          console.error lines
+        if "#{data}" isnt 'OK\n'
           callback []
           return
-        lines = lines.slice(0,-2)
-        callback lines.map (line)->
-          line.replace /\0/g,'\n'
+        process.stdout.once 'data', parseData
+    else
+      process.stdout.once 'data', parseData
+
     if uri?
       cmd = [command, uri].concat args
     else
       cmd = [command].concat args
     process.stdin.write cmd.join(' ').replace(/\r|\r?\n/g,' ') + '\n'
+
     if text?
       process.stdin.write "unload #{uri}\n"
