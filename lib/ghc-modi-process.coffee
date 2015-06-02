@@ -148,7 +148,7 @@ class GhcModiProcess
       options: @processOptions(@getRootDir(buffer).getPath())
       command: 'type',
       uri: buffer.getUri()
-      text: buffer.getText()
+      text: buffer.getText() if buffer.isModified()
       args: ["",crange.start.row+1,crange.start.column+1]
       callback: (lines) ->
         [range,type]=lines.reduce ((acc,line) ->
@@ -191,7 +191,7 @@ class GhcModiProcess
       options: @processOptions(@getRootDir(buffer).getPath())
       command: 'info'
       uri: buffer.getUri()
-      text: buffer.getText()
+      text: buffer.getText() if buffer.isModified()
       args: ["", symbol]
       callback: (lines) ->
         text = lines.join('\n')
@@ -210,12 +210,13 @@ class GhcModiProcess
       callback: callback
 
   doCheckOrLintBuffer: (cmd, buffer, callback) =>
+    dir = @getRootDir(buffer)
     @queueCmd 'checklint',
-      dir: @getRootDir(buffer).getPath()
-      options: @processOptions(@getRootDir(buffer).getPath())
+      dir: dir
+      options: @processOptions(dir.getPath())
       command: cmd
       uri: buffer.getUri()
-      text: buffer.getText()
+      text: buffer.getText() if buffer.isModified()
       callback: (lines) ->
         results = []
         lines.forEach (line) ->
@@ -223,7 +224,9 @@ class GhcModiProcess
             line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
           unless match?
             console.log("Ghc-Mod says: #{line}")
-            return
+            line = "#{buffer.getUri()}:0:0:Error: #{line}"
+            match=
+              line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
           [m,file,row,col,warning] = match
           severity =
             if cmd=='lint'
@@ -233,7 +236,7 @@ class GhcModiProcess
             else
               'error'
           results.push
-            uri: file
+            uri: dir.getFile(file).getPath()
             position: new Point(row-1, col-1),
             message: line.replace(m,'')
             severity: severity
