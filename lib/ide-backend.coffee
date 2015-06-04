@@ -140,5 +140,13 @@ class IdeBackend
   shutdownBackend: =>
     @process.killProcess() if @isActive()
 
+  ###
+  getModulesExportingSymbolAt()
+  Get all modules exporting symbol at position
+  buffer: TextBuffer with source
+  range: Range or Point, signifying extent of expression
+  callback: ([module]) ->
+    module: Module name
+  ###
   getModulesExportingSymbolAt: (buffer, range, callback) =>
     @process.findSymbolProvidersInBuffer buffer,range,callback
