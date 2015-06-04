@@ -12,8 +12,14 @@ module.exports = Util =
 
   getProcessOptions: (rootPath) ->
     sep = if process.platform=='win32' then ';' else ':'
-    env = process.env
-    env.PATH = rootPath+"/.cabal-sandbox/bin"+sep+env.PATH if rootPath
+    env = {}
+    for k,v of process.env
+      env[k] = v
+    apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories')
+    if rootPath
+      env.PATH = "#{rootPath}/.cabal-sandbox/bin#{sep}#{apd.join(sep)}"+
+        "#{sep}#{env.PATH}"
+    Util.debug "PATH = #{env.PATH}"
     options =
       cwd: rootPath
       env: env

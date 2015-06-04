@@ -1,3 +1,6 @@
+## 0.7.1
+* `additionalPathDirectories` configuration option
+
 ## 0.7.0
 * Fixed typo in completion-backend.coffee (@crazymykl)
 * Initial support for input file redirection (WIP on ghc-mod master)

@@ -49,6 +49,18 @@ work on paths with whitespace. If you experience problems, try disabling
 `ghc-modi` by setting `enableGhcModi` to `false` (or uncheck tick in settings).
 This will be slower, but may work better on some configurations.
 
+If you are on OSX, or have ghc installed with non-standard prefix, you may also
+consider adding path to directory containing ghc/ghci executable to
+`additionalPathDirectories` configuration option. It is a comma-separated list
+of directories that will be added to your search path when invoking ghc-mod.
+For example, if you have ghc installed to `/usr/local`, then you would add
+`/usr/local/bin` to `additionalPathDirectories`.
+
+On OSX, if you start Atom from Finder or with desktop icon, it doesn't inherit
+environment variables specified in your user shell (in `.profile`, `.bashrc`,
+etc). You can copy `PATH` settings from your shell to
+`additionalPathDirectories`, if you'd like to run Atom in this way.
+
 ## Service-hub API
 
 Since 0.6.0, haskell-ghc-mod provides two services, namely `haskell-ide-backend`

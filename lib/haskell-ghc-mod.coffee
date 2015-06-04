@@ -26,6 +26,14 @@ module.exports = HaskellGhcMod =
     debug:
       type: 'boolean'
       default: false
+    additionalPathDirectories:
+      type: 'array'
+      default: []
+      description: 'Add this directories to PATH when invoking ghc-mod.
+                    You might want to add path to ghc here.
+                    Separate with comma.'
+      items:
+        type: 'string'
 
   activate: (state) ->
     @process=new GhcModiProcess
