@@ -1,150 +1,9 @@
 FZ = require 'fuzzaldrin'
-_ = require 'underscore-plus'
-{Disposable, CompositeDisposable, Range, Emitter} = require 'atom'
+{Disposable, Range} = require 'atom'
+BufferInfo = require './buffer-info'
+ModuleInfo = require './module-info'
 
 # DEBUG = true
-
-class BufferInfo
-  buffer: null
-  emitter: null
-  disposables: null
-
-  constructor: (@buffer) ->
-    @disposables = new CompositeDisposable
-    @disposables.add @emitter=new Emitter
-
-    @disposables.add @buffer.onDidDestroy =>
-      @destroy()
-
-  destroy: () =>
-    @emitter.emit 'did-destroy'
-    @disposables.dispose()
-    @buffer=null
-
-  onDidDestroy: (callback) ->
-    return unless @emitter?
-    @emitter.on 'did-destroy', callback
-
-  onDidSave: (callback) ->
-    return unless @buffer
-    @buffer.onDidSave callback
-
-  getImports: () =>
-    return [] unless @buffer?
-    modules = []
-    regex= ///
-      ^import
-      \s+(qualified\s+)? #qualified
-      ([\w.]+) #name
-      (?:\s+as\s+([\w.]+))? #alias
-      (?:\s+(hiding))?
-      (?:\s+\(([^)]+)\))? #import list
-      ///gm
-    @buffer.scan regex, ({match}) ->
-      modules.push
-        qualified: match[1]?
-        name: match[2]
-        alias: match[3]
-        hiding: match[4]?
-        importList: match[5]?.split(',')?.map (s) -> s.trim()
-    unless (modules.some ({name}) -> name == 'Prelude')
-      modules.push
-        qualified: false
-        hiding: false
-        name: 'Prelude'
-    modules
-
-  getModuleName: =>
-    moduleName = undefined
-    @buffer.scan /^\s*module\s+([\w.']+)/, ({match}) ->
-      moduleName=match[1]
-    moduleName
-
-class ModuleInfo
-  symbols: null #module symbols
-  process: null
-  name: ""
-  disposables: null
-  emitter: null
-  timeout: null
-  invalidateInterval: 30*60*1000 #if module is unused for 30 minutes, remove it
-
-  constructor: (@name, @process, rootPath, done) ->
-    unless @name?
-      throw new Error("No name set")
-    console.log @name+' created' if DEBUG?
-    @symbols = []
-    @disposables = new CompositeDisposable
-    @disposables.add @emitter = new Emitter
-    @update rootPath,done
-    @timeout = setTimeout @destroy, @invalidateInterval
-
-  destroy: =>
-    console.log @name+' destroyed' if DEBUG?
-    clearTimeout @timeout
-    @timeout = null
-    @emitter.emit 'did-destroy'
-    @disposables.dispose()
-    @disposables = null
-    @symbols = null
-    @process = null
-
-  onDidDestroy: (callback) ->
-    @emitter.on 'did-destroy', callback
-
-  update: (rootPath,done) ->
-    return unless @process?
-    console.log @name+' updating' if DEBUG?
-    @process.runBrowse rootPath, [@name], (@symbols) =>
-      console.log @name+' updated' if DEBUG?
-      done?()
-
-  setBuffer: (bufferInfo,rootPath) ->
-    unless @process.getRootDir(bufferInfo.buffer).getPath() == rootPath
-      console.log "#{@name} rootPath mismatch:
-        #{@process.getRootDir(bufferInfo.buffer).getPath()}
-        != #{rootPath}" if DEBUG?
-      return
-    unless bufferInfo.getModuleName() == @name
-      console.log "#{@name} moduleName mismatch:
-        #{bufferInfo.getModuleName()}
-        != #{@name}" if DEBUG?
-      return
-    console.log "#{@name} buffer is set" if DEBUG?
-    @disposables.add bufferInfo.onDidSave =>
-      console.log @name+' did-save triggered' if DEBUG?
-      @update(rootPath)
-    @disposables.add bufferInfo.onDidDestroy =>
-      @unsetBuffer()
-
-  unsetBuffer: ->
-    @disposables.dispose()
-    @disposables = new CompositeDisposable
-
-  select: (importDesc, symbolTypes) ->
-    clearTimeout @timeout
-    @timeout = setTimeout @destroy, @invalidateInterval
-    symbols =
-      (if importDesc.importList?
-        @symbols.filter (s) ->
-          importDesc.hiding != (importDesc.importList.some (i) -> i == s.name)
-      else
-        @symbols)
-    si=symbols.map (s) ->
-      name: s.name
-      typeSignature: s.typeSignature
-      symbolType: s.symbolType
-      module: importDesc
-      qname:
-        if importDesc.qualified
-          (importDesc.alias ? importDesc.name) + '.' + s.name
-        else
-          s.name
-    if symbolTypes?
-      si=si.filter ({symbolType}) ->
-        symbolTypes.some (st) ->
-          st == symbolType
-    si
 
 module.exports =
 class CompletionBackend
@@ -177,12 +36,12 @@ class CompletionBackend
     {rootDir, moduleMap} = @getModuleMap {bufferInfo}
     if bufferInfo? and moduleMap?
       Promise.all bufferInfo.getImports().map (imp) =>
-        new Promise (resolve) =>
-          {moduleInfo} = @getModuleInfo
-            moduleName: imp.name
-            rootDir: rootDir
-            moduleMap: moduleMap
-            done: -> resolve moduleInfo.select(imp,symbolTypes)
+        @getModuleInfo
+          moduleName: imp.name
+          rootDir: rootDir
+          moduleMap: moduleMap
+        .then ({moduleInfo}) ->
+          moduleInfo.select(imp,symbolTypes)
       .then (promises) ->
         [].concat promises...
     else
@@ -207,7 +66,7 @@ class CompletionBackend
     rootDir: rootDir
     moduleMap: mm
 
-  getModuleInfo: ({moduleName,bufferInfo,rootDir,moduleMap,done}) ->
+  getModuleInfo: ({moduleName,bufferInfo,rootDir,moduleMap}) ->
     unless moduleName? or bufferInfo?
       throw new Error("No moduleName or bufferInfo specified")
     moduleName ?= bufferInfo.getModuleName()
@@ -219,24 +78,26 @@ class CompletionBackend
       unless bufferInfo?
         throw new Error("No bufferInfo specified and no moduleMap+rootDir")
       {rootDir, moduleMap} = @getModuleMap({bufferInfo,rootDir})
-    unless moduleMap.has moduleName
-      moduleMap.set moduleName,
-        moduleInfo=new ModuleInfo(moduleName,@process,rootDir.getPath(),done)
-      if bufferInfo?
-        moduleInfo.setBuffer bufferInfo, rootDir.getPath()
-      else
-        atom.workspace.getTextEditors().forEach (editor) =>
-          {bufferInfo} = @getBufferInfo {buffer: editor.getBuffer()}
-          moduleInfo.setBuffer bufferInfo, rootDir.getPath()
 
-      moduleInfo.onDidDestroy ->
-        moduleMap.delete moduleName
-        console.log moduleName+' removed from map' if DEBUG?
+    moduleInfo = moduleMap.get moduleName
+    unless moduleInfo?.symbols? #hack to help with #20, #21
+      new Promise (resolve) =>
+        moduleMap.set moduleName,
+          moduleInfo=new ModuleInfo moduleName,@process,rootDir.getPath(), =>
+            resolve {bufferInfo,rootDir,moduleMap,moduleInfo}
+
+        if bufferInfo?
+          moduleInfo.setBuffer bufferInfo, rootDir.getPath()
+        else
+          atom.workspace.getTextEditors().forEach (editor) =>
+            {bufferInfo} = @getBufferInfo {buffer: editor.getBuffer()}
+            moduleInfo.setBuffer bufferInfo, rootDir.getPath()
+
+        moduleInfo.onDidDestroy ->
+          moduleMap.delete moduleName
+          console.log moduleName+' removed from map' if DEBUG?
     else
-      moduleInfo = moduleMap.get moduleName
-      if done?
-        setTimeout done, 0
-    {bufferInfo,rootDir,moduleMap,moduleInfo}
+      Promise.resolve {bufferInfo,rootDir,moduleMap,moduleInfo}
 
   ### Public interface below ###
 
@@ -396,17 +257,16 @@ class CompletionBackend
         lineRange, ({match}) ->
           moduleName=match[1]
 
-    new Promise (resolve) =>
-      {bufferInfo}= @getBufferInfo {buffer}
-      {moduleInfo} = @getModuleInfo
-        bufferInfo: bufferInfo
-        moduleName: moduleName
-        done: ->
-          symbols = moduleInfo.select
-            qualified: false
-            hiding: false
-            name: moduleName
-          resolve (FZ.filter symbols, prefix, key: 'name')
+    {bufferInfo} = @getBufferInfo {buffer}
+    @getModuleInfo
+      bufferInfo: bufferInfo
+      moduleName: moduleName
+    .then ({moduleInfo}) ->
+      symbols = moduleInfo.select
+        qualified: false
+        hiding: false
+        name: moduleName
+      FZ.filter symbols, prefix, key: 'name'
 
   ###
   getCompletionsForLanguagePragmas(buffer,prefix,position)

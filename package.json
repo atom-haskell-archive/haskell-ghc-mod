@@ -11,8 +11,6 @@
   "dependencies": {
     "temp": "^0.8.1",
     "fs": "~0.0.2",
-    "grim": "^1.4.1",
-    "underscore-plus": "^1.6.6",
     "fuzzaldrin": "^2.1.0"
   },
   "providedServices": {

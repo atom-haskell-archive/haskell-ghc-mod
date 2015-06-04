@@ -2,7 +2,6 @@ GhcModiProcess = require './ghc-modi-process'
 {HaskellGhcModMessage,HaskellGhcModMessageElement} =
   require('./haskell-ghc-mod-message')
 {CompositeDisposable} = require 'atom'
-Grim = require 'grim'
 EditorController = require './editor-controller'
 IdeBackend = require './ide-backend'
 CompletionBackend = require './completion-backend'

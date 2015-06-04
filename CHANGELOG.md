@@ -1,9 +1,10 @@
 ## 0.6.7
-* Fixed typo in completion-backend.coffee
+* Fixed typo in completion-backend.coffee (@crazymykl)
 * Initial support for input file redirection (WIP on ghc-mod master)
 * Display non-fatal ghc-mod errors in outputView (was: print to console)
 * Don't pass buffer text as tempfile if it's saved
 * Always get abs. URI for check results
+* General cleanup, which hopefully helps with #20, #21
 
 ## 0.6.6
 * Fix bug in getCompletionsForSymbolInModule
