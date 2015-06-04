@@ -23,6 +23,9 @@ module.exports = HaskellGhcMod =
     suppressStartupWarning:
       type: 'boolean'
       default: false
+    debug:
+      type: 'boolean'
+      default: false
 
   activate: (state) ->
     @process=new GhcModiProcess

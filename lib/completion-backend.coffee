@@ -2,8 +2,7 @@ FZ = require 'fuzzaldrin'
 {Disposable, Range} = require 'atom'
 BufferInfo = require './buffer-info'
 ModuleInfo = require './module-info'
-
-# DEBUG = true
+Util = require './util'
 
 module.exports =
 class CompletionBackend
@@ -71,8 +70,8 @@ class CompletionBackend
       throw new Error("No moduleName or bufferInfo specified")
     moduleName ?= bufferInfo.getModuleName()
     unless moduleName
-      console.log "warn: nameless module in
-        #{bufferInfo.buffer.getUri()}" if DEBUG?
+      Util.debug "warn: nameless module in
+        #{bufferInfo.buffer.getUri()}"
       return
     unless moduleMap? and rootDir?
       unless bufferInfo?
@@ -95,7 +94,7 @@ class CompletionBackend
 
         moduleInfo.onDidDestroy ->
           moduleMap.delete moduleName
-          console.log moduleName+' removed from map' if DEBUG?
+          Util.debug "#{moduleName} removed from map"
     else
       Promise.resolve {bufferInfo,rootDir,moduleMap,moduleInfo}
 

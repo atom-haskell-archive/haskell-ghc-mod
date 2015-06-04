@@ -1,4 +1,5 @@
 {CompositeDisposable, Emitter} = require 'atom'
+Util = require './util'
 
 module.exports=
   class ModuleInfo
@@ -8,12 +9,12 @@ module.exports=
     disposables: null
     emitter: null
     timeout: null
-    invalidateInterval: 30*60*1000 #if module is unused for 30 minutes, remove it
+    invalidateInterval: 30*60*1000 #if module unused for 30 minutes, remove it
 
     constructor: (@name, @process, rootPath, done) ->
       unless @name?
         throw new Error("No name set")
-      console.log @name+' created' if DEBUG?
+      Util.debug "#{@name} created"
       @symbols = []
       @disposables = new CompositeDisposable
       @disposables.add @emitter = new Emitter
@@ -22,7 +23,7 @@ module.exports=
 
     destroy: =>
       return unless @symbols?
-      console.log @name+' destroyed' if DEBUG?
+      Util.debug "#{@name} destroyed"
       clearTimeout @timeout
       @timeout = null
       @emitter.emit 'did-destroy'
@@ -38,26 +39,26 @@ module.exports=
 
     update: (rootPath,done) =>
       return unless @process?
-      console.log @name+' updating' if DEBUG?
+      Util.debug "#{@name} updating"
       @process.runBrowse rootPath, [@name], (@symbols) =>
-        console.log @name+' updated' if DEBUG?
+        Util.debug "#{@name} updated"
         done?()
 
     setBuffer: (bufferInfo,rootPath) =>
       return unless @process?
       unless @process.getRootDir(bufferInfo.buffer).getPath() == rootPath
-        console.log "#{@name} rootPath mismatch:
+        Util.debug "#{@name} rootPath mismatch:
           #{@process.getRootDir(bufferInfo.buffer).getPath()}
-          != #{rootPath}" if DEBUG?
+          != #{rootPath}"
         return
       unless bufferInfo.getModuleName() == @name
-        console.log "#{@name} moduleName mismatch:
+        Util.debug "#{@name} moduleName mismatch:
           #{bufferInfo.getModuleName()}
-          != #{@name}" if DEBUG?
+          != #{@name}"
         return
-      console.log "#{@name} buffer is set" if DEBUG?
+      Util.debug "#{@name} buffer is set"
       @disposables.add bufferInfo.onDidSave =>
-        console.log @name+' did-save triggered' if DEBUG?
+        Util.debug "#{@name} did-save triggered"
         @update(rootPath)
       @disposables.add bufferInfo.onDidDestroy =>
         @unsetBuffer()
