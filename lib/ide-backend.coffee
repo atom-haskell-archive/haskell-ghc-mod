@@ -20,7 +20,7 @@ class IdeBackend
 
   Returns String, unique string describing a given backend
   ###
-  name: () -> "haskell-ghc-mod"
+  name: -> "haskell-ghc-mod"
 
   ###
   onDidDestroy(callback)

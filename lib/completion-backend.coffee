@@ -47,14 +47,14 @@ class CompletionBackend
     else
       Promise.resolve []
 
-  getBufferInfo: ({buffer}) ->
+  getBufferInfo: ({buffer}) =>
     if @bufferMap.has buffer
       bufferInfo: @bufferMap.get buffer
     else
       @bufferMap.set buffer, bi=new BufferInfo(buffer)
       bufferInfo: bi
 
-  getModuleMap: ({bufferInfo,rootDir}) ->
+  getModuleMap: ({bufferInfo,rootDir}) =>
     unless bufferInfo? or rootDir?
       throw new Error("Neither bufferInfo nor rootDir specified")
     rootDir ?= @process.getRootDir bufferInfo.buffer
@@ -66,7 +66,7 @@ class CompletionBackend
     rootDir: rootDir
     moduleMap: mm
 
-  getModuleInfo: ({moduleName,bufferInfo,rootDir,moduleMap}) ->
+  getModuleInfo: ({moduleName,bufferInfo,rootDir,moduleMap}) =>
     unless moduleName? or bufferInfo?
       throw new Error("No moduleName or bufferInfo specified")
     moduleName ?= bufferInfo.getModuleName()
@@ -83,7 +83,7 @@ class CompletionBackend
     unless moduleInfo?.symbols? #hack to help with #20, #21
       new Promise (resolve) =>
         moduleMap.set moduleName,
-          moduleInfo=new ModuleInfo moduleName,@process,rootDir.getPath(), =>
+          moduleInfo=new ModuleInfo moduleName,@process,rootDir.getPath(), ->
             resolve {bufferInfo,rootDir,moduleMap,moduleInfo}
 
         if bufferInfo?
@@ -107,7 +107,7 @@ class CompletionBackend
 
   Returns String, unique string describing a given backend
   ###
-  name: () -> "haskell-ghc-mod"
+  name: -> "haskell-ghc-mod"
 
   ###
   onDidDestroy(callback)

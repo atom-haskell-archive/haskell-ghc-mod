@@ -65,7 +65,7 @@ class GhcModiProcess
     @backend.killProcess()
 
   # Tear down any state and detach
-  destroy: ->
+  destroy: =>
     @backend.destroy()
     @emitter.emit 'did-destroy'
     @disposables.dispose()

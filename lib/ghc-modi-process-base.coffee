@@ -40,8 +40,7 @@ class GhcModiProcessBase
     @processMap.get(dir)?.process.kill?()
     @processMap.delete(dir)
 
-  # Tear down any state and detach
-  destroy: ->
+  destroy: =>
     @killProcess()
     @emitter.emit 'did-destroy'
     @disposables.dispose()

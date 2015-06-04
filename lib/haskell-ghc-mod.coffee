@@ -28,7 +28,7 @@ module.exports = HaskellGhcMod =
     @process=new GhcModiProcess
 
     unless atom.config.get('haskell-gch-mod.suppressStartupWarning')
-      setTimeout (=>
+      setTimeout (->
         unless atom.packages.isPackageActive('ide-haskell')
           atom.notifications.addWarning "Haskell-ghc-mod package is intended to
           be used as a backend for ide-haskell, please consider installing
