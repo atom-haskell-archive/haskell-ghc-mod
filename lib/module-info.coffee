@@ -45,10 +45,10 @@ module.exports=
         done?()
 
     setBuffer: (bufferInfo,rootPath) =>
-      return unless @process?
-      unless @process.getRootDir(bufferInfo.buffer).getPath() == rootPath
+      return unless @disposables?
+      unless Util.getRootDir(bufferInfo.buffer).getPath() == rootPath
         Util.debug "#{@name} rootPath mismatch:
-          #{@process.getRootDir(bufferInfo.buffer).getPath()}
+          #{Util.getRootDir(bufferInfo.buffer).getPath()}
           != #{rootPath}"
         return
       unless bufferInfo.getModuleName() == @name

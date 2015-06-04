@@ -1,5 +1,5 @@
-{BufferedProcess,Range,Point,Emitter,CompositeDisposable,
-Directory} = require 'atom'
+{BufferedProcess,Range,Point,Emitter,CompositeDisposable} = require 'atom'
+Util = require './util'
 
 GhcModiProcessTemp = require './ghc-modi-process-temp.coffee'
 GhcModiProcessRedirect = require './ghc-modi-process-redirect.coffee'
@@ -47,19 +47,6 @@ class GhcModiProcess
         dismissable: true
     @disposables = new CompositeDisposable
     @disposables.add @emitter=new Emitter
-
-  getRootDir: (buffer) ->
-    [dir]=atom.project.getDirectories().filter (dir) ->
-      dir.contains(buffer.getUri())
-    dir ? atom.project.getDirectories()[0] ? new Directory
-
-  processOptions: (rootPath) ->
-    sep = if process.platform=='win32' then ';' else ':'
-    env = process.env
-    env.PATH = rootPath+"/.cabal-sandbox/bin"+sep+env.PATH if rootPath
-    options =
-      cwd: rootPath
-      env: env
 
   killProcess: =>
     @backend.killProcess()
@@ -113,7 +100,7 @@ class GhcModiProcess
 
   runList: (rootPath, callback) =>
     @queueCmd 'completion',
-      options: @processOptions(rootPath)
+      options: Util.getProcessOptions(rootPath)
       command: 'list'
       callback: callback
 
@@ -129,7 +116,7 @@ class GhcModiProcess
 
   runBrowse: (rootPath, modules,callback) =>
     @queueCmd 'completion',
-      options: @processOptions(rootPath)
+      options: Util.getProcessOptions(rootPath)
       command: 'browse'
       args: ['-d'].concat(modules)
       callback: (lines) ->
@@ -144,13 +131,12 @@ class GhcModiProcess
           {name, typeSignature, symbolType}
 
   getTypeInBuffer: (buffer, crange, callback) =>
-    if crange instanceof Point
-      crange = new Range crange, crange
+    crange = Util.toRange crange
 
     @queueCmd 'typeinfo',
       interactive: true
-      dir: @getRootDir(buffer)
-      options: @processOptions(@getRootDir(buffer).getPath())
+      dir: Util.getRootDir(buffer)
+      options: Util.getProcessOptions(Util.getRootDir(buffer).getPath())
       command: 'type',
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
@@ -169,31 +155,14 @@ class GhcModiProcess
         range=crange unless range
         callback {range,type}
 
-  getSymbolInRange: (regex, buffer, crange) ->
-    if crange.isEmpty()
-      {start,end}=buffer.rangeForRow crange.start.row
-      crange2=new Range(crange.start,crange.end)
-      buffer.backwardsScanInRange regex,new Range(start,crange.start),
-        ({range,stop}) ->
-          crange2.start=range.start
-      buffer.scanInRange regex,new Range(crange.end,end),
-        ({range,stop}) ->
-          crange2.end=range.end
-    else
-      crange2=crange
-
-    symbol: buffer.getTextInRange crange2
-    range: crange2
-
   getInfoInBuffer: (buffer, crange, callback) =>
-    if crange instanceof Point
-      crange = new Range crange, crange
-    {symbol,range} = @getSymbolInRange(/[\w.']*/,buffer,crange)
+    crange = Util.toRange crange
+    {symbol,range} = Util.getSymbolInRange(/[\w.']*/,buffer,crange)
 
     @queueCmd 'typeinfo',
       interactive: true
-      dir: @getRootDir(buffer)
-      options: @processOptions(@getRootDir(buffer).getPath())
+      dir: Util.getRootDir(buffer)
+      options: Util.getProcessOptions(Util.getRootDir(buffer).getPath())
       command: 'info'
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
@@ -204,21 +173,20 @@ class GhcModiProcess
         callback {range, info: text}
 
   findSymbolProvidersInBuffer: (buffer, crange, callback) =>
-    if crange instanceof Point
-      crange = new Range crange, crange
-    {symbol} = @getSymbolInRange(/[\w']*/,buffer,crange)
+    crange = Util.toRange crange
+    {symbol} = Util.getSymbolInRange(/[\w']*/,buffer,crange)
 
     @queueCmd 'find',
-      options: @processOptions(@getRootDir(buffer).getPath())
+      options: Util.getProcessOptions(Util.getRootDir(buffer).getPath())
       command: 'find'
       args: [symbol]
       callback: callback
 
   doCheckOrLintBuffer: (cmd, buffer, callback) =>
-    dir = @getRootDir(buffer)
+    dir = Util.getRootDir(buffer)
     @queueCmd 'checklint',
       dir: dir
-      options: @processOptions(dir.getPath())
+      options: Util.getProcessOptions(dir.getPath())
       command: cmd
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()

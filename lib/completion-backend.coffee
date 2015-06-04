@@ -56,7 +56,7 @@ class CompletionBackend
   getModuleMap: ({bufferInfo,rootDir}) =>
     unless bufferInfo? or rootDir?
       throw new Error("Neither bufferInfo nor rootDir specified")
-    rootDir ?= @process.getRootDir bufferInfo.buffer
+    rootDir ?= Util.getRootDir bufferInfo.buffer
     unless @dirMap.has(rootDir)
       @dirMap.set rootDir, mm=new Map
     else
@@ -219,7 +219,7 @@ class CompletionBackend
   ###
   getCompletionsForModule: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
-    rootDir = @process.getRootDir buffer
+    rootDir = Util.getRootDir buffer
     m = @modListMap.get(rootDir)
     if m?
       Promise.resolve (FZ.filter m, prefix)
