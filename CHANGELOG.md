@@ -1,3 +1,6 @@
+## 0.7.4
+* Try to fix path capitalization issues on Windows
+
 ## 0.7.3
 * Relativize path on check in case ghc-mod returns full path for some reason
 
