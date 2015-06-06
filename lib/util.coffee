@@ -1,4 +1,5 @@
 {Range, Point, Directory} = require 'atom'
+{delimiter} = require 'path'
 
 module.exports = Util =
   debug: (message) ->
@@ -11,14 +12,14 @@ module.exports = Util =
     dir ? atom.project.getDirectories()[0] ? new Directory
 
   getProcessOptions: (rootPath) ->
-    sep = if process.platform=='win32' then ';' else ':'
     env = {}
     for k,v of process.env
       env[k] = v
     apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories')
-    apd.unshift "#{rootPath}/.cabal-sandbox/bin"
+          .concat process.env.PATH.split delimiter
     if rootPath
-      env.PATH = "#{apd.join(sep)}#{sep}#{env.PATH}"
+      apd.unshift "#{rootPath}/.cabal-sandbox/bin"
+    env.PATH = "#{apd.join(delimiter)}"
     Util.debug "PATH = #{env.PATH}"
     options =
       cwd: rootPath
