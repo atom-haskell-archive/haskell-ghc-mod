@@ -1,3 +1,6 @@
+## 0.7.2
+* Avoid two consecutive separators in PATH
+
 ## 0.7.1
 * `additionalPathDirectories` configuration option
 
