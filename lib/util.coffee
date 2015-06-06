@@ -16,9 +16,9 @@ module.exports = Util =
     for k,v of process.env
       env[k] = v
     apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories')
+    apd.unshift "#{rootPath}/.cabal-sandbox/bin"
     if rootPath
-      env.PATH = "#{rootPath}/.cabal-sandbox/bin#{sep}#{apd.join(sep)}"+
-        "#{sep}#{env.PATH}"
+      env.PATH = "#{apd.join(sep)}#{sep}#{env.PATH}"
     Util.debug "PATH = #{env.PATH}"
     options =
       cwd: rootPath
