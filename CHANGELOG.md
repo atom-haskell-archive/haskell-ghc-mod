@@ -1,3 +1,6 @@
+## 0.7.5
+* Rough fix for #24
+
 ## 0.7.4
 * Try to fix path capitalization issues on Windows
 
