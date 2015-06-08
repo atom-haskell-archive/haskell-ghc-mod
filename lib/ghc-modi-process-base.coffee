@@ -11,6 +11,7 @@ class GhcModiProcessBase
     @disposables.add @emitter=new Emitter
 
   spawnProcess: (rootDir,options)=>
+    return unless @processMap?
     return unless atom.config.get('haskell-ghc-mod.enableGhcModi')
     timer = setTimeout (=> @killProcessForDir rootDir), 60*60*1000
     proc = @processMap.get(rootDir)
@@ -31,20 +32,25 @@ class GhcModiProcessBase
     return proc
 
   killProcess: =>
+    return unless @processMap?
     atom.project.getDirectories().forEach (dir) =>
       @killProcessForDir dir
 
   killProcessForDir: (dir) =>
+    return unless @processMap?
     clearTimeout @processMap.get(dir)?.timer
     @processMap.get(dir)?.process.stdin?.end?()
     @processMap.get(dir)?.process.kill?()
     @processMap.delete(dir)
 
   destroy: =>
+    return unless @processMap?
     @killProcess()
     @emitter.emit 'did-destroy'
+    @emitter = null
     @disposables.dispose()
     @processMap = null
 
   onDidDestroy: (callback) =>
+    return unless @processMap?
     @emitter.on 'did-destroy', callback
