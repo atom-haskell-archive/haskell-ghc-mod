@@ -1,3 +1,7 @@
+## 0.7.6
+* Cleanup
+* More debugging output
+
 ## 0.7.5
 * Rough fix for #24
 
