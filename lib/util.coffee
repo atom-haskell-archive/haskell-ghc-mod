@@ -1,5 +1,7 @@
 {Range, Point, Directory} = require 'atom'
 {delimiter} = require 'path'
+Temp = require('temp')
+FS = require('fs')
 
 module.exports = Util =
   debug: (message) ->
@@ -48,3 +50,24 @@ module.exports = Util =
       pointOrRange
     else
       throw new Error("Unknown point or range class #{pointOrRange}")
+
+  withTempFile: (contents,func,opts) ->
+    Temp.open
+      prefix:'haskell-ghc-mod',
+      suffix:'.hs',
+      (err,info) ->
+        if err
+          atom.notifications.addError "Haskell-ghc-mod: Error when writing
+            temp. file",
+            detail: "#{err}"
+            dismissable: true
+          opts.callback []
+          return
+        FS.writeSync info.fd,contents
+        {uri,callback} = opts
+        opts.uri = info.path
+        opts.callback = (res) ->
+          FS.close info.fd, -> FS.unlink info.path
+          callback res.map (line) ->
+            line.split(info.path).join(uri)
+        func opts
