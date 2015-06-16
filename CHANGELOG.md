@@ -1,3 +1,6 @@
+## 0.7.7
+* Separate completion queues for different tasks. Should result in better responsiveness on start.
+
 ## 0.7.6
 * Cleanup
 * More debugging output
