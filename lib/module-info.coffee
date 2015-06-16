@@ -75,7 +75,7 @@ module.exports=
       symbols =
         if importDesc.importList?
           @symbols.filter (s) ->
-            importDesc.hiding != (importDesc.importList.some (i) -> i == s.name)
+            importDesc.hiding != (s.name in importDesc.importList)
         else
           @symbols
       si=symbols.map (s) ->
@@ -89,7 +89,5 @@ module.exports=
           else
             s.name
       if symbolTypes?
-        si=si.filter ({symbolType}) ->
-          symbolTypes.some (st) ->
-            st == symbolType
+        si=si.filter ({symbolType}) -> symbolType in symbolTypes
       si
