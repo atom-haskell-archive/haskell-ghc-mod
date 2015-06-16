@@ -11,13 +11,19 @@ class GhcModiProcess
     checklint:
       running: false
       queue: []
-    completion:
+    browse:
       running: false
       queue: []
     typeinfo:
       running: false
       queue: []
     find:
+      running: false
+      queue: []
+    init:
+      running: false
+      queue: []
+    list:
       running: false
       queue: []
 
@@ -100,23 +106,23 @@ class GhcModiProcess
     @backend.run cmdDesc
 
   runList: (rootPath, callback) =>
-    @queueCmd 'completion',
+    @queueCmd 'list',
       options: Util.getProcessOptions(rootPath)
       command: 'list'
       callback: callback
 
   runLang: (callback) =>
-    @queueCmd 'completion',
+    @queueCmd 'init',
       command: 'lang'
       callback: callback
 
   runFlag: (callback) =>
-    @queueCmd 'completion',
+    @queueCmd 'init',
       command: 'flag'
       callback: callback
 
   runBrowse: (rootPath, modules,callback) =>
-    @queueCmd 'completion',
+    @queueCmd 'browse',
       options: Util.getProcessOptions(rootPath)
       command: 'browse'
       args: ['-d'].concat(modules)
