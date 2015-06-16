@@ -1,4 +1,4 @@
-{BufferedProcess,Emitter,CompositeDisposable} = require('atom')
+{BufferedProcess, Emitter, CompositeDisposable} = require('atom')
 GhcModiProcessBase = require './ghc-modi-process-base'
 {withTempFile} = require './util'
 

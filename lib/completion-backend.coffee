@@ -40,7 +40,7 @@ class CompletionBackend
           rootDir: rootDir
           moduleMap: moduleMap
         .then ({moduleInfo}) ->
-          moduleInfo.select(imp,symbolTypes)
+          moduleInfo.select(imp, symbolTypes)
       .then (promises) ->
         [].concat promises...
     else
@@ -50,22 +50,22 @@ class CompletionBackend
     if @bufferMap.has buffer
       bufferInfo: @bufferMap.get buffer
     else
-      @bufferMap.set buffer, bi=new BufferInfo(buffer)
+      @bufferMap.set buffer, bi = new BufferInfo(buffer)
       bufferInfo: bi
 
-  getModuleMap: ({bufferInfo,rootDir}) =>
+  getModuleMap: ({bufferInfo, rootDir}) =>
     unless bufferInfo? or rootDir?
       throw new Error("Neither bufferInfo nor rootDir specified")
     rootDir ?= Util.getRootDir bufferInfo.buffer
     unless @dirMap.has(rootDir)
-      @dirMap.set rootDir, mm=new Map
+      @dirMap.set rootDir, mm = new Map
     else
       mm = @dirMap.get rootDir
 
     rootDir: rootDir
     moduleMap: mm
 
-  getModuleInfo: ({moduleName,bufferInfo,rootDir,moduleMap}) =>
+  getModuleInfo: ({moduleName, bufferInfo, rootDir, moduleMap}) =>
     unless moduleName? or bufferInfo?
       throw new Error("No moduleName or bufferInfo specified")
     moduleName ?= bufferInfo.getModuleName()
@@ -76,14 +76,14 @@ class CompletionBackend
     unless moduleMap? and rootDir?
       unless bufferInfo?
         throw new Error("No bufferInfo specified and no moduleMap+rootDir")
-      {rootDir, moduleMap} = @getModuleMap({bufferInfo,rootDir})
+      {rootDir, moduleMap} = @getModuleMap({bufferInfo, rootDir})
 
     moduleInfo = moduleMap.get moduleName
     unless moduleInfo?.symbols? #hack to help with #20, #21
       new Promise (resolve) =>
         moduleMap.set moduleName,
-          moduleInfo=new ModuleInfo moduleName,@process,rootDir.getPath(), ->
-            resolve {bufferInfo,rootDir,moduleMap,moduleInfo}
+          moduleInfo = new ModuleInfo moduleName, @process, rootDir.getPath(), ->
+            resolve {bufferInfo, rootDir, moduleMap, moduleInfo}
 
         if bufferInfo?
           moduleInfo.setBuffer bufferInfo, rootDir.getPath()
@@ -96,7 +96,7 @@ class CompletionBackend
           moduleMap.delete moduleName
           Util.debug "#{moduleName} removed from map"
     else
-      Promise.resolve {bufferInfo,rootDir,moduleMap,moduleInfo}
+      Promise.resolve {bufferInfo, rootDir, moduleMap, moduleInfo}
 
   ### Public interface below ###
 
@@ -134,10 +134,10 @@ class CompletionBackend
 
     {rootDir, moduleMap} = @getModuleMap {bufferInfo}
 
-    @getModuleInfo {bufferInfo,rootDir,moduleMap}
+    @getModuleInfo {bufferInfo, rootDir, moduleMap}
 
     bufferInfo.getImports().forEach ({name}) =>
-      @getModuleInfo {moduleName: name,rootDir,moduleMap}
+      @getModuleInfo {moduleName: name, rootDir, moduleMap}
 
     new Disposable =>
       @unregisterCompletionBuffer buffer
@@ -189,7 +189,7 @@ class CompletionBackend
   getCompletionsForType: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
-    @getSymbolsForBuffer(buffer,['type','class']).then (symbols) ->
+    @getSymbolsForBuffer(buffer, ['type', 'class']).then (symbols) ->
       FZ.filter symbols, prefix, key: 'qname'
 
   ###
@@ -205,7 +205,7 @@ class CompletionBackend
   getCompletionsForClass: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
-    @getSymbolsForBuffer(buffer,['class']).then (symbols) ->
+    @getSymbolsForBuffer(buffer, ['class']).then (symbols) ->
       FZ.filter symbols, prefix, key: 'qname'
 
   ###
@@ -228,7 +228,7 @@ class CompletionBackend
         @process.runList rootDir.getPath(), (modules) =>
           @modListMap.set rootDir, modules
           #refresh every minute
-          setTimeout (=> @modListMap.delete rootDir), 60*1000
+          setTimeout (=> @modListMap.delete rootDir), 60 * 1000
           resolve (FZ.filter modules, prefix)
 
   ###
@@ -254,7 +254,7 @@ class CompletionBackend
       lineRange = new Range [0, position.row], position
       buffer.backwardsScanInRange /^import\s+([\w.]+)/,
         lineRange, ({match}) ->
-          moduleName=match[1]
+          moduleName = match[1]
 
     {bufferInfo} = @getBufferInfo {buffer}
     @getModuleInfo
@@ -309,7 +309,7 @@ class CompletionBackend
   getCompletionsForHole: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
     new Promise (resolve) =>
-      @process.getTypeInBuffer buffer,position,({type}) =>
+      @process.getTypeInBuffer buffer, position, ({type}) =>
         @getSymbolsForBuffer(buffer).then (symbols) ->
           resolve (
             symbols
@@ -318,8 +318,8 @@ class CompletionBackend
                 tl = s.typeSignature.split(' -> ').slice(-1)[0]
                 return false if tl.match(/^[a-z]$/)
                 ts = tl.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&")
-                rx=RegExp ts.replace(/\b[a-z]\b/g,'.+'),''
+                rx = RegExp ts.replace(/\b[a-z]\b/g, '.+'), ''
                 rx.test(type)
-              .sort (a,b) ->
-                FZ.score(b.typeSignature,type)-FZ.score(a.typeSignature,type)
+              .sort (a, b) ->
+                FZ.score(b.typeSignature, type) - FZ.score(a.typeSignature, type)
             )

@@ -36,7 +36,7 @@ module.exports = HaskellGhcMod =
         type: 'string'
 
   activate: (state) ->
-    @process=new GhcModiProcess
+    @process = new GhcModiProcess
 
     unless atom.config.get('haskell-gch-mod.suppressStartupWarning')
       setTimeout (->

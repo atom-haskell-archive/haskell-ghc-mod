@@ -9,13 +9,13 @@ module.exports = Util =
       console.log "haskell-ghc-mod debug: #{message}"
 
   getRootDir: (buffer) ->
-    [dir]=atom.project.getDirectories().filter (dir) ->
+    [dir] = atom.project.getDirectories().filter (dir) ->
       dir.contains(buffer.getUri())
     dir ? atom.project.getDirectories()[0] ? new Directory
 
   getProcessOptions: (rootPath) ->
     env = {}
-    for k,v of process.env
+    for k, v of process.env
       env[k] = v
     apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories')
           .concat process.env.PATH.split delimiter
@@ -29,16 +29,16 @@ module.exports = Util =
 
   getSymbolInRange: (regex, buffer, crange) ->
     if crange.isEmpty()
-      {start,end}=buffer.rangeForRow crange.start.row
-      crange2=new Range(crange.start,crange.end)
-      buffer.backwardsScanInRange regex,new Range(start,crange.start),
-        ({range,stop}) ->
-          crange2.start=range.start
-      buffer.scanInRange regex,new Range(crange.end,end),
-        ({range,stop}) ->
-          crange2.end=range.end
+      {start, end} = buffer.rangeForRow crange.start.row
+      crange2 = new Range(crange.start, crange.end)
+      buffer.backwardsScanInRange regex, new Range(start, crange.start),
+        ({range, stop}) ->
+          crange2.start = range.start
+      buffer.scanInRange regex, new Range(crange.end, end),
+        ({range, stop}) ->
+          crange2.end = range.end
     else
-      crange2=crange
+      crange2 = crange
 
     symbol: buffer.getTextInRange crange2
     range: crange2
@@ -51,11 +51,11 @@ module.exports = Util =
     else
       throw new Error("Unknown point or range class #{pointOrRange}")
 
-  withTempFile: (contents,func,opts) ->
+  withTempFile: (contents, func, opts) ->
     Temp.open
       prefix:'haskell-ghc-mod',
       suffix:'.hs',
-      (err,info) ->
+      (err, info) ->
         if err
           atom.notifications.addError "Haskell-ghc-mod: Error when writing
             temp. file",
@@ -63,8 +63,8 @@ module.exports = Util =
             dismissable: true
           opts.callback []
           return
-        FS.writeSync info.fd,contents
-        {uri,callback} = opts
+        FS.writeSync info.fd, contents
+        {uri, callback} = opts
         opts.uri = info.path
         opts.callback = (res) ->
           FS.close info.fd, -> FS.unlink info.path

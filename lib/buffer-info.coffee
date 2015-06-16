@@ -8,16 +8,16 @@ module.exports=
 
     constructor: (@buffer) ->
       @disposables = new CompositeDisposable
-      @disposables.add @emitter=new Emitter
+      @disposables.add @emitter = new Emitter
 
       @disposables.add @buffer.onDidDestroy =>
         @destroy()
 
-    destroy: () =>
+    destroy: =>
       return unless @emitter?
       @emitter.emit 'did-destroy'
       @disposables.dispose()
-      @buffer=null
+      @buffer = null
 
     onDidDestroy: (callback) =>
       unless @emitter?
@@ -29,10 +29,10 @@ module.exports=
         return new Disposable ->
       @buffer.onDidSave callback
 
-    getImports: () =>
+    getImports: =>
       return [] unless @buffer?
       modules = []
-      regex= ///
+      regex = ///
         ^import
         \s+(qualified\s+)? #qualified
         ([\w.]+) #name
@@ -58,5 +58,5 @@ module.exports=
       return unless @buffer?
       moduleName = undefined
       @buffer.scan /^\s*module\s+([\w.']+)/, ({match}) ->
-        moduleName=match[1]
+        moduleName = match[1]
       moduleName

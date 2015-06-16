@@ -2,7 +2,7 @@ module.exports=
 class IdeBackend
   process: null
 
-  constructor: (@process,opts) ->
+  constructor: (@process, opts) ->
     @version = opts?.version
     @process?.onDidDestroy =>
       @process = null
@@ -44,10 +44,10 @@ class IdeBackend
     switch @version
       when '0.1.0'
         if @isActive()
-          @process.getTypeInBuffer buffer,range, (o) ->
+          @process.getTypeInBuffer buffer, range, (o) ->
             o.type ?= '???'
             callback o
-      else @process.getTypeInBuffer buffer,range,callback if @isActive()
+      else @process.getTypeInBuffer buffer, range, callback if @isActive()
 
   ###
   getInfo(buffer, range, callback)
@@ -62,10 +62,10 @@ class IdeBackend
     switch @version
       when '0.1.0'
         if @isActive()
-          @process.getInfoInBuffer buffer,range, (o) ->
+          @process.getInfoInBuffer buffer, range, (o) ->
             o.info ?= 'Cannot show info'
             callback o
-      else @process.getInfoInBuffer buffer,range,callback if @isActive()
+      else @process.getInfoInBuffer buffer, range, callback if @isActive()
 
   ###
   checkBuffer(buffer, callback)
@@ -79,7 +79,7 @@ class IdeBackend
     severity: String, one of ['error','warning']
   ###
   checkBuffer: (buffer, callback) =>
-    @process.doCheckBuffer buffer,callback if @isActive()
+    @process.doCheckBuffer buffer, callback if @isActive()
 
   ###
   lintBuffer(buffer, callback)
@@ -149,4 +149,4 @@ class IdeBackend
     module: Module name
   ###
   getModulesExportingSymbolAt: (buffer, range, callback) =>
-    @process.findSymbolProvidersInBuffer buffer,range,callback
+    @process.findSymbolProvidersInBuffer buffer, range, callback

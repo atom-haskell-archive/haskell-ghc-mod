@@ -9,7 +9,7 @@ module.exports=
     disposables: null
     emitter: null
     timeout: null
-    invalidateInterval: 30*60*1000 #if module unused for 30 minutes, remove it
+    invalidateInterval: 30 * 60 * 1000 #if module unused for 30 minutes, remove it
 
     constructor: (@name, @process, rootPath, done) ->
       unless @name?
@@ -18,7 +18,7 @@ module.exports=
       @symbols = []
       @disposables = new CompositeDisposable
       @disposables.add @emitter = new Emitter
-      @update rootPath,done
+      @update rootPath, done
       @timeout = setTimeout (=> @destroy), @invalidateInterval
 
     destroy: =>
@@ -37,14 +37,14 @@ module.exports=
         return new Disposable ->
       @emitter.on 'did-destroy', callback
 
-    update: (rootPath,done) =>
+    update: (rootPath, done) =>
       return unless @process?
       Util.debug "#{@name} updating"
       @process.runBrowse rootPath, [@name], (@symbols) =>
         Util.debug "#{@name} updated"
         done?()
 
-    setBuffer: (bufferInfo,rootPath) =>
+    setBuffer: (bufferInfo, rootPath) =>
       return unless @disposables?
       unless Util.getRootDir(bufferInfo.buffer).getPath() == rootPath
         Util.debug "#{@name} rootPath mismatch:
@@ -78,7 +78,7 @@ module.exports=
             importDesc.hiding != (s.name in importDesc.importList)
         else
           @symbols
-      si=symbols.map (s) ->
+      si = symbols.map (s) ->
         name: s.name
         typeSignature: s.typeSignature
         symbolType: s.symbolType
@@ -89,5 +89,5 @@ module.exports=
           else
             s.name
       if symbolTypes?
-        si=si.filter ({symbolType}) -> symbolType in symbolTypes
+        si = si.filter ({symbolType}) -> symbolType in symbolTypes
       si
