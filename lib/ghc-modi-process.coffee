@@ -217,7 +217,7 @@ class GhcModiProcess
               'error'
           results.push
             uri: dir.getFile(dir.relativize(file)).getPath()
-            position: new Point row - 1, col - 1,
+            position: new Point row - 1, col - 1
             message: line.replace m, ''
             severity: severity
         callback results
