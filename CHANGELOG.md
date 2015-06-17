@@ -1,3 +1,6 @@
+## 0.7.8
+* Wasn't possible to disable startup warning on ide-haskell not installed.
+
 ## 0.7.7
 * Separate completion queues for different tasks. Should result in better responsiveness on start.
 
