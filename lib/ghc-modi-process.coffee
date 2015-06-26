@@ -216,7 +216,7 @@ class GhcModiProcess
             else
               'error'
           results.push
-            uri: dir.getFile(dir.relativize(file)).getPath()
+            uri: (try dir.getFile(dir.relativize(file)).getPath()) ? file
             position: new Point row - 1, col - 1
             message: line.replace m, ''
             severity: severity

@@ -11,7 +11,7 @@ module.exports = Util =
   getRootDir: (buffer) ->
     [dir] = atom.project.getDirectories().filter (dir) ->
       dir.contains(buffer.getUri())
-    dir ? atom.project.getDirectories()[0] ? new Directory
+    dir ? atom.project.getDirectories()[0] ? buffer.file.getParent() ? new Directory
 
   getProcessOptions: (rootPath) ->
     env = {}
