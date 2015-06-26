@@ -51,10 +51,10 @@ module.exports = Util =
     else
       throw new Error("Unknown point or range class #{pointOrRange}")
 
-  withTempFile: (contents, func, opts) ->
+  withTempFile: (contents, func, suffix, opts) ->
     Temp.open
-      prefix:'haskell-ghc-mod',
-      suffix:'.hs',
+      prefix: 'haskell-ghc-mod',
+      suffix: suffix,
       (err, info) ->
         if err
           atom.notifications.addError "Haskell-ghc-mod: Error when writing

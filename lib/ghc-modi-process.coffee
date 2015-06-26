@@ -1,5 +1,6 @@
 {BufferedProcess, Range, Point, Emitter, CompositeDisposable} = require 'atom'
 Util = require './util'
+{extname} = require('path')
 
 GhcModiProcessTemp = require './ghc-modi-process-temp.coffee'
 GhcModiProcessRedirect = require './ghc-modi-process-redirect.coffee'
@@ -226,4 +227,5 @@ class GhcModiProcess
     @doCheckOrLintBuffer "check", buffer, callback
 
   doLintBuffer: (buffer, callback) =>
+    return callback [] if extname(buffer.getUri()) is '.lhs'
     @doCheckOrLintBuffer "lint", buffer, callback
