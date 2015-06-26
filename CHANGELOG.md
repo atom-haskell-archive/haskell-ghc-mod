@@ -1,3 +1,6 @@
+## 0.7.10
+* Initial support for literate Haskell
+
 ## 0.7.9
 * Fix some problems with standalone files (#29)
 
