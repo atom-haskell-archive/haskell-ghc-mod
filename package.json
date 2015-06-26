@@ -27,6 +27,11 @@
       "versions": {
         "0.1.0": "provideCompletionBackend_0_1_0"
       }
+    },
+    "linter": {
+      "versions": {
+        "1.0.0": "provideLinter"
+      }
     }
   }
 }
