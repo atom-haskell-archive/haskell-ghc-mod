@@ -1,3 +1,6 @@
+## 0.7.9
+* Fix some problems with standalone files (#29)
+
 ## 0.7.8
 * Wasn't possible to disable startup warning on ide-haskell not installed.
 
