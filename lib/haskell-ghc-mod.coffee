@@ -72,14 +72,6 @@ module.exports = HaskellGhcMod =
   provideLinter: ->
     return unless atom.config.get 'haskell-ghc-mod.useLinter'
     backend = new IdeBackend @process
-    multiline = (message) ->
-      elem = document.createElement 'linter-multiline-message'
-      elem.tabIndex = 0
-      console.log message.split(/\n/).map((l) -> "<line>#{l}</line>").join("")
-      elem.innerHTML = message.split(/\n/).filter((l) -> l)
-        .map((l) -> "<line>#{l}</line>")
-        .join("")
-      elem
     [
       grammarScopes: ['source.haskell', 'text.tex.latex.haskell']
       scope: 'file' # or 'project'
@@ -91,12 +83,14 @@ module.exports = HaskellGhcMod =
               [message, messages...] = message.split /^(?!\s)/gm
               {
                 type: severity
-                html: multiline message
+                text: message
+                multiline: true
                 filePath: uri
                 range: [position, position.translate [0, 1]]
                 trace: messages.map (text) ->
                   type: 'trace'
-                  html: multiline text
+                  text: text
+                  multiline: true
               }
     ,
       grammarScopes: ['source.haskell']
@@ -108,10 +102,12 @@ module.exports = HaskellGhcMod =
             resolve res.map ({uri, position, message, severity}) ->
               [message, messages...] = message.split /^(?!\s)/gm
               type: severity
-              html: multiline message
+              text: message
+              multliline: true
               filePath: uri
               range: [position, position.translate [0, 1]]
               trace: messages.map (text) ->
                 type: 'trace'
-                html: multiline text
+                text: text
+                multiline: true
     ]
