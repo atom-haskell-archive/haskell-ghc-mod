@@ -20,9 +20,6 @@ module.exports = HaskellGhcMod =
       type: 'string'
       default: 'ghc-modi'
       description: 'Path to ghc-modi'
-    suppressStartupWarning:
-      type: 'boolean'
-      default: false
     debug:
       type: 'boolean'
       default: false
@@ -34,24 +31,9 @@ module.exports = HaskellGhcMod =
                     Separate with comma.'
       items:
         type: 'string'
-    useLinter:
-      type: 'boolean'
-      default: false
-      description: 'Use Atom Linter service for check and lint
-                    (requires restart)'
 
   activate: (state) ->
     @process = new GhcModiProcess
-
-    unless atom.config.get('haskell-ghc-mod.suppressStartupWarning')
-      setTimeout (->
-        unless atom.packages.isPackageActive('ide-haskell')
-          atom.notifications.addWarning "Haskell-ghc-mod package is intended to
-          be used as a backend for ide-haskell, please consider installing
-          or activating it.
-          You can suppress this warning in haskell-ghc-mod settings.",
-          dismissable:true
-        ), 5000
 
   deactivate: ->
     @process?.destroy()
@@ -70,15 +52,24 @@ module.exports = HaskellGhcMod =
     new CompletionBackend @process
 
   provideLinter: ->
-    return unless atom.config.get 'haskell-ghc-mod.useLinter'
+    if atom.packages.getLoadedPackage('ide-haskell')
+      return unless atom.config.get 'ide-haskell.useLinter'
     backend = new IdeBackend @process
     [
-      grammarScopes: ['source.haskell', 'text.tex.latex.haskell']
-      scope: 'file' # or 'project'
-      lintOnFly: false # must be false for scope: 'project'
+      func: 'checkBuffer'
+      lintOnFly: false
+      scopes: ['source.haskell', 'text.tex.latex.haskell']
+    ,
+      func: 'lintBuffer'
+      lintOnFly: true
+      scopes: ['source.haskell']
+    ].map ({func, scopes, lintOnFly}) ->
+      grammarScopes: scopes
+      scope: 'file'
+      lintOnFly: lintOnFly
       lint: (textEditor) ->
         return new Promise (resolve, reject) ->
-          backend.checkBuffer textEditor.getBuffer(), (res) ->
+          backend[func] textEditor.getBuffer(), (res) ->
             resolve res.map ({uri, position, message, severity}) ->
               [message, messages...] = message.split /^(?!\s)/gm
               {
@@ -92,22 +83,3 @@ module.exports = HaskellGhcMod =
                   text: text
                   multiline: true
               }
-    ,
-      grammarScopes: ['source.haskell']
-      scope: 'file' # or 'project'
-      lintOnFly: true # must be false for scope: 'project'
-      lint: (textEditor) ->
-        return new Promise (resolve, reject) ->
-          backend?.lintBuffer textEditor.getBuffer(), (res) ->
-            resolve res.map ({uri, position, message, severity}) ->
-              [message, messages...] = message.split /^(?!\s)/gm
-              type: severity
-              text: message
-              multliline: true
-              filePath: uri
-              range: [position, position.translate [0, 1]]
-              trace: messages.map (text) ->
-                type: 'trace'
-                text: text
-                multiline: true
-    ]
