@@ -74,6 +74,25 @@ class GhcModiProcessBase
     if text?
       debug "sending stdin text to #{modPath}"
       process.process.stdin.write "#{text}\x04\n"
+    process.onWillThrowError ({error, handle}) ->
+      console.warn "Using fallback child_process because of #{error.message}"
+      child = CP.execFile modPath, cmd, options, (cperror, stdout, stderr) ->
+        if cperror?
+          atom.notifications.addError "Haskell-ghc-mod: #{modPath}
+              #{args.join ' '} failed with error message #{cperror}",
+            detail: "#{stdout}\n#{stderr}"
+            dismissable: true
+          callback []
+        else
+          callback stdout.split('\n').slice(0, -1).map (line) ->
+            line.replace /\0/g, '\n'
+      child.error = (error) ->
+        console.error error
+        callback []
+      if text?
+        debug "sending stdin text to #{modPath}"
+        child.stdin.write "#{text}\x04\n"
+      handle()
 
   runModiCmd: ({dir, options, command, text, uri, args, callback}) =>
     debug "Trying to run ghc-modi in #{dir.getPath()}"
