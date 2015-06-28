@@ -10,11 +10,25 @@ atom-text-editor[data-grammar~='haskell']::shadow .linter-highlight, .linter-hig
     }
     /* Style for Gutter */
     .icon-right::before{
+      content: @info;
       color: @background-color-info;
     }
     /* Style for the text editor highlight */
     .region {
       border-bottom: 1px dashed @background-color-info;
     }
+  }
+  &.error .icon-right::before {
+    content: @alert;
+    color: @background-color-error;
+  }
+  &.warning .icon-right::before {
+    content: @stop;
+    color: @background-color-warning;
+  }
+  .icon-right::before {
+    font-size:0.8em;
+    width:0.8em;
+    height:0.8em;
   }
 }
