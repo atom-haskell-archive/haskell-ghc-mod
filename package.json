@@ -17,15 +17,13 @@
     "haskell-ide-backend": {
       "description": "Implements general haskell-ide-backend spec",
       "versions": {
-        "0.1.0": "provideIdeBackend_0_1_0",
-        "0.1.1": "provideIdeBackend_0_1_1",
-        "0.1.2": "provideIdeBackend"
+        "1.0.0": "provideIdeBackend"
       }
     },
     "haskell-completion-backend": {
       "description": "Implements general haskell-completion-backend spec",
       "versions": {
-        "0.1.0": "provideCompletionBackend_0_1_0"
+        "1.0.0": "provideCompletionBackend"
       }
     },
     "linter": {

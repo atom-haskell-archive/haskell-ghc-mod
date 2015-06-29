@@ -41,13 +41,7 @@ class IdeBackend
     type: String, type signature; undefined if no type signature
   ###
   getType: (buffer, range, callback) =>
-    switch @version
-      when '0.1.0'
-        if @isActive()
-          @process.getTypeInBuffer buffer, range, (o) ->
-            o.type ?= '???'
-            callback o
-      else @process.getTypeInBuffer buffer, range, callback if @isActive()
+    @process.getTypeInBuffer buffer, range, callback if @isActive()
 
   ###
   getInfo(buffer, range, callback)
@@ -59,13 +53,7 @@ class IdeBackend
     info: String, information; undefined if no information
   ###
   getInfo: (buffer, range, callback) =>
-    switch @version
-      when '0.1.0'
-        if @isActive()
-          @process.getInfoInBuffer buffer, range, (o) ->
-            o.info ?= 'Cannot show info'
-            callback o
-      else @process.getInfoInBuffer buffer, range, callback if @isActive()
+    @process.getInfoInBuffer buffer, range, callback if @isActive()
 
   ###
   checkBuffer(buffer, callback)

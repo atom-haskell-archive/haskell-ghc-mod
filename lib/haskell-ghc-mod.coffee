@@ -38,24 +38,14 @@ module.exports = HaskellGhcMod =
   deactivate: ->
     @process?.destroy()
     @process = null
-    @ideBackend_0_1_0 = null
-    @ideBackend_0_1_1 = null
     @ideBackend = null
     @completionBackend = null
-
-  provideIdeBackend_0_1_0: ->
-    @ideBackend_0_1_0 ?= new IdeBackend @process, version: '0.1.0'
-    @ideBackend_0_1_0
-
-  provideIdeBackend_0_1_1: ->
-    @ideBackend_0_1_1 ?= new IdeBackend @process, version: '0.1.1'
-    @ideBackend_0_1_1
 
   provideIdeBackend: ->
     @ideBackend ?= new IdeBackend @process
     @ideBackend
 
-  provideCompletionBackend_0_1_0: ->
+  provideCompletionBackend: ->
     @completionBackend ?= new CompletionBackend @process
     @completionBackend
 
