@@ -1,3 +1,9 @@
+## 0.7.12
+* Honor additional PATH in runLang and runFlag
+
+## 0.7.11
+* Add fallback child_process.execFile for ghc-mod commands
+
 ## 0.7.10
 * Initial support for literate Haskell
 

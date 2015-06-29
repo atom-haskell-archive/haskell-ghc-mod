@@ -114,11 +114,13 @@ class GhcModiProcess
 
   runLang: (callback) =>
     @queueCmd 'init',
+      options: Util.getProcessOptions()
       command: 'lang'
       callback: callback
 
   runFlag: (callback) =>
     @queueCmd 'init',
+      options: Util.getProcessOptions()
       command: 'flag'
       callback: callback
 
