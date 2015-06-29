@@ -1,3 +1,9 @@
+## 0.8.0
+* Optional support of AtomLinter for displaying messages (doesn't need ide-haskell installed)
+* Cache backends
+* Drop support for older provider versions
+* Provider versions bumped to 1.0.0
+
 ## 0.7.12
 * Honor additional PATH in runLang and runFlag
 
