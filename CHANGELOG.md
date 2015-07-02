@@ -1,3 +1,6 @@
+## 0.8.1
+* Update redirect commands to correspond with upstream updates
+
 ## 0.8.0
 * Optional support of AtomLinter for displaying messages (doesn't need ide-haskell installed)
 * Cache backends
