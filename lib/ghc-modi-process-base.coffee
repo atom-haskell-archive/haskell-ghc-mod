@@ -48,7 +48,7 @@ class GhcModiProcessBase
     else
       cmd = [command].concat args
     if text?
-      cmd = ['--file-map', uri].concat cmd
+      cmd = ['--map-file', uri].concat cmd
     debug "running #{modPath} #{cmd} with
           #{"options.#{k} = #{v}" for k, v of options}"
     process = new BufferedProcess
@@ -117,7 +117,7 @@ class GhcModiProcessBase
         line.replace /\0/g, '\n'
     if text?
       debug "Loading file text for ghc-modi"
-      process.stdin.write "load #{uri}\n#{text}\x04\n"
+      process.stdin.write "map-file #{uri}\n#{text}\x04\n"
       process.stdout.once 'data', (data) ->
         if "#{data}" isnt 'OK\n'
           debug "Failed to load file text for ghc-modi"
@@ -137,7 +137,7 @@ class GhcModiProcessBase
 
     if text?
       debug "Unloading file text from ghc-modi"
-      process.stdin.write "unload #{uri}\n"
+      process.stdin.write "unmap-file #{uri}\n"
 
   killProcess: =>
     return unless @processMap?

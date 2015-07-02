@@ -31,7 +31,7 @@ class GhcModiProcess
   constructor: ->
     new BufferedProcess
       command: atom.config.get('haskell-ghc-mod.ghcModPath')
-      args: ['--file-map', 'test', 'version']
+      args: ['--map-file', 'test', 'version']
       options: Util.getProcessOptions()
       exit: (code) =>
         if code != 0
