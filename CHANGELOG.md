@@ -1,3 +1,6 @@
+## 0.8.2
+* More verbose debugging output
+
 ## 0.8.1
 * Update redirect commands to correspond with upstream updates
 
