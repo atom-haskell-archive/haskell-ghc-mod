@@ -4,16 +4,22 @@ Temp = require('temp')
 FS = require('fs')
 
 module.exports = Util =
-  debug: (message) ->
+  debug: (messages...) ->
     if atom.config.get('haskell-ghc-mod.debug')
-      console.log "haskell-ghc-mod debug: #{message}"
+      console.log "haskell-ghc-mod debug:", messages...
+      console.trace "haskell-ghc-mod trace:"
 
   getRootDir: (buffer) ->
     [dir] = atom.project.getDirectories().filter (dir) ->
       dir.contains(buffer.getUri())
-    dir ? atom.project.getDirectories()[0] ? buffer.file?.getParent?() ? new Directory
+    res = dir ? atom.project.getDirectories()[0] ? buffer.file?.getParent?() ? new Directory
+    Util.debug "getRootDir path = #{res.getPath()}",
+      "atom.project.getDirectories()[0] = #{atom.project.getDirectories()[0]?.getPath?()}",
+      "buffer.file?.getParent?() = #{buffer.file?.getParent?()?.getPath?()}"
+    return res
 
   getProcessOptions: (rootPath) ->
+    Util.debug "getProcessOptions(#{rootPath})"
     env = {}
     for k, v of process.env
       env[k] = v
