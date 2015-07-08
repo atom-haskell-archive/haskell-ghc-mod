@@ -51,6 +51,8 @@ class CompletionBackend
       bufferInfo: @bufferMap.get buffer
     else
       @bufferMap.set buffer, bi = new BufferInfo(buffer)
+      bi.onDidDestroy =>
+        @bufferMap.delete buffer
       bufferInfo: bi
 
   getModuleMap: ({bufferInfo, rootDir}) =>
@@ -148,7 +150,6 @@ class CompletionBackend
   ###
   unregisterCompletionBuffer: (buffer) =>
     @bufferMap.get(buffer)?.destroy()
-    @bufferMap.delete buffer
 
   ###
   getCompletionsForSymbol(buffer,prefix,position)

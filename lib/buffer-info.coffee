@@ -14,10 +14,12 @@ module.exports=
         @destroy()
 
     destroy: =>
-      return unless @emitter?
-      @emitter.emit 'did-destroy'
-      @disposables.dispose()
+      return unless @buffer?
       @buffer = null
+      @disposables.dispose()
+      @disposables = null
+      @emitter.emit 'did-destroy'
+      @emitter = null
 
     onDidDestroy: (callback) =>
       unless @emitter?
