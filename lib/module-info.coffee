@@ -31,6 +31,8 @@ module.exports=
       @disposables = null
       @symbols = null
       @process = null
+      @name = ""
+      @emitter = null
 
     onDidDestroy: (callback) =>
       unless @emitter?
