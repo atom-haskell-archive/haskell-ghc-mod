@@ -1,3 +1,6 @@
+## 0.8.3
+* Cleaner destruction of ModuleInfo/BufferInfo. Can help with heisenbugs.
+
 ## 0.8.2
 * More verbose debugging output
 
