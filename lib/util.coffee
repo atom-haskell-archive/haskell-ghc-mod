@@ -12,7 +12,9 @@ module.exports = Util =
   getRootDir: (buffer) ->
     [dir] = atom.project.getDirectories().filter (dir) ->
       dir.contains(buffer.getUri())
-    res = dir ? atom.project.getDirectories()[0] ? buffer.file?.getParent?() ? new Directory
+    res = dir ? atom.project.getDirectories()[0]
+    unless res?.isDirectory?()
+      res = buffer.file?.getParent?() ? new Directory
     Util.debug "getRootDir path = #{res.getPath()}",
       "atom.project.getDirectories()[0] = #{atom.project.getDirectories()[0]?.getPath?()}",
       "buffer.file?.getParent?() = #{buffer.file?.getParent?()?.getPath?()}"
