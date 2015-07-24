@@ -1,3 +1,6 @@
+## 0.8.4
+* atom.project.getDirectories() can return file in some cases (#32)
+
 ## 0.8.3
 * Cleaner destruction of ModuleInfo/BufferInfo. Can help with heisenbugs.
 
