@@ -47,13 +47,15 @@ class CompletionBackend
       Promise.resolve []
 
   getBufferInfo: ({buffer}) =>
+    unless buffer?
+      throw new Error("Null buffer in getBufferInfo!")
     if @bufferMap.has buffer
-      bufferInfo: @bufferMap.get buffer
-    else
+      bi = @bufferMap.get buffer
+    unless bi?.buffer?
       @bufferMap.set buffer, bi = new BufferInfo(buffer)
-      bi.onDidDestroy =>
-        @bufferMap.delete buffer
-      bufferInfo: bi
+      # bi.onDidDestroy =>
+      #   @bufferMap.delete buffer
+    bufferInfo: bi
 
   getModuleMap: ({bufferInfo, rootDir}) =>
     unless bufferInfo? or rootDir?
