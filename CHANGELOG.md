@@ -1,3 +1,6 @@
+## 0.8.5
+* Attempt at fixing #36 (rely on garbage collector more in `getBufferInfo`)
+
 ## 0.8.4
 * atom.project.getDirectories() can return file in some cases (#32)
 
