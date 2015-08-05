@@ -1,3 +1,6 @@
+## 0.8.6
+* Attempt at fixing #31 (Atom returns `atom://config` as project directory)
+
 ## 0.8.5
 * Attempt at fixing #36 (rely on garbage collector more in `getBufferInfo`)
 
