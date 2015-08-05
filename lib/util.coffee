@@ -13,7 +13,7 @@ module.exports = Util =
     [dir] = atom.project.getDirectories().filter (dir) ->
       dir.contains(buffer.getUri())
     res = dir ? atom.project.getDirectories()[0]
-    if res.getPath() is 'atom://config'
+    if res?.getPath?() is 'atom://config'
       res = null
     unless res?.isDirectory?()
       res = buffer.file?.getParent?() ? new Directory
