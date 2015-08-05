@@ -1,3 +1,6 @@
+## 0.8.7
+* Hotfix #37 (res can be undefined)
+
 ## 0.8.6
 * Attempt at fixing #31 (Atom returns `atom://config` as project directory)
 
