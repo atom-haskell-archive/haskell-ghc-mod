@@ -63,7 +63,7 @@ class GhcModiProcessBase
         debug "#{modPath} ended with code #{code}"
         if code != 0
           atom.notifications.addError "Haskell-ghc-mod: #{modPath}
-              #{args.join ' '} failed with error code #{code}",
+              #{cmd.join ' '} failed with error code #{code}",
             detail: "#{err.join('\n')}"
             dismissable: true
           console.error err
@@ -79,7 +79,7 @@ class GhcModiProcessBase
       child = CP.execFile modPath, cmd, options, (cperror, stdout, stderr) ->
         if cperror?
           atom.notifications.addError "Haskell-ghc-mod: #{modPath}
-              #{args.join ' '} failed with error message #{cperror}",
+              #{cmd.join ' '} failed with error message #{cperror}",
             detail: "#{stdout}\n#{stderr}"
             dismissable: true
           callback []
