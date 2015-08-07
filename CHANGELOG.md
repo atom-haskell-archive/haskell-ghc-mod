@@ -1,3 +1,6 @@
+## 0.8.8
+* Fix ghc-mod args in error reporting
+
 ## 0.8.7
 * Hotfix #37 (res can be undefined)
 
