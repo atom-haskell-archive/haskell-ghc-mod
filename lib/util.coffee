@@ -16,7 +16,7 @@ module.exports = Util =
     if res?.getPath?() is 'atom://config'
       res = null
     unless res?.isDirectory?()
-      res = buffer.file?.getParent?() ? new Directory
+      res = buffer.file?.getParent?() ? new Directory ''
     Util.debug "getRootDir path = #{res.getPath()}",
       "atom.project.getDirectories()[0] = #{atom.project.getDirectories()[0]?.getPath?()}",
       "buffer.file?.getParent?() = #{buffer.file?.getParent?()?.getPath?()}"
