@@ -1,3 +1,6 @@
+## 0.8.10
+* Fix deactivation error
+
 ## 0.8.9
 * Fix #41 (undefined path in `new Directory` error on Windows)
 
