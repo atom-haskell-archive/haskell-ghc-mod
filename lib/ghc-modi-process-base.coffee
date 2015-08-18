@@ -32,7 +32,7 @@ class GhcModiProcessBase
       console.error 'Ghc-modi says:', data
     proc.on 'exit', (code) =>
       debug "ghc-modi for #{rootDir.getPath()} ended with #{code}"
-      @processMap.delete(rootDir)
+      @processMap?.delete(rootDir)
       @spawnProcess(rootDir, options) if code != 0
     @processMap.set rootDir,
       process: proc
