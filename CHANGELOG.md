@@ -1,3 +1,6 @@
+## 0.8.12
+* Fix pointWithTabs
+
 ## 0.8.11
 * Tweak ranges for tabs
 * Removed redirect-map ghc-mod version notification
