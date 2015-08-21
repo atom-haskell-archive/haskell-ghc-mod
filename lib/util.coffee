@@ -83,7 +83,7 @@ module.exports = Util =
         func opts
 
   pointWithTabs: (buffer, point, tabWidth = 8) ->
-    text = buffer.getTextInRange [point.row, 0], point
+    text = buffer.getTextInRange [[point.row, 0], point]
     numTabs = text.split('\t').length - 1
     new Point point.row, point.column + numTabs * (tabWidth - 1)
 
@@ -104,7 +104,6 @@ module.exports = Util =
           tabWidth
         else
           1
-    console.log col
     new Point point.row, col
 
   rangeWithTabsRev: (buffer, range, tabWidth = 8) ->
