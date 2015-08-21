@@ -81,3 +81,32 @@ module.exports = Util =
           callback res.map (line) ->
             line.split(info.path).join(uri)
         func opts
+
+  pointWithTabs: (buffer, point, tabWidth = 8) ->
+    text = buffer.getTextInRange [point.row, 0], point
+    numTabs = text.split('\t').length - 1
+    new Point point.row, point.column + numTabs * (tabWidth - 1)
+
+  rangeWithTabs: (buffer, range, tabWidth = 8) ->
+    new Range Util.pointWithTabs(buffer, range.start, tabWidth),
+      Util.pointWithTabs(buffer, range.end, tabWidth)
+
+  pointWithTabsRev: (buffer, point, tabWidth = 8) ->
+    text = buffer.lineForRow point.row
+    col = 0
+    n = point.column
+    for char in text
+      if n <= 0
+        break
+      col += 1
+      n -=
+        if char is '\t'
+          tabWidth
+        else
+          1
+    console.log col
+    new Point point.row, col
+
+  rangeWithTabsRev: (buffer, range, tabWidth = 8) ->
+    new Range Util.pointWithTabsRev(buffer, range.start, tabWidth),
+      Util.pointWithTabsRev(buffer, range.end, tabWidth)
