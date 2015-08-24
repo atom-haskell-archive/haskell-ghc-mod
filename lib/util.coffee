@@ -85,7 +85,9 @@ module.exports = Util =
   pointWithTabs: (buffer, point, tabWidth = 8) ->
     text = buffer.getTextInRange [[point.row, 0], point]
     numTabs = text.split('\t').length - 1
-    new Point point.row, point.column + numTabs * (tabWidth - 1)
+    res = new Point point.row, point.column + numTabs * (tabWidth - 1)
+    Point.assertValid res
+    res
 
   rangeWithTabs: (buffer, range, tabWidth = 8) ->
     new Range Util.pointWithTabs(buffer, range.start, tabWidth),
@@ -104,7 +106,9 @@ module.exports = Util =
           tabWidth
         else
           1
-    new Point point.row, col
+    res = new Point point.row, col
+    Point.assertValid res
+    res
 
   rangeWithTabsRev: (buffer, range, tabWidth = 8) ->
     new Range Util.pointWithTabsRev(buffer, range.start, tabWidth),
