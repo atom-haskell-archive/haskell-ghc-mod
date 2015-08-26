@@ -135,7 +135,6 @@ class GhcModiProcess
 
   getTypeInBuffer: (buffer, crange, callback) =>
     crange = Util.toRange crange
-    trange = Util.rangeWithTabs buffer, crange
 
     @queueCmd 'typeinfo',
       interactive: true
@@ -144,7 +143,7 @@ class GhcModiProcess
       command: 'type',
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
-      args: ["", trange.start.row + 1, trange.start.column + 1]
+      args: ["", crange.start.row + 1, crange.start.column + 1]
       callback: (lines) ->
         [range, type] = lines.reduce ((acc, line) ->
           return acc if acc != ''
@@ -152,7 +151,6 @@ class GhcModiProcess
           pos = tokens[0].trim().split(' ').map (i) -> i - 1
           type = tokens[1]
           myrange = new Range [pos[0], pos[1]], [pos[2], pos[3]]
-          myrange = Util.rangeWithTabsRev buffer, myrange
           return acc unless myrange.containsRange(crange)
           return [myrange, type]),
           ''
@@ -213,7 +211,7 @@ class GhcModiProcess
               'warning'
             else
               'error'
-          messPos = Util.pointWithTabsRev buffer, new Point(row - 1, col - 1)
+          messPos = new Point(row - 1, col - 1)
           results.push
             uri: (try dir.getFile(dir.relativize(file)).getPath()) ? file
             position: messPos

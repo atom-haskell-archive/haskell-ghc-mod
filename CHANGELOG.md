@@ -1,3 +1,6 @@
+## 0.8.14
+* Revert tab tweaks
+
 ## 0.8.13
 * Check point validity in pointWithTabs functions
 
