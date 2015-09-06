@@ -1,3 +1,6 @@
+## 0.9.0
+* Allow for hole completion refinement
+
 ## 0.8.14
 * Revert tab tweaks
 
