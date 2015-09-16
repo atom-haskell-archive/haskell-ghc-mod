@@ -104,7 +104,6 @@ class GhcModiProcessBase
     savedLines = []
     parseData = ->
       data = process.stdout.read()
-      console.log "#{data}"
       unless data?
         atom.notifications.addError "Haskell-ghc-mod: ghc-modi crashed
             on #{command} with message #{savedLines.join('\n')}",
