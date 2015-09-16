@@ -43,7 +43,7 @@ class GhcModiProcess
         it is probably missing or misconfigured",
         details: res.error
         dismissable: true
-    if res.code != 0
+    if res.status != 0
       # no redirect support
       @backend = new GhcModiProcessTemp
     else
