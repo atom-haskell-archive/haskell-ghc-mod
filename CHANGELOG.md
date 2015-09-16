@@ -1,3 +1,7 @@
+## 0.9.2
+* Fix ghc-mod revision detection
+* Cache buffer-rootDir mappings
+
 ## 0.9.1
 * Initial support for ghc-mod 5.4.0.0 (run ghc-mod in project root dir as reported by `ghc-mod root`)
 
