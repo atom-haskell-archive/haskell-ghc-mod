@@ -2,6 +2,7 @@
 GhcModiProcessBase = require './ghc-modi-process-base'
 {withTempFile} = require './util'
 {extname} = require('path')
+Util = require './util'
 
 module.exports =
 class GhcModiProcessTemp extends GhcModiProcessBase
@@ -21,3 +22,6 @@ class GhcModiProcessTemp extends GhcModiProcessBase
           {dir, options, command, uri, args, callback}
       else
         @runModiCmd {dir, options, command, uri, args, callback}
+
+  getRootDir: (buffer) ->
+    Util.getRootDir buffer

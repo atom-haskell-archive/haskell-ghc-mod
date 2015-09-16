@@ -60,7 +60,7 @@ class CompletionBackend
   getModuleMap: ({bufferInfo, rootDir}) =>
     unless bufferInfo? or rootDir?
       throw new Error("Neither bufferInfo nor rootDir specified")
-    rootDir ?= Util.getRootDir bufferInfo.buffer
+    rootDir ?= @process?.getRootDir?(bufferInfo.buffer) ? Util.getRootDir(bufferInfo.buffer)
     unless @dirMap.has(rootDir)
       @dirMap.set rootDir, mm = new Map
     else
@@ -222,13 +222,13 @@ class CompletionBackend
   ###
   getCompletionsForModule: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
-    rootDir = Util.getRootDir buffer
+    rootDir = @process?.getRootDir?(buffer) ? Util.getRootDir(buffer)
     m = @modListMap.get(rootDir)
     if m?
       Promise.resolve (FZ.filter m, prefix)
     else
       new Promise (resolve) =>
-        @process.runList rootDir.getPath(), (modules) =>
+        @process.runList buffer, (modules) =>
           @modListMap.set rootDir, modules
           #refresh every minute
           setTimeout (=> @modListMap.delete rootDir), 60 * 1000

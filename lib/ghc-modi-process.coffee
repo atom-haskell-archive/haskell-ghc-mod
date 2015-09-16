@@ -1,9 +1,10 @@
-{BufferedProcess, Range, Point, Emitter, CompositeDisposable} = require 'atom'
+{Range, Point, Emitter, CompositeDisposable} = require 'atom'
 Util = require './util'
 {extname} = require('path')
 
 GhcModiProcessTemp = require './ghc-modi-process-temp.coffee'
 GhcModiProcessRedirect = require './ghc-modi-process-redirect.coffee'
+CP = require 'child_process'
 
 module.exports =
 class GhcModiProcess
@@ -29,25 +30,27 @@ class GhcModiProcess
       queue: []
 
   constructor: ->
-    new BufferedProcess
-      command: atom.config.get('haskell-ghc-mod.ghcModPath')
-      args: ['--map-file', 'test', 'version']
-      options: Util.getProcessOptions()
-      exit: (code) =>
-        if code != 0
-          # no redirect support
-          @backend = new GhcModiProcessTemp
-        else
-          @backend = new GhcModiProcessRedirect
-        for k, v of @commandQueues
-          @runQueuedCommands k
-    .onWillThrowError (error, handle) ->
-      atom.notifications.addError "Haskell-ghc-mod: ghc-mod failed to launch
-        it is probably missing or misconfigured",
-        details: error
-        dismissable: true
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
+
+    opts = Util.getProcessOptions()
+    opts.timeout = 1000
+    res = CP.spawnSync atom.config.get('haskell-ghc-mod.ghcModPath'),
+      ['--map-file', 'test', 'version'],
+      opts
+    if res.error?
+      atom.notifications.addError "Haskell-ghc-mod: ghc-mod failed to launch
+        it is probably missing or misconfigured",
+        details: res.error
+        dismissable: true
+    if res.code != 0
+      # no redirect support
+      @backend = new GhcModiProcessTemp
+    else
+      @backend = new GhcModiProcessRedirect
+
+    for k, v of @commandQueues
+      @runQueuedCommands k
 
   killProcess: =>
     @backend.killProcess()
@@ -99,9 +102,10 @@ class GhcModiProcess
       @runQueuedCommands qn
     @backend.run cmdDesc
 
-  runList: (rootPath, callback) =>
+  runList: (buffer, callback) =>
+    rootDir = @backend.getRootDir(buffer)
     @queueCmd 'list',
-      options: Util.getProcessOptions(rootPath)
+      options: Util.getProcessOptions(rootDir.getPath())
       command: 'list'
       callback: callback
 
@@ -136,10 +140,12 @@ class GhcModiProcess
   getTypeInBuffer: (buffer, crange, callback) =>
     crange = Util.toRange crange
 
+    rootDir = @backend.getRootDir(buffer)
+
     @queueCmd 'typeinfo',
       interactive: true
-      dir: Util.getRootDir(buffer)
-      options: Util.getProcessOptions(Util.getRootDir(buffer).getPath())
+      dir: rootDir
+      options: Util.getProcessOptions(rootDir.getPath())
       command: 'type',
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
@@ -162,10 +168,12 @@ class GhcModiProcess
     crange = Util.toRange crange
     {symbol, range} = Util.getSymbolInRange(/[\w.']*/, buffer, crange)
 
+    rootDir = @backend.getRootDir(buffer)
+
     @queueCmd 'typeinfo',
       interactive: true
-      dir: Util.getRootDir(buffer)
-      options: Util.getProcessOptions(Util.getRootDir(buffer).getPath())
+      dir: rootDir
+      options: Util.getProcessOptions(rootDir.getPath())
       command: 'info'
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
@@ -179,17 +187,19 @@ class GhcModiProcess
     crange = Util.toRange crange
     {symbol} = Util.getSymbolInRange(/[\w']*/, buffer, crange)
 
+    rootDir = @backend.getRootDir(buffer)
+
     @queueCmd 'find',
-      options: Util.getProcessOptions(Util.getRootDir(buffer).getPath())
+      options: Util.getProcessOptions(rootDir.getPath())
       command: 'find'
       args: [symbol]
       callback: callback
 
   doCheckOrLintBuffer: (cmd, buffer, callback) =>
-    dir = Util.getRootDir(buffer)
+    rootDir = @backend.getRootDir(buffer)
     @queueCmd 'checklint',
-      dir: dir
-      options: Util.getProcessOptions(dir.getPath())
+      dir: rootDir
+      options: Util.getProcessOptions(rootDir.getPath())
       command: cmd
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
@@ -213,7 +223,7 @@ class GhcModiProcess
               'error'
           messPos = new Point(row - 1, col - 1)
           results.push
-            uri: (try dir.getFile(dir.relativize(file)).getPath()) ? file
+            uri: (try rootDir.getFile(rootDir.relativize(file)).getPath()) ? file
             position: messPos
             message: line.replace m, ''
             severity: severity
@@ -225,3 +235,6 @@ class GhcModiProcess
   doLintBuffer: (buffer, callback) =>
     return callback [] if extname(buffer.getUri()) is '.lhs'
     @doCheckOrLintBuffer "lint", buffer, callback
+
+  getRootDir: (buffer) ->
+    @backend?.getRootDir?(buffer) ? Util.getRootDir(buffer)
