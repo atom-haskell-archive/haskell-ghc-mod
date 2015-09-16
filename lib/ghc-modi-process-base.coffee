@@ -28,10 +28,11 @@ class GhcModiProcessBase
           #{"options.#{k} = #{v}" for k, v of options}"
     modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
     proc = CP.spawn(modiPath, [], options)
-    proc.on 'stderr', (data) ->
-      console.error 'Ghc-modi says:', data
+    proc.stdout.pause()
+    proc.stderr.pause()
     proc.on 'exit', (code) =>
       debug "ghc-modi for #{rootDir.getPath()} ended with #{code}"
+      console.error "Ghc-modi said: #{proc.stderr.read()}"
       @processMap?.delete(rootDir)
       @spawnProcess(rootDir, options) if code != 0
     @processMap.set rootDir,
@@ -100,33 +101,42 @@ class GhcModiProcessBase
     unless process
       debug "Failed. Falling back to ghc-mod"
       return @runModCmd {options, command, text, uri, args, callback}
-    parseData = (data) ->
-      debug "Got response from ghc-modi:\n#{data}"
-      lines = "#{data}".split("\n")
-      result = lines[lines.length - 2]
-      unless result.match(/^OK/)
+    savedLines = []
+    parseData = ->
+      data = process.stdout.read()
+      console.log "#{data}"
+      unless data?
         atom.notifications.addError "Haskell-ghc-mod: ghc-modi crashed
-            on #{command} with message #{result}",
+            on #{command} with message #{savedLines.join('\n')}",
           detail: dir.getPath()
           dismissable: true
-        console.error lines
+        console.error savedLines
         callback []
         return
-      lines = lines.slice(0, -2)
-      callback lines.map (line) ->
-        line.replace /\0/g, '\n'
+      data = data.toString()
+      debug "Got response from ghc-modi:\n#{data}"
+      lines = data.split("\n")
+      savedLines = savedLines.concat lines
+      result = lines[lines.length - 2]
+      if result.match(/^OK/)
+        lines = savedLines.slice(0, -2)
+        callback lines.map (line) ->
+          line.replace /\0/g, '\n'
+      else
+        process.stdout.once 'readable', parseData
     if text?
       debug "Loading file text for ghc-modi"
       process.stdin.write "map-file #{uri}\n#{text}\x04\n"
-      process.stdout.once 'data', (data) ->
-        if "#{data}" isnt 'OK\n'
+      process.stdout.once 'readable', ->
+        data = process.stdout.read().toString()
+        if data isnt 'OK\n'
           debug "Failed to load file text for ghc-modi"
           callback []
           return
         debug "Successfully loaded file text for ghc-modi"
-        process.stdout.once 'data', parseData
+        process.stdout.once 'readable', parseData
     else
-      process.stdout.once 'data', parseData
+      process.stdout.once 'readable', parseData
 
     if uri?
       cmd = [command, uri].concat args
