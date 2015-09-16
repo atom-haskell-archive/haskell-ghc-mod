@@ -1,3 +1,6 @@
+## 0.9.3
+* Use buffer for ghc-modi responses (#51)
+
 ## 0.9.2
 * Fix ghc-mod revision detection
 * Cache buffer-rootDir mappings
