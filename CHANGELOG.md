@@ -1,3 +1,6 @@
+## 0.9.4
+* Remove redundant debug output
+
 ## 0.9.3
 * Use buffer for ghc-modi responses (#51)
 
