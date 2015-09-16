@@ -5,6 +5,9 @@ CP = require 'child_process'
 
 module.exports =
 class GhcModiProcessRedirect extends GhcModiProcessBase
+  constructor: ->
+    super
+    @bufferDirMap = new WeakMap #TextBuffer -> Directory
 
   run: ({interactive, dir, options, command, text, uri, args, callback}) =>
     args ?= []
@@ -14,18 +17,23 @@ class GhcModiProcessRedirect extends GhcModiProcessBase
       @runModiCmd {dir, options, command, text, uri, args, callback}
 
   getRootDir: (buffer) ->
+    dir = @bufferDirMap.get buffer
+    if dir?
+      return dir
     dir = buffer.file?.getParent?() ? Util.getRootDirFallback buffer
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     options = Util.getProcessOptions(dir.getPath())
     options.timeout = 1000
     res = CP.spawnSync modPath, ['root'], options
-    if res.error?
+    dir = if res.error?
       console.warn "Encountered #{res.error} while getting project root dir"
       Util.getRootDir buffer
     else
-      dir = new Directory res.stdout.toString().slice(0, -1)
-      unless dir?.isDirectory?()
+      d = new Directory res.stdout.toString().slice(0, -1)
+      unless d?.isDirectory?()
         console.warn "Ghc-mod returned non-directory while getting project root dir"
         Util.getRootDir buffer
       else
-        dir
+        d
+    @bufferDirMap.set buffer, dir
+    dir

@@ -6,6 +6,9 @@ Util = require './util'
 
 module.exports =
 class GhcModiProcessTemp extends GhcModiProcessBase
+  constructor: ->
+    super
+    @bufferDirMap = new WeakMap #TextBuffer -> Directory
 
   run: ({interactive, dir, options, command, text, uri, args, callback}) =>
     args ?= []
@@ -24,4 +27,9 @@ class GhcModiProcessTemp extends GhcModiProcessBase
         @runModiCmd {dir, options, command, uri, args, callback}
 
   getRootDir: (buffer) ->
-    Util.getRootDir buffer
+    dir = @bufferDirMap.get buffer
+    if dir?
+      return dir
+    dir = Util.getRootDir buffer
+    @bufferDirMap.set buffer, dir
+    dir
