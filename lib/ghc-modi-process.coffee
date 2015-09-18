@@ -41,7 +41,7 @@ class GhcModiProcess
     if res.error?
       atom.notifications.addError "Haskell-ghc-mod: ghc-mod failed to launch
         it is probably missing or misconfigured",
-        details: res.error
+        detail: res.error
         dismissable: true
     if res.status != 0
       # no redirect support
