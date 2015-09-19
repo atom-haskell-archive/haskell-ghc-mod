@@ -6,6 +6,8 @@ GhcModiProcessTemp = require './ghc-modi-process-temp.coffee'
 GhcModiProcessRedirect = require './ghc-modi-process-redirect.coffee'
 CP = require 'child_process'
 
+{EOL} = require('os')
+
 module.exports =
 class GhcModiProcess
   backend: null
@@ -179,7 +181,7 @@ class GhcModiProcess
       text: buffer.getText() if buffer.isModified()
       args: ["", symbol]
       callback: (lines) ->
-        text = lines.join('\n')
+        text = lines.join(EOL)
         text = undefined if text is 'Cannot show info' or not text
         callback {range, info: text}
 

@@ -2,6 +2,7 @@
 GhcModiProcessBase = require './ghc-modi-process-base'
 Util = require './util'
 CP = require 'child_process'
+{EOL} = require('os')
 
 module.exports =
 class GhcModiProcessRedirect extends GhcModiProcessBase
@@ -29,7 +30,7 @@ class GhcModiProcessRedirect extends GhcModiProcessBase
       console.warn "Encountered #{res.error} while getting project root dir"
       Util.getRootDir buffer
     else
-      d = new Directory res.stdout.toString().slice(0, -1)
+      d = new Directory res.stdout.toString().split(EOL)[0]
       unless d?.isDirectory?()
         console.warn "Ghc-mod returned non-directory while getting project root dir"
         Util.getRootDir buffer

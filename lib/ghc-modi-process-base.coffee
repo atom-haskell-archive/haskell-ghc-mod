@@ -1,6 +1,7 @@
 {BufferedProcess, Emitter, CompositeDisposable} = require('atom')
 CP = require('child_process')
 {debug} = require './util'
+{EOL} = require('os')
 
 module.exports =
 class GhcModiProcessBase
@@ -62,42 +63,42 @@ class GhcModiProcessBase
       args: cmd
       options: options
       stdout: (data) ->
-        result = result.concat(data.split('\n'))
+        result = result.concat(data.split(EOL))
       stderr: (data) ->
-        err = err.concat(data.split('\n'))
+        err = err.concat(data.split(EOL))
       exit: (code) ->
         debug "#{modPath} ended with code #{code}"
         if code != 0
           atom.notifications.addError "Haskell-ghc-mod: #{modPath}
               #{cmd.join ' '} failed with error code #{code}",
-            detail: "#{err.join('\n')}"
+            detail: "#{err.join(EOL)}"
             dismissable: true
           console.error err
           callback []
         else
           callback result.slice(0, -1).map (line) ->
-            line.replace /\0/g, '\n'
+            line.replace /\0/g, EOL
     if text?
       debug "sending stdin text to #{modPath}"
-      process.process.stdin.write "#{text}\x04\n"
+      process.process.stdin.write "#{text}\x04#{EOL}"
     process.onWillThrowError ({error, handle}) ->
       console.warn "Using fallback child_process because of #{error.message}"
       child = CP.execFile modPath, cmd, options, (cperror, stdout, stderr) ->
         if cperror?
           atom.notifications.addError "Haskell-ghc-mod: #{modPath}
               #{cmd.join ' '} failed with error message #{cperror}",
-            detail: "#{stdout}\n#{stderr}"
+            detail: "#{stdout}#{EOL}#{stderr}"
             dismissable: true
           callback []
         else
-          callback stdout.split('\n').slice(0, -1).map (line) ->
-            line.replace /\0/g, '\n'
+          callback stdout.split(EOL).slice(0, -1).map (line) ->
+            line.replace /\0/g, EOL
       child.error = (error) ->
         console.error error
         callback []
       if text?
         debug "sending stdin text to #{modPath}"
-        child.stdin.write "#{text}\x04\n"
+        child.stdin.write "#{text}\x04EOL"
       handle()
 
   runModiCmd: ({dir, options, command, text, uri, args, callback, legacyInteractive}) =>
@@ -111,29 +112,29 @@ class GhcModiProcessBase
       data = process.stdout.read()
       unless data?
         atom.notifications.addError "Haskell-ghc-mod: ghc-modi crashed
-            on #{command} with message #{savedLines.join('\n')}",
+            on #{command} with message #{savedLines.join(EOL)}",
           detail: dir.getPath()
           dismissable: true
         console.error savedLines
         callback []
         return
       data = data.toString()
-      debug "Got response from ghc-modi:\n#{data}"
-      lines = data.split("\n")
+      debug "Got response from ghc-modi:#{EOL}#{data}"
+      lines = data.split(EOL)
       savedLines = savedLines.concat lines
       result = lines[lines.length - 2]
       if result.match(/^OK/)
         lines = savedLines.slice(0, -2)
         callback lines.map (line) ->
-          line.replace /\0/g, '\n'
+          line.replace /\0/g, EOL
       else
         process.stdout.once 'readable', parseData
     if text?
       debug "Loading file text for ghc-modi"
-      process.stdin.write "map-file #{uri}\n#{text}\x04\n"
+      process.stdin.write "map-file #{uri}#{EOL}#{text}\x04#{EOL}"
       process.stdout.once 'readable', ->
         data = process.stdout.read().toString()
-        if data isnt 'OK\n'
+        if data isnt "OK#{EOL}"
           debug "Failed to load file text for ghc-modi"
           callback []
           return
@@ -147,11 +148,11 @@ class GhcModiProcessBase
     else
       cmd = [command].concat args
     debug "Running ghc-modi command #{cmd}"
-    process.stdin.write cmd.join(' ').replace(/\r|\r?\n/g, ' ') + '\n'
+    process.stdin.write cmd.join(' ').replace(EOL, ' ') + EOL
 
     if text?
       debug "Unloading file text from ghc-modi"
-      process.stdin.write "unmap-file #{uri}\n"
+      process.stdin.write "unmap-file #{uri}#{EOL}"
 
   killProcess: =>
     return unless @processMap?
