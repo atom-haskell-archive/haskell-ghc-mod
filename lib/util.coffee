@@ -1,5 +1,5 @@
 {Range, Point, Directory} = require 'atom'
-{delimiter} = require 'path'
+{delimiter, sep} = require 'path'
 Temp = require('temp')
 FS = require('fs')
 
@@ -50,7 +50,7 @@ module.exports = Util =
     apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories')
           .concat process.env.PATH.split delimiter
     if rootPath
-      apd.unshift "#{rootPath}/.cabal-sandbox/bin"
+      apd.unshift "#{rootPath}#{sep}.cabal-sandbox#{sep}bin"
     env.PATH = "#{apd.join(delimiter)}"
     Util.debug "PATH = #{env.PATH}"
     options =
