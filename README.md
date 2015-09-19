@@ -19,17 +19,14 @@ Quick setup is as follows:
 
 ```
 $ cabal update
-$ cabal install ghc-mod hlint
+$ cabal install ghc-mod
 ```
 
 After this process finishes, you'll have `ghc-mod`, `ghc-modi` and `hlint` available in `$HOME/.cabal/bin/` directory.
 
-Please note, that there are some problems with `ghc-mod` and `cabal>=1.22`.
-Consult [ghc-mod wiki page][inconsistent-cabal] for more information.
+Please note, that for ghc>=7.10 and/or cabal>=1.22, you need ghc-mod>=5.3.0.0. Ghc-mod versions before 5.3.0.0 won't work.
 
 User interface is provided by [ide-haskell](https://atom.io/packages/ide-haskell)
-
-[inconsistent-cabal]: https://github.com/kazu-yamamoto/ghc-mod/wiki/InconsistentCabalVersions
 
 ## Installation
 
