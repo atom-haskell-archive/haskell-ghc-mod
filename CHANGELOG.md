@@ -1,3 +1,6 @@
+## 0.9.9
+* Use platform-specific pathsep
+
 ## 0.9.8
 * Use platform-specific EOL whenever possible
 
