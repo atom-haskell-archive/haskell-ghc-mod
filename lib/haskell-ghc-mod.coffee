@@ -14,8 +14,8 @@ module.exports = HaskellGhcMod =
       type: 'boolean'
       default: true
       description:
-        'Disable if experiencing problems. It is noticeably slower,
-         but can help with ghc-modi bugs'
+        'Using GHC Modi is suggested and noticeably faster,
+         but if experiencing problems, disabling it can sometimes help.'
     ghcModiPath:
       type: 'string'
       default: 'ghc-modi'
