@@ -1,3 +1,6 @@
+## 0.9.8
+* Use platform-specific EOL whenever possible
+
 ## 0.9.7
 * Use `ghc-mod legacy-interactive` with ghc-mod-5.4.0.0 and up
 
