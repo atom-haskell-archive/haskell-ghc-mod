@@ -23,7 +23,7 @@ class GhcModiProcessRedirect extends GhcModiProcessBase
     dir = buffer.file?.getParent?() ? Util.getRootDirFallback buffer
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     options = Util.getProcessOptions(dir.getPath())
-    options.timeout = 1000
+    options.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
     res = CP.spawnSync modPath, ['root'], options
     dir = if res.error?
       console.warn "Encountered #{res.error} while getting project root dir"

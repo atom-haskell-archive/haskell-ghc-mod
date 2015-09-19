@@ -34,7 +34,7 @@ class GhcModiProcess
     @disposables.add @emitter = new Emitter
 
     opts = Util.getProcessOptions()
-    opts.timeout = 1000
+    opts.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
     res = CP.spawnSync atom.config.get('haskell-ghc-mod.ghcModPath'),
       ['--map-file', 'test', 'version'],
       opts

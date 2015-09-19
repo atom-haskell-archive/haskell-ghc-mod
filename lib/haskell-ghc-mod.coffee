@@ -31,6 +31,13 @@ module.exports = HaskellGhcMod =
                     Separate with comma.'
       items:
         type: 'string'
+    syncTimeout:
+      type: 'integer'
+      description: 'Some ghc-mod operations need to be run in sync. This option
+                    sets timeout for such operations. Increase if getting
+                    ETIMEDOUT errors.'
+      default: 5000
+      minimum: 100
 
   activate: (state) ->
     @process = new GhcModiProcess
