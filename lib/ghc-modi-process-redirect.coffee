@@ -14,7 +14,7 @@ class GhcModiProcessRedirect extends GhcModiProcessBase
     unless interactive
       @runModCmd {options, command, text, uri, args, callback}
     else
-      @runModiCmd {dir, options, command, text, uri, args, callback}
+      @runModiCmd {dir, options, command, text, uri, args, callback, legacyInteractive: true}
 
   getRootDir: (buffer) ->
     dir = @bufferDirMap.get buffer

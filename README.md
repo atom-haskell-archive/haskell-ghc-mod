@@ -39,9 +39,11 @@ $ apm install language-haskell haskell-ghc-mod ide-haskell autocomplete-haskell
 
 ## Configuration
 
-Only configuration options you will likely need to set are `ghcModPath` and
-`ghcModiPath`. Both need to be set to full path to `ghc-mod` and `ghc-modi`
-programs respectively, if those are not in your PATH.
+Only configuration options you will likely need to set are `ghcModPath` and,
+for ghc-mod<5.4.0.0, `ghcModiPath`. Both need to be set to full path to `ghc-mod` and `ghc-modi` programs respectively, if those are not in your PATH.
+
+Note, that ghc-mod>=5.4.0.0 doesn't use `ghcModiPath` setting (instead running
+ghc-mod in interactive mode directly).
 
 There can be some problems with ghc-modi upstream, most notably, it does not
 work on paths with whitespace. If you experience problems, try disabling
