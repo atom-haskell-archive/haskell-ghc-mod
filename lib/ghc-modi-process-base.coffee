@@ -34,7 +34,6 @@ class GhcModiProcessBase
       else
         modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
         CP.spawn(modiPath, [], options)
-    proc.stdout.pause()
     proc.stderr.pause()
     proc.on 'exit', (code) =>
       debug "ghc-modi for #{rootDir.getPath()} ended with #{code}"
@@ -98,7 +97,7 @@ class GhcModiProcessBase
         callback []
       if text?
         debug "sending stdin text to #{modPath}"
-        child.stdin.write "#{text}\x04EOL"
+        child.stdin.write "#{text}\x04#{EOL}"
       handle()
 
   runModiCmd: ({dir, options, command, text, uri, args, callback, legacyInteractive}) =>
@@ -108,6 +107,10 @@ class GhcModiProcessBase
       debug "Failed. Falling back to ghc-mod"
       return @runModCmd {options, command, text, uri, args, callback}
     savedLines = []
+    process.stdout.pause()
+    callbackAndResume = (res) ->
+      process.stdout.resume()
+      callback res
     parseData = ->
       data = process.stdout.read()
       unless data?
@@ -116,7 +119,7 @@ class GhcModiProcessBase
           detail: dir.getPath()
           dismissable: true
         console.error savedLines
-        callback []
+        callbackAndResume []
         return
       data = data.toString()
       debug "Got response from ghc-modi:#{EOL}#{data}"
@@ -125,7 +128,7 @@ class GhcModiProcessBase
       result = lines[lines.length - 2]
       if result.match(/^OK/)
         lines = savedLines.slice(0, -2)
-        callback lines.map (line) ->
+        callbackAndResume lines.map (line) ->
           line.replace /\0/g, EOL
       else
         process.stdout.once 'readable', parseData
@@ -136,7 +139,7 @@ class GhcModiProcessBase
         data = process.stdout.read().toString()
         if data isnt "OK#{EOL}"
           debug "Failed to load file text for ghc-modi"
-          callback []
+          callbackAndResume []
           return
         debug "Successfully loaded file text for ghc-modi"
         process.stdout.once 'readable', parseData
