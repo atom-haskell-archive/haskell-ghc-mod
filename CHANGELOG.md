@@ -1,3 +1,6 @@
+## 0.9.7
+* Use `ghc-mod legacy-interactive` with ghc-mod-5.4.0.0 and up
+
 ## 0.9.6
 * Configurable sync launch timeout
 * Fixed confusing instructions about GHC Modi disabling (@wolftune)
