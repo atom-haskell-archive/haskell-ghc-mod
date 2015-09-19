@@ -1,3 +1,6 @@
+## 0.9.10
+* Only pause ghc-modi stdout on command, and resume after
+
 ## 0.9.9
 * Use platform-specific pathsep
 
