@@ -1,6 +1,10 @@
+## 0.9.6
+* Configurable sync launch timeout
+* Fixed confusing instructions about GHC Modi disabling (@wolftune)
+
 ## 0.9.5
 * Fix detail view on spawn error
-* Update suported versions
+* Update supported versions
 
 ## 0.9.4
 * Remove redundant debug output
