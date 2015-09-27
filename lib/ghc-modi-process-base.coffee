@@ -39,7 +39,7 @@ class GhcModiProcessBase
       debug "ghc-modi for #{rootDir.getPath()} ended with #{code}"
       console.error "Ghc-modi said: #{proc.stderr.read()}"
       @processMap?.delete(rootDir)
-      @spawnProcess(rootDir, options) if code != 0
+      @spawnProcess(rootDir, legacyInteractive, options) if code != 0
     @processMap.set rootDir,
       process: proc
       timer: timer
