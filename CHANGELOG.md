@@ -1,3 +1,6 @@
+## 0.9.11
+* Fix occasional EACCESS
+
 ## 0.9.10
 * Only pause ghc-modi stdout on command, and resume after
 
