@@ -1,3 +1,6 @@
+## 0.9.12
+* Update Linter styles
+
 ## 0.9.11
 * Fix occasional EACCESS
 
