@@ -2,6 +2,7 @@
 CP = require('child_process')
 {debug} = require './util'
 {EOL} = require('os')
+EOT = "#{EOL}\x04#{EOL}"
 
 module.exports =
 class GhcModiProcessBase
@@ -79,7 +80,7 @@ class GhcModiProcessBase
             line.replace /\0/g, EOL
     if text?
       debug "sending stdin text to #{modPath}"
-      process.process.stdin.write "#{text}\x04#{EOL}"
+      process.process.stdin.write "#{text}#{EOT}"
     process.onWillThrowError ({error, handle}) ->
       console.warn "Using fallback child_process because of #{error.message}"
       child = CP.execFile modPath, cmd, options, (cperror, stdout, stderr) ->
@@ -97,7 +98,7 @@ class GhcModiProcessBase
         callback []
       if text?
         debug "sending stdin text to #{modPath}"
-        child.stdin.write "#{text}\x04#{EOL}"
+        child.stdin.write "#{text}#{EOT}"
       handle()
 
   runModiCmd: ({dir, options, command, text, uri, args, callback, legacyInteractive}) =>
@@ -134,7 +135,7 @@ class GhcModiProcessBase
         process.stdout.once 'readable', parseData
     if text?
       debug "Loading file text for ghc-modi"
-      process.stdin.write "map-file #{uri}#{EOL}#{text}\x04#{EOL}"
+      process.stdin.write "map-file #{uri}#{EOL}#{text}#{EOT}"
       process.stdout.once 'readable', ->
         data = process.stdout.read().toString()
         if data isnt "OK#{EOL}"
