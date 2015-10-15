@@ -13,13 +13,15 @@
     "fs": "~0.0.2",
     "fuzzaldrin": "^2.1.0"
   },
-  "providedServices": {
-    "haskell-ide-backend": {
-      "description": "Implements general haskell-ide-backend spec",
+  "consumedServices": {
+    "ide-haskell-upi": {
+      "description": "Uses ide-haskell's unified pluggable interface",
       "versions": {
-        "1.0.0": "provideIdeBackend"
+        "0.0.1": "consumeUPI"
       }
-    },
+    }
+  },
+  "providedServices": {
     "haskell-completion-backend": {
       "description": "Implements general haskell-completion-backend spec",
       "versions": {

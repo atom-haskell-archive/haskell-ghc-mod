@@ -1,6 +1,7 @@
 GhcModiProcess = require './ghc-modi-process'
 IdeBackend = require './ide-backend'
 CompletionBackend = require './completion-backend'
+{CompositeDisposable} = require 'atom'
 
 module.exports = HaskellGhcMod =
   process: null
@@ -48,13 +49,113 @@ module.exports = HaskellGhcMod =
     @ideBackend = null
     @completionBackend = null
 
-  provideIdeBackend: ->
-    @ideBackend ?= new IdeBackend @process
-    @ideBackend
-
   provideCompletionBackend: ->
     @completionBackend ?= new CompletionBackend @process
     @completionBackend
+
+  consumeUPI: (upi) ->
+    console.log "consumeUPI"
+    disposables = new CompositeDisposable
+    disposables.add upi.disposables
+
+    disposables.add atom.commands.add 'atom-workspace',
+      'ide-haskell:shutdown-backend': =>
+        @process?.killProcess?()
+
+    disposables.add atom.commands.add 'atom-text-editor[data-grammar~="haskell"]',
+      'haskell-ghc-mod:check-file': ({target}) =>
+        editor = target.getModel()
+        @process.doCheckBuffer editor.getBuffer(), (res) ->
+          upi.setMessages res, ['error', 'warning']
+      'haskell-ghc-mod:lint-file': ({target}) =>
+        editor = target.getModel()
+        @process.doLintBuffer editor.getBuffer(), (res) ->
+          upi.setMessages res, ['lint']
+      'haskell-ghc-mod:show-type': ({target, detail}) =>
+        upi.showTooltip
+          editor: target.getModel()
+          detail: detail
+          tooltip: (crange) =>
+            console.log @
+            new Promise (resolve, reject) =>
+              @process.getTypeInBuffer target.getModel().getBuffer(), crange, ({range, type}) ->
+                if type?
+                  resolve {range, text: type}
+                else
+                  reject()
+      'haskell-ghc-mod:show-info': ({target, detail}) =>
+        upi.showTooltip
+          editor: target.getModel()
+          detail: detail
+          tooltip: (crange) =>
+            new Promise (resolve, reject) =>
+              @process.getInfoInBuffer target.getModel().getBuffer(), crange, ({range, info}) ->
+                if info?
+                  resolve {range, text: info}
+                else
+                  reject()
+      'haskell-ghc-mod:show-info-fallback-to-type': ({target, detail}) =>
+        upi.showTooltip
+          editor: target.getModel()
+          detail: detail
+          tooltip: (crange) =>
+            console.log @
+            new Promise (resolve, reject) =>
+              @process.getInfoInBuffer target.getModel().getBuffer(), crange, ({range, info}) ->
+                if info?
+                  resolve {range, text: info}
+                else
+                  @process.getTypeInBuffer target.getModel().getBuffer(), crange, ({range, type}) ->
+                    if type?
+                      resolve {range, text: type}
+                    else
+                      reject()
+      # 'haskell-ghc-mod:insert-type': ({target, detail}) =>
+      #   @pluginManager.insertType target.getModel(), getEventType(detail)
+      # 'haskell-ghc-mod:insert-import': ({target, detail}) =>
+      #   @pluginManager.insertImport target.getModel(), getEventType(detail)
+
+    upi.onShouldShowTooltip (editor, crange) =>
+      new Promise (resolve, reject) =>
+        @process.getTypeInBuffer editor.getBuffer(), crange, ({range, type}) ->
+          if type?
+            resolve {range, text: type}
+          else
+            reject()
+
+    disposables.add @process.onBackendActive ->
+      upi.setStatus status: 'progress'
+
+    disposables.add @process.onBackendIdle ->
+      upi.setStatus status: 'ready'
+
+    @process.onBackendActive
+
+    upi.setMenu 'Ghc-Mod', [
+      {label: 'Check', command: 'haskell-ghc-mod:check-file'}
+      {label: 'Lint', command: 'haskell-ghc-mod:lint-file'}
+      {label: 'Stop Backend', command: 'haskell-ghc-mod:shutdown-backend'}
+    ]
+
+    disposables.add atom.contextMenu.add
+      'atom-text-editor[data-grammar~="haskell"]': [
+        'label': 'Ghc-Mod'
+        'submenu': [
+            'label': 'Show Type'
+            'command': 'haskell-ghc-mod:show-type'
+          ,
+            'label': 'Show Info'
+            'command': 'haskell-ghc-mod:show-info'
+          ,
+            'label': 'Insert Type'
+            'command': 'haskell-ghc-mod:insert-type'
+          ,
+            'label': 'Insert Import'
+            'command': 'haskell-ghc-mod:insert-import'
+        ]
+      ]
+
+    disposables
 
   provideLinter: ->
     if atom.packages.getLoadedPackage('ide-haskell')
