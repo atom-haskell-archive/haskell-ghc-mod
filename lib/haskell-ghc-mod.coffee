@@ -40,6 +40,27 @@ module.exports = HaskellGhcMod =
       default: 5000
       minimum: 100
 
+    onSaveCheck:
+      type: "boolean"
+      default: true
+      description: "Check file on save"
+
+    onSaveLint:
+      type: "boolean"
+      default: true
+      description: "Lint file on save"
+
+    onMouseHoverShow:
+      type: 'string'
+      default: 'Info, fallback to Type'
+      enum: ['Nothing', 'Type', 'Info', 'Info, fallback to Type']
+
+    useLinter:
+      type: 'boolean'
+      default: false
+      description: 'Use Atom Linter service for check and lint
+                    (requires restart)'
+
   activate: (state) ->
     @process = new GhcModiProcess
 
@@ -81,7 +102,6 @@ module.exports = HaskellGhcMod =
           editor: target.getModel()
           detail: detail
           tooltip: (crange) =>
-            console.log @
             new Promise (resolve, reject) =>
               @process.getTypeInBuffer target.getModel().getBuffer(), crange, ({range, type}) ->
                 if type?
@@ -104,9 +124,8 @@ module.exports = HaskellGhcMod =
           editor: target.getModel()
           detail: detail
           tooltip: (crange) =>
-            console.log @
             new Promise (resolve, reject) =>
-              @process.getInfoInBuffer target.getModel().getBuffer(), crange, ({range, info}) ->
+              @process.getInfoInBuffer target.getModel().getBuffer(), crange, ({range, info}) =>
                 if info?
                   resolve {range, text: info}
                 else
@@ -122,11 +141,31 @@ module.exports = HaskellGhcMod =
 
     upi.onShouldShowTooltip (editor, crange) =>
       new Promise (resolve, reject) =>
-        @process.getTypeInBuffer editor.getBuffer(), crange, ({range, type}) ->
-          if type?
-            resolve {range, text: type}
+        switch atom.config.get('haskell-ghc-mod.onMouseHoverShow')
+          when 'Type'
+            @process.getTypeInBuffer editor.getBuffer(), crange, ({range, type}) ->
+              if type?
+                resolve {range, text: type}
+              else
+                reject()
+          when 'Info'
+            @process.getInfoInBuffer editor.getBuffer(), crange, ({range, info}) ->
+              if info?
+                resolve {range, text: info}
+              else
+                reject()
+          when 'Info, fallback to Type'
+            @process.getInfoInBuffer editor.getBuffer(), crange, ({range, info}) =>
+              if info?
+                resolve {range, text: info}
+              else
+                @process.getTypeInBuffer editor.getBuffer(), crange, ({range, type}) ->
+                  if type?
+                    resolve {range, text: type}
+                  else
+                    reject()
           else
-            reject()
+            reject {}
 
     disposables.add @process.onBackendActive ->
       upi.setStatus status: 'progress'
