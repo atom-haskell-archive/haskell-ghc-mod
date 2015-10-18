@@ -86,7 +86,7 @@ module.exports = HaskellGhcMod =
       lint: {}
 
     disposables.add atom.commands.add 'atom-workspace',
-      'ide-haskell:shutdown-backend': =>
+      'haskell-ghc-mod:shutdown-backend': =>
         @process?.killProcess?()
 
     disposables.add atom.commands.add 'atom-text-editor[data-grammar~="haskell"]',
