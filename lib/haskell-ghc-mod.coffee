@@ -227,24 +227,22 @@ module.exports = HaskellGhcMod =
     disposables
 
   provideLinter: ->
-    if atom.packages.getLoadedPackage('ide-haskell')
-      return unless atom.config.get 'ide-haskell.useLinter'
-    backend = HaskellGhcMod.provideIdeBackend()
+    return unless atom.config.get 'haskell-ghc-mod.useLinter'
     [
-      func: 'checkBuffer'
+      func: 'doCheckBuffer'
       lintOnFly: false
       scopes: ['source.haskell', 'text.tex.latex.haskell']
     ,
-      func: 'lintBuffer'
+      func: 'doLintBuffer'
       lintOnFly: true
       scopes: ['source.haskell']
-    ].map ({func, scopes, lintOnFly}) ->
+    ].map ({func, scopes, lintOnFly}) =>
       grammarScopes: scopes
       scope: 'file'
       lintOnFly: lintOnFly
-      lint: (textEditor) ->
-        return new Promise (resolve, reject) ->
-          backend[func] textEditor.getBuffer(), (res) ->
+      lint: (textEditor) =>
+        return new Promise (resolve, reject) =>
+          @process[func] textEditor.getBuffer(), (res) ->
             resolve res.map ({uri, position, message, severity}) ->
               [message, messages...] = message.split /^(?!\s)/gm
               {
