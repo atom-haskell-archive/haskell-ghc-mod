@@ -2,6 +2,7 @@ GhcModiProcess = require './ghc-modi-process'
 IdeBackend = require './ide-backend'
 CompletionBackend = require './completion-backend'
 {CompositeDisposable} = require 'atom'
+ImportListView = require './views/import-list-view'
 
 module.exports = HaskellGhcMod =
   process: null
@@ -146,8 +147,24 @@ module.exports = HaskellGhcMod =
               editor.setTextInBufferRange [pos, pos],
                 indent + symbol + " :: " + type + "\n"
               stop()
-      # 'haskell-ghc-mod:insert-import': ({target, detail}) =>
-      #   @pluginManager.insertImport target.getModel(), getEventType(detail)
+      'haskell-ghc-mod:insert-import': ({target, detail}) =>
+        editor = target.getModel()
+        buffer = editor.getBuffer()
+        upi.withEventRange {editor, detail}, ({crange}) =>
+          @process.findSymbolProvidersInBuffer buffer, crange, (lines) ->
+            new ImportListView
+              items: lines
+              onConfirmed: (mod) ->
+                pos = null
+                indent = null
+                buffer.backwardsScan /^(\s*)import/, ({match, range}) ->
+                  r = buffer.rangeForRow range.start.row
+                  pos = r.end
+                  indent = match[1]
+                pi = if pos?
+                  {pos, indent}
+                if pi?
+                  editor.setTextInBufferRange [pi.pos, pi.pos], "\n#{pi.indent}import #{mod}"
 
     upi.onShouldShowTooltip (editor, crange) =>
       new Promise (resolve, reject) =>

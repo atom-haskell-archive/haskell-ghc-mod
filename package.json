@@ -11,7 +11,8 @@
   "dependencies": {
     "temp": "^0.8.1",
     "fs": "~0.0.2",
-    "fuzzaldrin": "^2.1.0"
+    "fuzzaldrin": "^2.1.0",
+    "atom-space-pen-views": "^2.0.3"
   },
   "consumedServices": {
     "ide-haskell-upi": {
