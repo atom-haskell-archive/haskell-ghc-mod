@@ -134,8 +134,18 @@ module.exports = HaskellGhcMod =
                       resolve {range, text: type}
                     else
                       reject()
-      # 'haskell-ghc-mod:insert-type': ({target, detail}) =>
-      #   @pluginManager.insertType target.getModel(), getEventType(detail)
+      'haskell-ghc-mod:insert-type': ({target, detail}) =>
+        editor = target.getModel()
+        upi.withEventRange {editor, detail}, ({crange}) =>
+          @process.getTypeInBuffer editor.getBuffer(), crange, ({range, type}) ->
+            n = editor.indentationForBufferRow(range.start.row)
+            indent = ' '.repeat n * editor.getTabLength()
+            editor.scanInBufferRange /[\w'.]+/, range, ({matchText, stop}) ->
+              symbol = matchText
+              pos = [range.start.row, 0]
+              editor.setTextInBufferRange [pos, pos],
+                indent + symbol + " :: " + type + "\n"
+              stop()
       # 'haskell-ghc-mod:insert-import': ({target, detail}) =>
       #   @pluginManager.insertImport target.getModel(), getEventType(detail)
 
