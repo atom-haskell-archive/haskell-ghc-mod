@@ -1,5 +1,4 @@
 GhcModiProcess = require './ghc-modi-process'
-IdeBackend = require './ide-backend'
 CompletionBackend = require './completion-backend'
 {CompositeDisposable} = require 'atom'
 ImportListView = require './views/import-list-view'
@@ -68,7 +67,6 @@ module.exports = HaskellGhcMod =
   deactivate: ->
     @process?.destroy()
     @process = null
-    @ideBackend = null
     @completionBackend = null
 
   provideCompletionBackend: ->
