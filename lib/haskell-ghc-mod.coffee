@@ -58,6 +58,11 @@ module.exports = HaskellGhcMod =
     disposables = new CompositeDisposable
     disposables.add upi.disposables
 
+    upi.setMessageTypes
+      error: {}
+      warning: {}
+      lint: {}
+
     disposables.add atom.commands.add 'atom-workspace',
       'ide-haskell:shutdown-backend': =>
         @process?.killProcess?()
