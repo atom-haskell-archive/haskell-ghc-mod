@@ -167,6 +167,21 @@ module.exports = HaskellGhcMod =
           else
             reject {}
 
+    disposables.add upi.onDidSaveBuffer (buffer) =>
+      if atom.config.get('haskell-ghc-mod.onSaveCheck') and
+         atom.config.get('haskell-ghc-mod.onSaveLint')
+        upi.clearMessages ['error', 'warning', 'lint']
+        @process.doCheckBuffer buffer, (res) ->
+          upi.addMessages res, ['error', 'warning', 'lint']
+        @process.doLintBuffer buffer, (res) ->
+          upi.addMessages res, ['error', 'warning', 'lint']
+      else if atom.config.get('haskell-ghc-mod.onSaveCheck')
+        @process.doCheckBuffer buffer, (res) ->
+          upi.setMessages res, ['error', 'warning']
+      else if atom.config.get('haskell-ghc-mod.onSaveLint')
+        @process.doLintBuffer buffer, (res) ->
+          upi.setMessages res, ['lint']
+
     disposables.add @process.onBackendActive ->
       upi.setStatus status: 'progress'
 
