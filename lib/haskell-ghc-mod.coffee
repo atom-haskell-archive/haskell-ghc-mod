@@ -74,7 +74,6 @@ module.exports = HaskellGhcMod =
     @completionBackend
 
   consumeUPI: (upi) ->
-    console.log "consumeUPI"
     disposables = new CompositeDisposable
     disposables.add upi.disposables
 
@@ -87,6 +86,18 @@ module.exports = HaskellGhcMod =
       'haskell-ghc-mod:shutdown-backend': =>
         @process?.killProcess?()
 
+    typeTooltip = =>
+      @process.getTypeInBuffer(arguments...)
+      .then ({range, type}) -> {range, text: type}
+    infoTooltip = =>
+      @process.getInfoInBuffer(arguments...)
+      .then ({range, info}) -> {range, text: info}
+    infoTypeTooltip = ->
+      args = arguments
+      infoTooltip(args...)
+      .catch ->
+        typeTooltip(args...)
+
     disposables.add atom.commands.add 'atom-text-editor[data-grammar~="haskell"]',
       'haskell-ghc-mod:check-file': ({target}) =>
         editor = target.getModel()
@@ -96,47 +107,29 @@ module.exports = HaskellGhcMod =
         editor = target.getModel()
         @process.doLintBuffer editor.getBuffer(), (res) ->
           upi.setMessages res, ['lint']
-      'haskell-ghc-mod:show-type': ({target, detail}) =>
+      'haskell-ghc-mod:show-type': ({target, detail}) ->
         upi.showTooltip
           editor: target.getModel()
           detail: detail
-          tooltip: (crange) =>
-            new Promise (resolve, reject) =>
-              @process.getTypeInBuffer target.getModel().getBuffer(), crange, ({range, type}) ->
-                if type?
-                  resolve {range, text: type}
-                else
-                  reject()
-      'haskell-ghc-mod:show-info': ({target, detail}) =>
+          tooltip: (crange) ->
+            typeTooltip target.getModel().getBuffer(), crange
+      'haskell-ghc-mod:show-info': ({target, detail}) ->
         upi.showTooltip
           editor: target.getModel()
           detail: detail
-          tooltip: (crange) =>
-            new Promise (resolve, reject) =>
-              @process.getInfoInBuffer target.getModel().getBuffer(), crange, ({range, info}) ->
-                if info?
-                  resolve {range, text: info}
-                else
-                  reject()
-      'haskell-ghc-mod:show-info-fallback-to-type': ({target, detail}) =>
+          tooltip: (crange) ->
+            infoTooltip target.getModel().getBuffer(), crange
+      'haskell-ghc-mod:show-info-fallback-to-type': ({target, detail}) ->
         upi.showTooltip
           editor: target.getModel()
           detail: detail
-          tooltip: (crange) =>
-            new Promise (resolve, reject) =>
-              @process.getInfoInBuffer target.getModel().getBuffer(), crange, ({range, info}) =>
-                if info?
-                  resolve {range, text: info}
-                else
-                  @process.getTypeInBuffer target.getModel().getBuffer(), crange, ({range, type}) ->
-                    if type?
-                      resolve {range, text: type}
-                    else
-                      reject()
+          tooltip: (crange) ->
+            infoTypeTooltip target.getModel().getBuffer(), crange
       'haskell-ghc-mod:insert-type': ({target, detail}) =>
         editor = target.getModel()
         upi.withEventRange {editor, detail}, ({crange}) =>
-          @process.getTypeInBuffer editor.getBuffer(), crange, ({range, type}) ->
+          @process.getTypeInBuffer(editor.getBuffer(), crange)
+          .then ({range, type}) ->
             n = editor.indentationForBufferRow(range.start.row)
             indent = ' '.repeat n * editor.getTabLength()
             editor.scanInBufferRange /[\w'.]+/, range, ({matchText, stop}) ->
@@ -164,33 +157,16 @@ module.exports = HaskellGhcMod =
                 if pi?
                   editor.setTextInBufferRange [pi.pos, pi.pos], "\n#{pi.indent}import #{mod}"
 
-    upi.onShouldShowTooltip (editor, crange) =>
-      new Promise (resolve, reject) =>
-        switch atom.config.get('haskell-ghc-mod.onMouseHoverShow')
-          when 'Type'
-            @process.getTypeInBuffer editor.getBuffer(), crange, ({range, type}) ->
-              if type?
-                resolve {range, text: type}
-              else
-                reject()
-          when 'Info'
-            @process.getInfoInBuffer editor.getBuffer(), crange, ({range, info}) ->
-              if info?
-                resolve {range, text: info}
-              else
-                reject()
-          when 'Info, fallback to Type'
-            @process.getInfoInBuffer editor.getBuffer(), crange, ({range, info}) =>
-              if info?
-                resolve {range, text: info}
-              else
-                @process.getTypeInBuffer editor.getBuffer(), crange, ({range, type}) ->
-                  if type?
-                    resolve {range, text: type}
-                  else
-                    reject()
-          else
-            reject {}
+    upi.onShouldShowTooltip (editor, crange) ->
+      switch atom.config.get('haskell-ghc-mod.onMouseHoverShow')
+        when 'Type'
+          typeTooltip editor.getBuffer(), crange
+        when 'Info'
+          infoTooltip editor.getBuffer(), crange
+        when 'Info, fallback to Type'
+          infoTypeTooltip editor.getBuffer(), crange
+        else
+          Promise.reject ignore: true #this won't set backend status
 
     disposables.add upi.onDidSaveBuffer (buffer) =>
       if atom.config.get('haskell-ghc-mod.onSaveCheck') and

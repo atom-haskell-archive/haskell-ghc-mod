@@ -139,51 +139,57 @@ class GhcModiProcess
             symbolType = 'function'
           {name, typeSignature, symbolType}
 
-  getTypeInBuffer: (buffer, crange, callback) =>
+  getTypeInBuffer: (buffer, crange) =>
     crange = Util.toRange crange
 
     rootDir = @backend.getRootDir(buffer)
 
-    @queueCmd 'typeinfo',
-      interactive: true
-      dir: rootDir
-      options: Util.getProcessOptions(rootDir.getPath())
-      command: 'type',
-      uri: buffer.getUri()
-      text: buffer.getText() if buffer.isModified()
-      args: ["", crange.start.row + 1, crange.start.column + 1]
-      callback: (lines) ->
-        [range, type] = lines.reduce ((acc, line) ->
-          return acc if acc != ''
-          tokens = line.split '"'
-          pos = tokens[0].trim().split(' ').map (i) -> i - 1
-          type = tokens[1]
-          myrange = new Range [pos[0], pos[1]], [pos[2], pos[3]]
-          return acc unless myrange.containsRange(crange)
-          return [myrange, type]),
-          ''
-        type = undefined unless type
-        range = crange unless range
-        callback {range, type}
+    new Promise (resolve, reject) =>
+      @queueCmd 'typeinfo',
+        interactive: true
+        dir: rootDir
+        options: Util.getProcessOptions(rootDir.getPath())
+        command: 'type',
+        uri: buffer.getUri()
+        text: buffer.getText() if buffer.isModified()
+        args: ["", crange.start.row + 1, crange.start.column + 1]
+        callback: (lines) ->
+          [range, type] = lines.reduce ((acc, line) ->
+            return acc if acc != ''
+            tokens = line.split '"'
+            pos = tokens[0].trim().split(' ').map (i) -> i - 1
+            type = tokens[1]
+            myrange = new Range [pos[0], pos[1]], [pos[2], pos[3]]
+            return acc unless myrange.containsRange(crange)
+            return [myrange, type]),
+            ''
+          range = crange unless range
+          if type
+            resolve {range, type}
+          else
+            reject()
 
-  getInfoInBuffer: (buffer, crange, callback) =>
+  getInfoInBuffer: (buffer, crange) =>
     crange = Util.toRange crange
     {symbol, range} = Util.getSymbolInRange(/[\w.']*/, buffer, crange)
 
     rootDir = @backend.getRootDir(buffer)
 
-    @queueCmd 'typeinfo',
-      interactive: true
-      dir: rootDir
-      options: Util.getProcessOptions(rootDir.getPath())
-      command: 'info'
-      uri: buffer.getUri()
-      text: buffer.getText() if buffer.isModified()
-      args: ["", symbol]
-      callback: (lines) ->
-        text = lines.join(EOL)
-        text = undefined if text is 'Cannot show info' or not text
-        callback {range, info: text}
+    new Promise (resolve, reject) =>
+      @queueCmd 'typeinfo',
+        interactive: true
+        dir: rootDir
+        options: Util.getProcessOptions(rootDir.getPath())
+        command: 'info'
+        uri: buffer.getUri()
+        text: buffer.getText() if buffer.isModified()
+        args: ["", symbol]
+        callback: (lines) ->
+          info = lines.join(EOL)
+          if info is 'Cannot show info' or not info
+            reject()
+          else
+            resolve {range, info}
 
   findSymbolProvidersInBuffer: (buffer, crange, callback) =>
     crange = Util.toRange crange
