@@ -198,6 +198,7 @@ class GhcModiProcess
       callback: callback
 
   doCheckOrLintBuffer: (cmd, buffer, callback) =>
+    return callback [] if buffer.isEmpty()
     rootDir = @backend.getRootDir(buffer)
     @queueCmd 'checklint',
       dir: rootDir

@@ -73,6 +73,7 @@ module.exports = HaskellGhcMod =
       scope: 'file'
       lintOnFly: lintOnFly
       lint: (textEditor) ->
+        return if textEditor.isEmpty()
         return new Promise (resolve, reject) ->
           backend[func] textEditor.getBuffer(), (res) ->
             resolve res.map ({uri, position, message, severity}) ->
