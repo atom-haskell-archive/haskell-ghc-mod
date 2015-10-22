@@ -1,3 +1,6 @@
+## 0.9.14
+* Don't check/lint empty buffers
+
 ## 0.9.13
 * Change end-of-input sequence from `\EOT\n` to `\n\EOT\n`
 
