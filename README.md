@@ -81,13 +81,10 @@ You can edit Atom keybindings by opening 'Edit → Open Your Keymap'. Here is a 
 
 ## Service-hub API
 
-Since 0.6.0, haskell-ghc-mod provides two services, namely `haskell-ide-backend`
-and `haskell-completion-backend`.
+Since 1.0.0, haskell-ghc-mod provides `haskell-completion-backend` service.
 
-You can find description of these services in relevant source files:
+**NOTE**: Prior to 1.0.0, ide-backend service was provided. It has been scrapped in favor of ide-haskell's UPI.
 
-* [ide-backend.coffee][1]
-* [completion-backend.coffee][2]
+You can find description in [completion-backend.coffee][2]
 
-[1]:https://github.com/atom-haskell/haskell-ghc-mod/blob/master/lib/ide-backend.coffee
 [2]:https://github.com/atom-haskell/haskell-ghc-mod/blob/master/lib/completion-backend.coffee
