@@ -63,26 +63,28 @@ module.exports = HaskellGhcMod =
 
   activate: (state) ->
     @process = new GhcModiProcess
+    @disposables = null
 
   deactivate: ->
     @process?.destroy()
     @process = null
     @completionBackend = null
+    @disposables?.dispose?()
+    @disposables = null
 
   provideCompletionBackend: ->
     @completionBackend ?= new CompletionBackend @process
     @completionBackend
 
-  consumeUPI: (upi) ->
-    disposables = new CompositeDisposable
-    disposables.add upi.disposables
+  consumeUPI: (service) ->
+    upi = service.registerPlugin @disposables = new CompositeDisposable
 
     upi.setMessageTypes
       error: {}
       warning: {}
       lint: {}
 
-    disposables.add atom.commands.add 'atom-workspace',
+    @disposables.add atom.commands.add 'atom-workspace',
       'haskell-ghc-mod:shutdown-backend': =>
         @process?.killProcess?()
 
@@ -98,7 +100,7 @@ module.exports = HaskellGhcMod =
       .catch ->
         typeTooltip(args...)
 
-    disposables.add atom.commands.add 'atom-text-editor[data-grammar~="haskell"]',
+    @disposables.add atom.commands.add 'atom-text-editor[data-grammar~="haskell"]',
       'haskell-ghc-mod:check-file': ({target}) =>
         editor = target.getModel()
         @process.doCheckBuffer editor.getBuffer(), (res) ->
@@ -168,7 +170,7 @@ module.exports = HaskellGhcMod =
         else
           Promise.reject ignore: true #this won't set backend status
 
-    disposables.add upi.onDidSaveBuffer (buffer) =>
+    @disposables.add upi.onDidSaveBuffer (buffer) =>
       if atom.config.get('haskell-ghc-mod.onSaveCheck') and
          atom.config.get('haskell-ghc-mod.onSaveLint')
         upi.clearMessages ['error', 'warning', 'lint']
@@ -183,10 +185,10 @@ module.exports = HaskellGhcMod =
         @process.doLintBuffer buffer, (res) ->
           upi.setMessages res, ['lint']
 
-    disposables.add @process.onBackendActive ->
+    @disposables.add @process.onBackendActive ->
       upi.setStatus status: 'progress'
 
-    disposables.add @process.onBackendIdle ->
+    @disposables.add @process.onBackendIdle ->
       upi.setStatus status: 'ready'
 
     @process.onBackendActive
@@ -197,7 +199,7 @@ module.exports = HaskellGhcMod =
       {label: 'Stop Backend', command: 'haskell-ghc-mod:shutdown-backend'}
     ]
 
-    disposables.add atom.contextMenu.add
+    @disposables.add atom.contextMenu.add
       'atom-text-editor[data-grammar~="haskell"]': [
         'label': 'Ghc-Mod'
         'submenu': [
@@ -215,7 +217,7 @@ module.exports = HaskellGhcMod =
         ]
       ]
 
-    disposables
+    @disposables
 
   provideLinter: ->
     return unless atom.config.get 'haskell-ghc-mod.useLinter'
