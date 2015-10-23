@@ -140,8 +140,6 @@ class GhcModiProcess
           {name, typeSignature, symbolType}
 
   getTypeInBuffer: (buffer, crange) =>
-    crange = Util.toRange crange
-
     rootDir = @backend.getRootDir(buffer)
 
     new Promise (resolve, reject) =>
@@ -170,7 +168,6 @@ class GhcModiProcess
             reject()
 
   getInfoInBuffer: (buffer, crange) =>
-    crange = Util.toRange crange
     {symbol, range} = Util.getSymbolInRange(/[\w.']*/, buffer, crange)
 
     rootDir = @backend.getRootDir(buffer)
@@ -192,7 +189,6 @@ class GhcModiProcess
             resolve {range, info}
 
   findSymbolProvidersInBuffer: (buffer, crange, callback) =>
-    crange = Util.toRange crange
     {symbol} = Util.getSymbolInRange(/[\w']*/, buffer, crange)
 
     rootDir = @backend.getRootDir(buffer)

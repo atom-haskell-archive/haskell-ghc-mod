@@ -312,6 +312,7 @@ class CompletionBackend
   ###
   getCompletionsForHole: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
+    position = Range.fromPointWithDelta(position, 0, 0) if position?
     prefix = prefix.slice 1 if prefix.startsWith '_'
     @process.getTypeInBuffer(buffer, position).then ({type}) =>
       @getSymbolsForBuffer(buffer).then (symbols) ->
