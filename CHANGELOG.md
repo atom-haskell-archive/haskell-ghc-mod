@@ -1,3 +1,6 @@
+## 1.0.0
+* Migration to ide-haskell UPI interface
+
 ## 0.9.14
 * Don't check/lint empty buffers
 
