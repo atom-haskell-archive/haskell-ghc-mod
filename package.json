@@ -6,20 +6,23 @@
   "repository": "https://github.com/atom-haskell/haskell-ghc-mod",
   "license": "MIT",
   "engines": {
-    "atom": ">=0.174.0 <2.0.0"
+    "atom": ">=1.0.0 <2.0.0"
   },
   "dependencies": {
     "temp": "^0.8.1",
     "fs": "~0.0.2",
-    "fuzzaldrin": "^2.1.0"
+    "fuzzaldrin": "^2.1.0",
+    "atom-space-pen-views": "^2.0.3"
+  },
+  "consumedServices": {
+    "ide-haskell-upi": {
+      "description": "Uses ide-haskell's unified pluggable interface",
+      "versions": {
+        "0.0.1": "consumeUPI"
+      }
+    }
   },
   "providedServices": {
-    "haskell-ide-backend": {
-      "description": "Implements general haskell-ide-backend spec",
-      "versions": {
-        "1.0.0": "provideIdeBackend"
-      }
-    },
     "haskell-completion-backend": {
       "description": "Implements general haskell-completion-backend spec",
       "versions": {

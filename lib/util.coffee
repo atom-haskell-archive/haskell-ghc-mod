@@ -73,14 +73,6 @@ module.exports = Util =
     symbol: buffer.getTextInRange crange2
     range: crange2
 
-  toRange: (pointOrRange) ->
-    if pointOrRange instanceof Point
-      new Range pointOrRange, pointOrRange
-    else if pointOrRange instanceof Range
-      pointOrRange
-    else
-      throw new Error("Unknown point or range class #{pointOrRange}")
-
   withTempFile: (contents, func, suffix, opts) ->
     Temp.open
       prefix: 'haskell-ghc-mod',

@@ -59,15 +59,32 @@ environment variables specified in your user shell (in `.profile`, `.bashrc`,
 etc). You can copy `PATH` settings from your shell to
 `additionalPathDirectories`, if you'd like to run Atom in this way.
 
+## Keybindings
+
+Haskell-ghc-mod comes with little pre-specified keybindings, so you will need to specify your own, if you want those.
+
+You can edit Atom keybindings by opening 'Edit → Open Your Keymap'. Here is a template for all commands, provided by haskell-ghc-mod:
+
+```cson
+'atom-text-editor[data-grammar~="haskell"]':
+  '': 'haskell-ghc-mod:check-file'
+  '': 'haskell-ghc-mod:lint-file'
+  'ctrl-alt-t': 'haskell-ghc-mod:show-type' #this is an example binding
+  'ctrl-alt-i': 'haskell-ghc-mod:show-info' #this is an example binding
+  'ctrl-alt-T': 'haskell-ghc-mod:insert-type' #this is an example binding
+  '': 'haskell-ghc-mod:show-info-fallback-to-type'
+  '': 'haskell-ghc-mod:insert-import'
+
+'atom-workspace':
+  '': 'haskell-ghc-mod:shutdown-backend'
+```
+
 ## Service-hub API
 
-Since 0.6.0, haskell-ghc-mod provides two services, namely `haskell-ide-backend`
-and `haskell-completion-backend`.
+Since 1.0.0, haskell-ghc-mod provides `haskell-completion-backend` service.
 
-You can find description of these services in relevant source files:
+**NOTE**: Prior to 1.0.0, ide-backend service was provided. It has been scrapped in favor of ide-haskell's UPI.
 
-* [ide-backend.coffee][1]
-* [completion-backend.coffee][2]
+You can find description in [completion-backend.coffee][2]
 
-[1]:https://github.com/atom-haskell/haskell-ghc-mod/blob/master/lib/ide-backend.coffee
 [2]:https://github.com/atom-haskell/haskell-ghc-mod/blob/master/lib/completion-backend.coffee

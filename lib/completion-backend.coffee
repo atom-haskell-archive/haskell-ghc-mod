@@ -312,21 +312,19 @@ class CompletionBackend
   ###
   getCompletionsForHole: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
+    position = Range.fromPointWithDelta(position, 0, 0) if position?
     prefix = prefix.slice 1 if prefix.startsWith '_'
-    new Promise (resolve) =>
-      @process.getTypeInBuffer buffer, position, ({type}) =>
-        @getSymbolsForBuffer(buffer).then (symbols) ->
-          resolve (
-            ts = symbols.filter (s) ->
-              return false unless s.typeSignature?
-              tl = s.typeSignature.split(' -> ').slice(-1)[0]
-              return false if tl.match(/^[a-z]$/)
-              ts = tl.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&")
-              rx = RegExp ts.replace(/\b[a-z]\b/g, '.+'), ''
-              rx.test(type)
-            if prefix.length is 0
-              ts.sort (a, b) ->
-                FZ.score(b.typeSignature, type) - FZ.score(a.typeSignature, type)
-            else
-              FZ.filter ts, prefix, key: 'qname'
-            )
+    @process.getTypeInBuffer(buffer, position).then ({type}) =>
+      @getSymbolsForBuffer(buffer).then (symbols) ->
+        ts = symbols.filter (s) ->
+          return false unless s.typeSignature?
+          tl = s.typeSignature.split(' -> ').slice(-1)[0]
+          return false if tl.match(/^[a-z]$/)
+          ts = tl.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&")
+          rx = RegExp ts.replace(/\b[a-z]\b/g, '.+'), ''
+          rx.test(type)
+        if prefix.length is 0
+          ts.sort (a, b) ->
+            FZ.score(b.typeSignature, type) - FZ.score(a.typeSignature, type)
+        else
+          FZ.filter ts, prefix, key: 'qname'
