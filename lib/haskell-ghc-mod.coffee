@@ -50,6 +50,16 @@ module.exports = HaskellGhcMod =
       default: true
       description: "Lint file on save"
 
+    onChangeCheck:
+      type: "boolean"
+      default: false
+      description: "Check file on change"
+
+    onChangeLint:
+      type: "boolean"
+      default: false
+      description: "Lint file on change"
+
     onMouseHoverShow:
       type: 'string'
       default: 'Info, fallback to Type'
@@ -183,6 +193,21 @@ module.exports = HaskellGhcMod =
           upi.setMessages res, ['error', 'warning']
       else if atom.config.get('haskell-ghc-mod.onSaveLint')
         @process.doLintBuffer(buffer).then (res) ->
+          upi.setMessages res, ['lint']
+
+    @disposables.add upi.onDidStopChanging (buffer) =>
+      if atom.config.get('haskell-ghc-mod.onChangeCheck') and
+         atom.config.get('haskell-ghc-mod.onChangeLint')
+        upi.clearMessages ['error', 'warning', 'lint']
+        @process.doCheckBuffer(buffer, true).then (res) ->
+          upi.addMessages res, ['error', 'warning', 'lint']
+        @process.doLintBuffer(buffer, true).then (res) ->
+          upi.addMessages res, ['error', 'warning', 'lint']
+      else if atom.config.get('haskell-ghc-mod.onChangeCheck')
+        @process.doCheckBuffer(buffer, true).then (res) ->
+          upi.setMessages res, ['error', 'warning']
+      else if atom.config.get('haskell-ghc-mod.onChangeLint')
+        @process.doLintBuffer(buffer, true).then (res) ->
           upi.setMessages res, ['lint']
 
     @disposables.add @process.onBackendActive ->
