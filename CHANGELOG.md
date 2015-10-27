@@ -1,3 +1,10 @@
+## 1.1.0
+* Simplify check/lint subscription code
+* doCheckAndLint
+* On-change check/lint
+* Use promises for check/lint
+* Use promises for sequential ghc-modi communication
+
 ## 1.0.0
 * Migration to ide-haskell UPI interface
 
