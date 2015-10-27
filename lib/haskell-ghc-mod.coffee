@@ -103,11 +103,11 @@ module.exports = HaskellGhcMod =
     @disposables.add atom.commands.add 'atom-text-editor[data-grammar~="haskell"]',
       'haskell-ghc-mod:check-file': ({target}) =>
         editor = target.getModel()
-        @process.doCheckBuffer editor.getBuffer(), (res) ->
+        @process.doCheckBuffer(editor.getBuffer()).then (res) ->
           upi.setMessages res, ['error', 'warning']
       'haskell-ghc-mod:lint-file': ({target}) =>
         editor = target.getModel()
-        @process.doLintBuffer editor.getBuffer(), (res) ->
+        @process.doLintBuffer(editor.getBuffer()).then (res) ->
           upi.setMessages res, ['lint']
       'haskell-ghc-mod:show-type': ({target, detail}) ->
         upi.showTooltip
@@ -174,15 +174,15 @@ module.exports = HaskellGhcMod =
       if atom.config.get('haskell-ghc-mod.onSaveCheck') and
          atom.config.get('haskell-ghc-mod.onSaveLint')
         upi.clearMessages ['error', 'warning', 'lint']
-        @process.doCheckBuffer buffer, (res) ->
+        @process.doCheckBuffer(buffer).then (res) ->
           upi.addMessages res, ['error', 'warning', 'lint']
-        @process.doLintBuffer buffer, (res) ->
+        @process.doLintBuffer(buffer).then (res) ->
           upi.addMessages res, ['error', 'warning', 'lint']
       else if atom.config.get('haskell-ghc-mod.onSaveCheck')
-        @process.doCheckBuffer buffer, (res) ->
+        @process.doCheckBuffer(buffer).then (res) ->
           upi.setMessages res, ['error', 'warning']
       else if atom.config.get('haskell-ghc-mod.onSaveLint')
-        @process.doLintBuffer buffer, (res) ->
+        @process.doLintBuffer(buffer).then (res) ->
           upi.setMessages res, ['lint']
 
     @disposables.add @process.onBackendActive ->
@@ -235,18 +235,17 @@ module.exports = HaskellGhcMod =
       lintOnFly: lintOnFly
       lint: (textEditor) =>
         return if textEditor.isEmpty()
-        return new Promise (resolve, reject) =>
-          @process[func] textEditor.getBuffer(), (res) ->
-            resolve res.map ({uri, position, message, severity}) ->
-              [message, messages...] = message.split /^(?!\s)/gm
-              {
-                type: severity
-                text: message
+        @process[func](textEditor.getBuffer(), lintOnFly).then (res) ->
+          res.map ({uri, position, message, severity}) ->
+            [message, messages...] = message.split /^(?!\s)/gm
+            {
+              type: severity
+              text: message
+              multiline: true
+              filePath: uri
+              range: [position, position.translate [0, 1]]
+              trace: messages.map (text) ->
+                type: 'trace'
+                text: text
                 multiline: true
-                filePath: uri
-                range: [position, position.translate [0, 1]]
-                trace: messages.map (text) ->
-                  type: 'trace'
-                  text: text
-                  multiline: true
-              }
+            }

@@ -199,47 +199,49 @@ class GhcModiProcess
       args: [symbol]
       callback: callback
 
-  doCheckOrLintBuffer: (cmd, buffer, callback) =>
-    return callback [] if buffer.isEmpty()
+  doCheckOrLintBuffer: (cmd, buffer, fast) =>
+    return Promise.resolve [] if buffer.isEmpty()
     rootDir = @backend.getRootDir(buffer)
-    @queueCmd 'checklint',
-      dir: rootDir
-      options: Util.getProcessOptions(rootDir.getPath())
-      command: cmd
-      uri: buffer.getUri()
-      text: buffer.getText() if buffer.isModified()
-      callback: (lines) ->
-        results = []
-        lines.forEach (line) ->
-          match =
-            line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
-          unless match?
-            console.log("Ghc-Mod says: #{line}")
-            line = "#{buffer.getUri()}:0:0:Error: #{line}"
-            match=
+    new Promise (resolve, reject) =>
+      @queueCmd 'checklint',
+        interactive: fast
+        dir: rootDir
+        options: Util.getProcessOptions(rootDir.getPath())
+        command: cmd
+        uri: buffer.getUri()
+        text: buffer.getText() if buffer.isModified()
+        callback: (lines) ->
+          results = []
+          lines.forEach (line) ->
+            match =
               line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
-          [m, file, row, col, warning] = match
-          severity =
-            if cmd == 'lint'
-              'lint'
-            else if warning == 'Warning'
-              'warning'
-            else
-              'error'
-          messPos = new Point(row - 1, col - 1)
-          results.push
-            uri: (try rootDir.getFile(rootDir.relativize(file)).getPath()) ? file
-            position: messPos
-            message: line.replace m, ''
-            severity: severity
-        callback results
+            unless match?
+              console.log("Ghc-Mod says: #{line}")
+              line = "#{buffer.getUri()}:0:0:Error: #{line}"
+              match=
+                line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
+            [m, file, row, col, warning] = match
+            severity =
+              if cmd == 'lint'
+                'lint'
+              else if warning == 'Warning'
+                'warning'
+              else
+                'error'
+            messPos = new Point(row - 1, col - 1)
+            results.push
+              uri: (try rootDir.getFile(rootDir.relativize(file)).getPath()) ? file
+              position: messPos
+              message: line.replace m, ''
+              severity: severity
+          resolve results
 
-  doCheckBuffer: (buffer, callback) =>
-    @doCheckOrLintBuffer "check", buffer, callback
+  doCheckBuffer: (buffer, fast) =>
+    @doCheckOrLintBuffer "check", buffer, fast
 
-  doLintBuffer: (buffer, callback) =>
-    return callback [] if extname(buffer.getUri()) is '.lhs'
-    @doCheckOrLintBuffer "lint", buffer, callback
+  doLintBuffer: (buffer, fast) =>
+    return Promise.resolve [] if extname(buffer.getUri()) is '.lhs'
+    @doCheckOrLintBuffer "lint", buffer, fast
 
   getRootDir: (buffer) ->
     @backend?.getRootDir?(buffer) ? Util.getRootDir(buffer)
