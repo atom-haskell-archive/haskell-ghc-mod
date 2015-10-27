@@ -243,5 +243,10 @@ class GhcModiProcess
     return Promise.resolve [] if extname(buffer.getUri()) is '.lhs'
     @doCheckOrLintBuffer "lint", buffer, fast
 
+  doCheckAndLint: (buffer, fast) =>
+    @doCheckBuffer(buffer, fast).then (resCheck) =>
+      @doLintBuffer(buffer, fast).then (resLint) ->
+        return resCheck.concat resLint
+
   getRootDir: (buffer) ->
     @backend?.getRootDir?(buffer) ? Util.getRootDir(buffer)
