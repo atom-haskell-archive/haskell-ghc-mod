@@ -180,35 +180,24 @@ module.exports = HaskellGhcMod =
         else
           Promise.reject ignore: true #this won't set backend status
 
-    @disposables.add upi.onDidSaveBuffer (buffer) =>
-      if atom.config.get('haskell-ghc-mod.onSaveCheck') and
-         atom.config.get('haskell-ghc-mod.onSaveLint')
-        upi.clearMessages ['error', 'warning', 'lint']
-        @process.doCheckBuffer(buffer).then (res) ->
-          upi.addMessages res, ['error', 'warning', 'lint']
-        @process.doLintBuffer(buffer).then (res) ->
-          upi.addMessages res, ['error', 'warning', 'lint']
-      else if atom.config.get('haskell-ghc-mod.onSaveCheck')
-        @process.doCheckBuffer(buffer).then (res) ->
+    checkLint = (buffer, opt, fast) =>
+      if atom.config.get("haskell-ghc-mod.on#{opt}Check") and
+         atom.config.get("haskell-ghc-mod.on#{opt}Lint")
+        @process.doCheckAndLint(buffer, fast).then (res) ->
+          upi.setMessages res, ['error', 'warning', 'lint']
+      else if atom.config.get("haskell-ghc-mod.on#{opt}Check")
+        @process.doCheckBuffer(buffer, fast).then (res) ->
           upi.setMessages res, ['error', 'warning']
-      else if atom.config.get('haskell-ghc-mod.onSaveLint')
-        @process.doLintBuffer(buffer).then (res) ->
+      else if atom.config.get("haskell-ghc-mod.on#{opt}Lint")
+        @process.doLintBuffer(buffer, fast).then (res) ->
           upi.setMessages res, ['lint']
 
-    @disposables.add upi.onDidStopChanging (buffer) =>
-      if atom.config.get('haskell-ghc-mod.onChangeCheck') and
-         atom.config.get('haskell-ghc-mod.onChangeLint')
-        upi.clearMessages ['error', 'warning', 'lint']
-        @process.doCheckBuffer(buffer, true).then (res) ->
-          upi.addMessages res, ['error', 'warning', 'lint']
-        @process.doLintBuffer(buffer, true).then (res) ->
-          upi.addMessages res, ['error', 'warning', 'lint']
-      else if atom.config.get('haskell-ghc-mod.onChangeCheck')
-        @process.doCheckBuffer(buffer, true).then (res) ->
-          upi.setMessages res, ['error', 'warning']
-      else if atom.config.get('haskell-ghc-mod.onChangeLint')
-        @process.doLintBuffer(buffer, true).then (res) ->
-          upi.setMessages res, ['lint']
+    @disposables.add upi.onDidSaveBuffer (buffer) ->
+      checkLint buffer, 'Save'
+
+    @disposables.add upi.onDidStopChanging (buffer) ->
+      checkLint buffer, 'Change', true
+
 
     @disposables.add @process.onBackendActive ->
       upi.setStatus status: 'progress'
