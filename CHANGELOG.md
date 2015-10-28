@@ -1,3 +1,6 @@
+## 1.1.1
+* Fix #61
+
 ## 1.1.0
 * Simplify check/lint subscription code
 * doCheckAndLint
