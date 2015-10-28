@@ -107,7 +107,6 @@ class GhcModiProcessBase
     unless process
       debug "Failed. Falling back to ghc-mod"
       return @runModCmd {options, command, text, uri, args, callback}
-    savedLines = []
     process.stdout.pause()
     Promise.prototype.finally = (callback) -> @then(callback, callback)
     Promise.resolve().then ->
@@ -127,6 +126,7 @@ class GhcModiProcessBase
         Promise.resolve()
     .then ->
       new Promise (resolve, reject) ->
+        savedLines = []
         parseData = ->
           data = process.stdout.read()
           unless data?
@@ -169,7 +169,7 @@ class GhcModiProcessBase
               return reject()
           process.stdin.write "unmap-file #{uri}#{EOL}"
       else
-        Promise.resolve()
+        Promise.resolve(res)
     .finally (res) ->
       process.stdout.resume()
       callback res ? []
