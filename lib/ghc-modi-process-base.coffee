@@ -108,19 +108,18 @@ class GhcModiProcessBase
       debug "Failed. Falling back to ghc-mod"
       return @runModCmd {options, command, text, uri, args, callback}
     process.stdout.pause()
-    Promise.prototype.finally = (callback) -> @then(callback, callback)
     Promise.resolve().then ->
       if text?
         debug "Loading file text for ghc-modi"
         new Promise (resolve, reject) ->
           process.stdout.once 'readable', ->
-            data = process.stdout.read().toString()
+            data = process.stdout.read()?.toString?()
             if data is "OK#{EOL}"
               debug "Successfully loaded file text for ghc-modi"
               return resolve()
             else
               debug "Failed to load file text for ghc-modi: #{data}"
-              return reject()
+              return reject "Failed to load file text for ghc-modi: #{data}"
           process.stdin.write "map-file #{uri}#{EOL}#{text}#{EOT}"
       else
         Promise.resolve()
@@ -128,23 +127,19 @@ class GhcModiProcessBase
       new Promise (resolve, reject) ->
         savedLines = []
         parseData = ->
-          data = process.stdout.read()
+          data = process.stdout.read()?.toString?()
           unless data?
-            atom.notifications.addError "Haskell-ghc-mod: ghc-modi crashed
-                on #{command} with message #{savedLines.join(EOL)}",
-              detail: dir.getPath()
-              dismissable: true
             console.error savedLines
-            reject()
-            return
-          data = data.toString()
+            return reject "Haskell-ghc-mod: ghc-modi crashed on
+              #{command} with message #{savedLines.join(EOL)}
+              in #{dir.getPath()}"
           debug "Got response from ghc-modi:#{EOL}#{data}"
           lines = data.split(EOL)
           savedLines = savedLines.concat lines
           result = lines[lines.length - 2]
           if result.match(/^OK/)
             lines = savedLines.slice(0, -2)
-            resolve lines.map (line) ->
+            return resolve lines.map (line) ->
               line.replace /\0/g, EOL
           else
             process.stdout.once 'readable', parseData
@@ -155,26 +150,31 @@ class GhcModiProcessBase
           cmd = [command].concat args
         debug "Running ghc-modi command #{cmd}"
         process.stdin.write cmd.join(' ').replace(EOL, ' ') + EOL
-    .finally (res) ->
+    .then (res) ->
       if text?
         new Promise (resolve, reject) ->
           debug "Unloading file text from ghc-modi"
           process.stdout.once 'readable', ->
-            data = process.stdout.read().toString()
+            data = process.stdout.read()?.toString?()
             if data is "OK#{EOL}"
               debug "Successfully unloaded file text for ghc-modi"
               return resolve(res)
             else
               debug "Failed to unload file text for ghc-modi: #{data}"
-              return reject()
+              return reject "Failed to unload file text for ghc-modi: #{data}"
           process.stdin.write "unmap-file #{uri}#{EOL}"
       else
         Promise.resolve(res)
-    .finally (res) ->
+    .then (res) ->
       process.stdout.resume()
       callback res ? []
     .catch (err) ->
-      console.error 'Looks like ghc-modi crahsed', err
+      try
+        process.stdout.resume()
+        process.stdin.write cmd.join(' ').replace(EOL, ' ') + EOL
+      atom.notifications.addError 'Looks like ghc-modi crahsed',
+        detail: "#{err}"
+        dismissable: true
       callback []
 
   killProcess: =>
