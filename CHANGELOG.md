@@ -1,3 +1,6 @@
+## 1.1.2
+* More careful ghc-modi error handling
+
 ## 1.1.1
 * Fix #61
 
