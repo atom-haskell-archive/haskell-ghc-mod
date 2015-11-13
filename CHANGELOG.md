@@ -1,3 +1,7 @@
+## 1.1.3
+* Break endless cycle in getRootDir on undefined dir
+* Use getRootDir with fallback
+
 ## 1.1.2
 * More careful ghc-modi error handling
 
