@@ -105,7 +105,7 @@ class GhcModiProcess
     @backend.run cmdDesc
 
   runList: (buffer, callback) =>
-    rootDir = @backend.getRootDir(buffer)
+    rootDir = @getRootDir(buffer)
     @queueCmd 'list',
       options: Util.getProcessOptions(rootDir.getPath())
       command: 'list'
@@ -140,7 +140,7 @@ class GhcModiProcess
           {name, typeSignature, symbolType}
 
   getTypeInBuffer: (buffer, crange) =>
-    rootDir = @backend.getRootDir(buffer)
+    rootDir = @getRootDir(buffer)
 
     new Promise (resolve, reject) =>
       @queueCmd 'typeinfo',
@@ -170,7 +170,7 @@ class GhcModiProcess
   getInfoInBuffer: (buffer, crange) =>
     {symbol, range} = Util.getSymbolInRange(/[\w.']*/, buffer, crange)
 
-    rootDir = @backend.getRootDir(buffer)
+    rootDir = @getRootDir(buffer)
 
     new Promise (resolve, reject) =>
       @queueCmd 'typeinfo',
@@ -191,7 +191,7 @@ class GhcModiProcess
   findSymbolProvidersInBuffer: (buffer, crange, callback) =>
     {symbol} = Util.getSymbolInRange(/[\w']*/, buffer, crange)
 
-    rootDir = @backend.getRootDir(buffer)
+    rootDir = @getRootDir(buffer)
 
     @queueCmd 'find',
       options: Util.getProcessOptions(rootDir.getPath())
@@ -201,7 +201,7 @@ class GhcModiProcess
 
   doCheckOrLintBuffer: (cmd, buffer, fast) =>
     return Promise.resolve [] if buffer.isEmpty()
-    rootDir = @backend.getRootDir(buffer)
+    rootDir = @getRootDir(buffer)
     new Promise (resolve, reject) =>
       @queueCmd 'checklint',
         interactive: fast
