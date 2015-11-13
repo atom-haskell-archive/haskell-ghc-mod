@@ -30,10 +30,10 @@ module.exports = Util =
       d.getEntriesSync().some (file) ->
         file.isFile() and (file.getBaseName() is 'cabal.sandbox.config')
     findProjectRoot = (d, check) ->
-      until d?.isRoot?() or check d
+      until d?.isRoot?() or not d? or check d
         d = d?.getParent?()
       d if check d
-    dir = buffer.file?.getParent?()
+    dir = buffer.file?.getParent?() ? Util.getRootDirFallback buffer
     dir = findProjectRoot(dir, dirHasCabalFile) ? findProjectRoot(dir, dirHasSandboxFile)
     unless dir?.isDirectory?()
       dir = Util.getRootDirFallback buffer
