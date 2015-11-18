@@ -50,7 +50,9 @@ module.exports = Util =
     apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories')
           .concat process.env.PATH.split delimiter
     if rootPath
-      apd.unshift "#{rootPath}#{sep}.cabal-sandbox#{sep}bin"
+      sandbox = "#{rootPath}#{sep}.cabal-sandbox#{sep}bin"
+      try if FS.statSync(sandbox).isDirectory()
+        apd.unshift sandbox
     env.PATH = "#{apd.join(delimiter)}"
     Util.debug "PATH = #{env.PATH}"
     options =
