@@ -1,3 +1,6 @@
+## 1.1.5
+* More clear description of additionalPathDirs opt.
+
 ## 1.1.4
 * Check for existence of sandbox bindir
 
