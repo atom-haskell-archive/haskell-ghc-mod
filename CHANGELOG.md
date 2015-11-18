@@ -1,3 +1,6 @@
+## 1.1.4
+* Check for existence of sandbox bindir
+
 ## 1.1.3
 * Break endless cycle in getRootDir on undefined dir
 * Use getRootDir with fallback
