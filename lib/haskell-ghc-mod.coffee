@@ -28,7 +28,8 @@ module.exports = HaskellGhcMod =
       type: 'array'
       default: []
       description: 'Add this directories to PATH when invoking ghc-mod.
-                    You might want to add path to ghc here.
+                    You might want to add path to a directory with
+                    ghc, cabal, etc binaries here.
                     Separate with comma.'
       items:
         type: 'string'
