@@ -172,7 +172,7 @@ class GhcModiProcessBase
       try
         process.stdout.resume()
         process.stdin.write cmd.join(' ').replace(EOL, ' ') + EOL
-      atom.notifications.addError 'Looks like ghc-modi crahsed',
+      atom.notifications.addError 'Looks like ghc-modi crashed',
         detail: "#{err}"
         dismissable: true
       callback []
