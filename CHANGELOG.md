@@ -1,3 +1,6 @@
+## 1.1.6
+* Work around ghc-mod stack root bug
+
 ## 1.1.5
 * More clear description of additionalPathDirs opt.
 
