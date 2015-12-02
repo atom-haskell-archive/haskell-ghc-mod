@@ -1,5 +1,8 @@
 ## 1.1.6
+* Merge branch 'master' of github.com:atom-haskell/haskell-ghc-mod
 * Work around ghc-mod stack root bug
+* Merge pull request #69 from Roughsketch/master
+* Fixed typo
 
 ## 1.1.5
 * More clear description of additionalPathDirs opt.
