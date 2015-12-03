@@ -1,3 +1,8 @@
+## 1.1.8
+* Use promise-queues for more robust command queues
+* Bounded parallel auto-completion initialization
+* Fix backend stop command
+
 ## 1.1.7
 * Queue interactive commands
 
