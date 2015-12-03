@@ -42,7 +42,8 @@ module.exports=
     update: (rootPath, done) =>
       return unless @process?
       Util.debug "#{@name} updating"
-      @process.runBrowse rootPath, [@name], (@symbols) =>
+      @process.runBrowse rootPath, [@name]
+      .then (@symbols) =>
         Util.debug "#{@name} updated"
         done?()
 

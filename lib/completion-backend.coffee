@@ -21,8 +21,8 @@ class CompletionBackend
     @process?.onDidDestroy =>
       @process = null
 
-    @process?.runLang (@languagePragmas) =>
-    @process?.runFlag (@compilerOptions) =>
+    @process?.runLang().then (@languagePragmas) =>
+    @process?.runFlag().then (@compilerOptions) =>
 
   isActive: =>
     unless @process?
@@ -227,12 +227,11 @@ class CompletionBackend
     if m?
       Promise.resolve (FZ.filter m, prefix)
     else
-      new Promise (resolve) =>
-        @process.runList buffer, (modules) =>
-          @modListMap.set rootDir, modules
-          #refresh every minute
-          setTimeout (=> @modListMap.delete rootDir), 60 * 1000
-          resolve (FZ.filter modules, prefix)
+      @process.runList(buffer).then (modules) =>
+        @modListMap.set rootDir, modules
+        #refresh every minute
+        setTimeout (=> @modListMap.delete rootDir), 60 * 1000
+        FZ.filter modules, prefix
 
   ###
   getCompletionsForSymbolInModule(buffer,prefix,position,{module})

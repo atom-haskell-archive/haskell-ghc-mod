@@ -155,7 +155,8 @@ module.exports = HaskellGhcMod =
         editor = target.getModel()
         buffer = editor.getBuffer()
         upi.withEventRange {editor, detail}, ({crange}) =>
-          @process.findSymbolProvidersInBuffer buffer, crange, (lines) ->
+          @process.findSymbolProvidersInBuffer buffer, crange
+          .then (lines) ->
             new ImportListView
               items: lines
               onConfirmed: (mod) ->
