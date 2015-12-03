@@ -1,3 +1,6 @@
+## 1.1.7
+* Queue interactive commands
+
 ## 1.1.6
 * Merge branch 'master' of github.com:atom-haskell/haskell-ghc-mod
 * Work around ghc-mod stack root bug
