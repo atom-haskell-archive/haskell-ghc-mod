@@ -12,17 +12,12 @@ CP = require 'child_process'
 module.exports =
 class GhcModiProcess
   backend: null
-  commandQueues:
-    checklint: new Queue(1)
-    browse: new Queue(4)
-    typeinfo: new Queue(1)
-    find: new Queue(1)
-    init: new Queue(4)
-    list: new Queue(1)
 
   constructor: ->
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
+
+    @createQueues()
 
     opts = Util.getProcessOptions()
     opts.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
@@ -39,6 +34,15 @@ class GhcModiProcess
       @backend = new GhcModiProcessTemp
     else
       @backend = new GhcModiProcessRedirect
+
+  createQueues: =>
+    @commandQueues =
+      checklint: new Queue(1)
+      browse: new Queue(4)
+      typeinfo: new Queue(1)
+      find: new Queue(1)
+      init: new Queue(4)
+      list: new Queue(1)
 
   killProcess: =>
     @backend.killProcess()
