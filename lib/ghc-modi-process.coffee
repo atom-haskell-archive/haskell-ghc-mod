@@ -73,7 +73,6 @@ class GhcModiProcess
       @emitter.emit 'backend-active'
       @backend.run runArgs
     .then (res) =>
-      console.log res
       if qe(queueName)
         @emitter.emit 'queue-idle', {queue: queueName}
         if (1 for k of @commandQueues when qe(k)).length
