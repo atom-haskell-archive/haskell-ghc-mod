@@ -1,5 +1,5 @@
 {Range, Point, Directory} = require 'atom'
-{delimiter, sep} = require 'path'
+{delimiter, sep, extname} = require 'path'
 Temp = require('temp')
 FS = require('fs')
 
@@ -75,23 +75,27 @@ module.exports = Util =
     symbol: buffer.getTextInRange crange2
     range: crange2
 
-  withTempFile: (contents, func, suffix, opts) ->
-    Temp.open
-      prefix: 'haskell-ghc-mod',
-      suffix: suffix,
-      (err, info) ->
-        if err
-          atom.notifications.addError "Haskell-ghc-mod: Error when writing
-            temp. file",
-            detail: "#{err}"
-            dismissable: true
-          opts.callback []
-          return
-        FS.writeSync info.fd, contents
-        {uri, callback} = opts
-        opts.uri = info.path
-        opts.callback = (res) ->
-          FS.close info.fd, -> FS.unlink info.path
-          callback res.map (line) ->
-            line.split(info.path).join(uri)
-        func opts
+  withTempFile: (contents, uri, gen) ->
+    new Promise (resolve, reject) ->
+      Temp.open {prefix: 'haskell-ghc-mod', suffix: extname uri or ".hs"},
+        (err, info) ->
+          if err
+            reject err
+          else
+            resolve info
+    .then (info) ->
+      new Promise (resolve, reject) ->
+        FS.write info.fd, contents, (err) ->
+          if err
+            reject err
+          else
+            gen(info.path).then (res) ->
+              FS.close info.fd, -> FS.unlink info.path
+              resolve res.map (line) ->
+                line.split(info.path).join(uri)
+    .catch (err) ->
+      atom.notifications.addError "Haskell-ghc-mod: Error when writing
+        temp. file",
+        detail: "#{err}"
+        dismissable: true
+      return []

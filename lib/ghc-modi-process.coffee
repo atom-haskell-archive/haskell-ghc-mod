@@ -97,12 +97,10 @@ class GhcModiProcess
     @commandQueues[qn].running = true
     cmdDesc = @commandQueues[qn].queue.shift()
     @emitter.emit 'backend-active', {queue: qn, command: cmdDesc}
-    cb = cmdDesc.callback
-    cmdDesc.callback = (lines) =>
-      cb lines
+    @backend.run(cmdDesc).then (lines) =>
+      cmdDesc.callback lines
       @commandQueues[qn].running = false
       @runQueuedCommands qn
-    @backend.run cmdDesc
 
   runList: (buffer, callback) =>
     rootDir = @getRootDir(buffer)

@@ -10,12 +10,12 @@ class GhcModiProcessRedirect extends GhcModiProcessBase
     super
     @bufferDirMap = new WeakMap #TextBuffer -> Directory
 
-  run: ({interactive, dir, options, command, text, uri, args, callback}) =>
+  run: ({interactive, dir, options, command, text, uri, args}) =>
     args ?= []
     unless interactive
-      @runModCmd {options, command, text, uri, args, callback}
+      @runModCmd {options, command, text, uri, args}
     else
-      @runModiCmd {dir, options, command, text, uri, args, callback, legacyInteractive: true}
+      @runModiCmd {dir, options, command, text, uri, args, legacyInteractive: true}
 
   getRootDir: (buffer) ->
     dir = @bufferDirMap.get buffer

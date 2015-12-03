@@ -12,6 +12,7 @@ class GhcModiProcessBase
     @processMap = new WeakMap
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
+    @interactiveAction = Promise.resolve()
 
   spawnProcess: (rootDir, legacyInteractive, options) =>
     return unless @processMap?
@@ -46,7 +47,7 @@ class GhcModiProcessBase
       timer: timer
     return proc
 
-  runModCmd: ({options, command, text, uri, args, callback}) ->
+  runModCmd: ({options, command, text, uri, args}) ->
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     result = []
     err = []
@@ -58,61 +59,56 @@ class GhcModiProcessBase
       cmd = ['--map-file', uri].concat cmd
     debug "running #{modPath} #{cmd} with
           #{"options.#{k} = #{v}" for k, v of options}"
-    process = new BufferedProcess
-      command: modPath
-      args: cmd
-      options: options
-      stdout: (data) ->
-        result = result.concat(data.split(EOL))
-      stderr: (data) ->
-        err = err.concat(data.split(EOL))
-      exit: (code) ->
-        debug "#{modPath} ended with code #{code}"
-        if code != 0
-          atom.notifications.addError "Haskell-ghc-mod: #{modPath}
-              #{cmd.join ' '} failed with error code #{code}",
-            detail: "#{err.join(EOL)}"
-            dismissable: true
-          console.error err
-          callback []
-        else
-          callback result.slice(0, -1).map (line) ->
-            line.replace /\0/g, EOL
-    if text?
-      debug "sending stdin text to #{modPath}"
-      process.process.stdin.write "#{text}#{EOT}"
-    process.onWillThrowError ({error, handle}) ->
-      console.warn "Using fallback child_process because of #{error.message}"
-      child = CP.execFile modPath, cmd, options, (cperror, stdout, stderr) ->
-        if cperror?
-          atom.notifications.addError "Haskell-ghc-mod: #{modPath}
-              #{cmd.join ' '} failed with error message #{cperror}",
-            detail: "#{stdout}#{EOL}#{stderr}"
-            dismissable: true
-          callback []
-        else
-          callback stdout.split(EOL).slice(0, -1).map (line) ->
-            line.replace /\0/g, EOL
-      child.error = (error) ->
-        console.error error
-        callback []
+    new Promise (resolve, reject) ->
+      process = new BufferedProcess
+        command: modPath
+        args: cmd
+        options: options
+        stdout: (data) ->
+          result = result.concat(data.split(EOL))
+        stderr: (data) ->
+          err = err.concat(data.split(EOL))
+        exit: (code) ->
+          debug "#{modPath} ended with code #{code}"
+          if code != 0
+            reject message: "code #{code}", detail: "#{err.join(EOL)}"
+          else
+            resolve result.slice(0, -1).map (line) ->
+              line.replace /\0/g, EOL
       if text?
         debug "sending stdin text to #{modPath}"
-        child.stdin.write "#{text}#{EOT}"
-      handle()
+        process.process.stdin.write "#{text}#{EOT}"
+      process.onWillThrowError ({error, handle}) ->
+        console.warn "Using fallback child_process because of #{error.message}"
+        child = CP.execFile modPath, cmd, options, (cperror, stdout, stderr) ->
+          if cperror?
+            reject message: "message #{cperror}", detail: "#{stdout}#{EOL}#{stderr}"
+          else
+            resolve stdout.split(EOL).slice(0, -1).map (line) ->
+              line.replace /\0/g, EOL
+        child.error = (error) ->
+          reject message: "#{error}"
+        if text?
+          debug "sending stdin text to #{modPath}"
+          child.stdin.write "#{text}#{EOT}"
+        handle()
+    .catch (err) ->
+      atom.notifications.addError "Haskell-ghc-mod: #{modPath}
+          #{cmd.join ' '} failed with error #{err.message}",
+        detail: "#{err.detail}"
+        dismissable: true
+      return []
 
   runModiCmd: (o) =>
-    {dir, options, command, text, uri, args, callback, legacyInteractive} = o
+    {dir, options, command, text, uri, args, legacyInteractive} = o
     debug "Trying to run ghc-modi in #{dir.getPath()}"
     process = @spawnProcess(dir, legacyInteractive, options)
     unless process
       debug "Failed. Falling back to ghc-mod"
       return @runModCmd o
-    if process.stdout.isPaused()
-      setTimeout (=> @runModiCmd o), 100
-      return
-    process.stdout.pause()
-    Promise.resolve().then ->
+    @interactiveAction =
+    @interactiveAction.then ->
+      process.stdout.pause()
       if text?
         debug "Loading file text for ghc-modi"
         new Promise (resolve, reject) ->
@@ -120,13 +116,11 @@ class GhcModiProcessBase
             data = process.stdout.read()?.toString?()
             if data is "OK#{EOL}"
               debug "Successfully loaded file text for ghc-modi"
-              return resolve()
+              resolve()
             else
               debug "Failed to load file text for ghc-modi: #{data}"
-              return reject "Failed to load file text for ghc-modi: #{data}"
+              reject "Failed to load file text for ghc-modi: #{data}"
           process.stdin.write "map-file #{uri}#{EOL}#{text}#{EOT}"
-      else
-        Promise.resolve()
     .then ->
       new Promise (resolve, reject) ->
         savedLines = []
@@ -162,24 +156,22 @@ class GhcModiProcessBase
             data = process.stdout.read()?.toString?()
             if data is "OK#{EOL}"
               debug "Successfully unloaded file text for ghc-modi"
-              return resolve(res)
+              resolve(res)
             else
               debug "Failed to unload file text for ghc-modi: #{data}"
-              return reject "Failed to unload file text for ghc-modi: #{data}"
+              reject "Failed to unload file text for ghc-modi: #{data}"
           process.stdin.write "unmap-file #{uri}#{EOL}"
       else
-        Promise.resolve(res)
-    .then (res) ->
-      process.stdout.resume()
-      callback res ? []
+        res
     .catch (err) ->
-      try
-        process.stdout.resume()
-        process.stdin.write cmd.join(' ').replace(EOL, ' ') + EOL
       atom.notifications.addError 'Looks like ghc-modi crashed',
         detail: "#{err}"
         dismissable: true
-      callback []
+      try process.stdin.write "unmap-file #{uri}#{EOL}"
+      return []
+    .then (res) ->
+      try process.stdout.resume()
+      res
 
   killProcess: =>
     return unless @processMap?
