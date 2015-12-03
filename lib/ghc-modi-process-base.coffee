@@ -101,12 +101,16 @@ class GhcModiProcessBase
         child.stdin.write "#{text}#{EOT}"
       handle()
 
-  runModiCmd: ({dir, options, command, text, uri, args, callback, legacyInteractive}) =>
+  runModiCmd: (o) =>
+    {dir, options, command, text, uri, args, callback, legacyInteractive} = o
     debug "Trying to run ghc-modi in #{dir.getPath()}"
     process = @spawnProcess(dir, legacyInteractive, options)
     unless process
       debug "Failed. Falling back to ghc-mod"
-      return @runModCmd {options, command, text, uri, args, callback}
+      return @runModCmd o
+    if process.stdout.isPaused()
+      setTimeout (=> @runModiCmd o), 100
+      return
     process.stdout.pause()
     Promise.resolve().then ->
       if text?
