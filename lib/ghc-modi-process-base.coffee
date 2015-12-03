@@ -176,8 +176,8 @@ class GhcModiProcessBase
   killProcess: =>
     return unless @processMap?
     debug "Killing all ghc-modi processes"
-    atom.project.getDirectories().forEach (dir) =>
-      @killProcessForDir dir
+    atom.workspace.getTextEditors().forEach (editor) =>
+      @killProcessForDir @getRootDir(editor.getBuffer())
 
   killProcessForDir: (dir) =>
     return unless @processMap?
