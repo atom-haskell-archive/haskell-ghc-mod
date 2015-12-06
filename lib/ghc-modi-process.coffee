@@ -12,6 +12,7 @@ CP = require 'child_process'
 module.exports =
 class GhcModiProcess
   backend: null
+  commandQueues: null
 
   constructor: ->
     @disposables = new CompositeDisposable
@@ -38,11 +39,13 @@ class GhcModiProcess
   createQueues: =>
     @commandQueues =
       checklint: new Queue(1)
-      browse: new Queue(4)
+      browse: null
       typeinfo: new Queue(1)
       find: new Queue(1)
       init: new Queue(4)
       list: new Queue(1)
+    @disposables.add atom.config.observe 'haskell-ghc-mod.maxBrowseProcesses', (value) =>
+      @commandQueues.browse = new Queue(value)
 
   killProcess: =>
     @backend.killProcess()
@@ -52,10 +55,7 @@ class GhcModiProcess
     @backend.destroy()
     @emitter.emit 'did-destroy'
     @disposables.dispose()
-    for k, v of @commandQueues
-      v =
-        running: false
-        queue: []
+    @commandQueues = null
 
   onDidDestroy: (callback) =>
     @emitter.on 'did-destroy', callback

@@ -71,6 +71,13 @@ module.exports = HaskellGhcMod =
       default: false
       description: 'Use Atom Linter service for check and lint
                     (requires restart)'
+    maxBrowseProcesses:
+      type: 'integer'
+      default: 2
+      description: 'Maximum number of parallel ghc-mod browse processes, which
+                    are used in autocompletion backend initialization.
+                    Note that on larger projects it may require a considerable
+                    amount of memory.'
 
   activate: (state) ->
     @process = new GhcModiProcess
