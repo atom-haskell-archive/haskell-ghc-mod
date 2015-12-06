@@ -1,3 +1,6 @@
+## 1.1.9
+* Fix ghc-modi reply parsing bug
+
 ## 1.1.8
 * Use promise-queues for more robust command queues
 * Bounded parallel auto-completion initialization
