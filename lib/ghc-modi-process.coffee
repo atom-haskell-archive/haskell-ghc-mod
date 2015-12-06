@@ -79,7 +79,7 @@ class GhcModiProcess
     .then (res) =>
       if qe(queueName)
         @emitter.emit 'queue-idle', {queue: queueName}
-        if (1 for k of @commandQueues when qe(k)).length
+        if (k for k of @commandQueues).every(qe)
           @emitter.emit 'backend-idle'
       res
 
