@@ -73,15 +73,15 @@ class GhcModiProcess
     qe = (qn) =>
       q = @commandQueues[qn]
       q.getQueueLength() + q.getPendingLength() is 0
-    @commandQueues[queueName].add =>
+    promise = @commandQueues[queueName].add =>
       @emitter.emit 'backend-active'
       @backend.run runArgs
-    .then (res) =>
+    promise.then (res) =>
       if qe(queueName)
         @emitter.emit 'queue-idle', {queue: queueName}
         if (k for k of @commandQueues).every(qe)
           @emitter.emit 'backend-idle'
-      res
+    return promise
 
   runList: (buffer) =>
     rootDir = @getRootDir(buffer)
