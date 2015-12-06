@@ -134,8 +134,8 @@ class GhcModiProcessBase
           debug "Got response from ghc-modi:#{EOL}#{data}"
           lines = data.split(EOL)
           savedLines = savedLines.concat lines
-          result = lines[lines.length - 2]
-          if result.match(/^OK/)
+          result = savedLines[savedLines.length - 2]
+          if result?.match?(/^OK/)
             lines = savedLines.slice(0, -2)
             return resolve lines.map (line) ->
               line.replace /\0/g, EOL
