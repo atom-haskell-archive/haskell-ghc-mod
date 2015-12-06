@@ -1,3 +1,8 @@
+## 1.2.0
+* Fix backend-idle notification
+* Configurable max browse processes
+* Fix ghc-modi reply parsing bug
+
 ## 1.1.9
 * Fix ghc-modi reply parsing bug
 
