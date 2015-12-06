@@ -38,7 +38,7 @@ class GhcModiProcess
 
   createQueues: =>
     @commandQueues =
-      checklint: new Queue(1)
+      checklint: new Queue(2)
       browse: null
       typeinfo: new Queue(1)
       find: new Queue(1)
@@ -217,9 +217,8 @@ class GhcModiProcess
     @doCheckOrLintBuffer "lint", buffer, fast
 
   doCheckAndLint: (buffer, fast) =>
-    @doCheckBuffer(buffer, fast).then (resCheck) =>
-      @doLintBuffer(buffer, fast).then (resLint) ->
-        return resCheck.concat resLint
+    Promise.all [ @doCheckBuffer(buffer, fast), @doLintBuffer(buffer, fast) ]
+    .then (resArr) -> [].concat resArr...
 
   getRootDir: (buffer) ->
     @backend?.getRootDir?(buffer) ? Util.getRootDir(buffer)
