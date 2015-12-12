@@ -188,7 +188,7 @@ class GhcModiProcess
         match =
           line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
         unless match?
-          console.log("Ghc-Mod says: #{line}")
+          console.log("ghc-mod says: #{line}")
           line = "#{buffer.getUri()}:0:0:Error: #{line}"
           match=
             line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
