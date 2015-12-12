@@ -2,7 +2,7 @@
 
 This package is primarily intended as backend for [ide-haskell](https://atom.io/packages/ide-haskell).
 
-Haskell Ghc-Mod opens pipe to ghc-modi and queries types, info and checks
+Haskell ghc-mod opens pipe to ghc-modi and queries types, info and checks
 for errors. It uses temporary files to feed them into ghc-mod (since it does
 not read from stdin)
 
@@ -10,7 +10,7 @@ If ghc-mod/ghc-modi is not in your PATH, set full path to those in config.
 
 ## Dependencies
 
-You need to have `ghc-mod`, `ghc-modi` (part of Ghc-Mod) and `hlint` executables
+You need to have `ghc-mod`, `ghc-modi` (part of ghc-mod) and `hlint` executables
 installed on your system. `ghc-mod` needs to be able to find `hlint` (eiter add `hlint` directory to PATH, or install both in the same cabal sandbox).
 
 Supported `ghc-mod` versions are from 4.1.0 to 5.2.1.2, and 5.4.x. 5.3.x might work, but is not officially supported.
@@ -24,7 +24,7 @@ $ cabal install ghc-mod
 
 After this process finishes, you'll have `ghc-mod`, `ghc-modi` and `hlint` available in `$HOME/.cabal/bin/` directory.
 
-Please note, that for ghc>=7.10 and/or cabal>=1.22, you need ghc-mod>=5.3.0.0. Ghc-mod versions before 5.3.0.0 won't work.
+Please note, that for ghc>=7.10 and/or cabal>=1.22, you need ghc-mod>=5.3.0.0. ghc-mod versions before 5.3.0.0 won't work.
 
 User interface is provided by [ide-haskell](https://atom.io/packages/ide-haskell)
 
