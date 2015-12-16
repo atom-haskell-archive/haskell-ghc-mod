@@ -216,7 +216,7 @@ module.exports = HaskellGhcMod =
 
     @process.onBackendActive
 
-    upi.setMenu 'Ghc-Mod', [
+    upi.setMenu 'ghc-mod', [
       {label: 'Check', command: 'haskell-ghc-mod:check-file'}
       {label: 'Lint', command: 'haskell-ghc-mod:lint-file'}
       {label: 'Stop Backend', command: 'haskell-ghc-mod:shutdown-backend'}
@@ -224,7 +224,7 @@ module.exports = HaskellGhcMod =
 
     @disposables.add atom.contextMenu.add
       'atom-text-editor[data-grammar~="haskell"]': [
-        'label': 'Ghc-Mod'
+        'label': 'ghc-mod'
         'submenu': [
             'label': 'Show Type'
             'command': 'haskell-ghc-mod:show-type'
