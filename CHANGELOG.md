@@ -1,3 +1,8 @@
+## 1.2.2
+* Clear interactive command timeout on exit
+* Less verbose interactive debug messages
+* Fix more of ghc-mod capitalization
+
 ## 1.2.1
 * Interactive commands buffering and timeout
 * `ghc-mod` capitalization
