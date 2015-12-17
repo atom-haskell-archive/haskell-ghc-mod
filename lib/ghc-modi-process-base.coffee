@@ -146,13 +146,7 @@ class GhcModiProcessBase
     @interactiveAction =
     @interactiveAction.then =>
       if text?
-        debug "Loading file text for ghc-modi"
         @interact proc, "map-file #{uri}#{EOL}#{text}#{EOT}"
-        .then ->
-          debug "Successfully loaded file text for ghc-modi"
-        .catch (err) ->
-          debug "Failed to load file text for ghc-modi"
-          throw err
     .then =>
       if uri?
         cmd = [command, uri].concat args
@@ -162,17 +156,12 @@ class GhcModiProcessBase
       @interact proc, cmd.join(' ').replace(EOL, ' ') + EOL
     .then (res) =>
       if text?
-        debug "Unloading file text from ghc-modi"
         @interact proc, "unmap-file #{uri}#{EOL}"
-        .then ->
-          debug "Successfully unloaded file text for ghc-modi"
-          return res
-        .catch (err) ->
-          debug "Failed to unload file text for ghc-modi: #{err}"
-          throw err
+        .then -> res
       else
         res
     .catch (err) ->
+      debug "#{err}"
       atom.notifications.addError 'Looks like something went wrong',
         detail: "#{err}"
         dismissable: true
