@@ -1,3 +1,9 @@
+## 1.2.1
+* Interactive commands buffering and timeout
+* `ghc-mod` capitalization
+* Allow for parallel check/lint
+* backend-idle signal parallel to result
+
 ## 1.2.0
 * Fix backend-idle notification
 * Configurable max browse processes
