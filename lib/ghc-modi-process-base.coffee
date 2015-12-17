@@ -36,10 +36,11 @@ class GhcModiProcessBase
       else
         modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
         CP.spawn(modiPath, [], options)
-    proc.stderr.pause()
+    proc.stdout.setEncoding 'utf-8'
+    proc.stderr.on 'data', (data) ->
+      console.error "Ghc-modi said: #{data}"
     proc.on 'exit', (code) =>
       debug "ghc-modi for #{rootDir.getPath()} ended with #{code}"
-      console.error "Ghc-modi said: #{proc.stderr.read()}"
       @processMap?.delete(rootDir)
       @spawnProcess(rootDir, legacyInteractive, options) if code != 0
     @processMap.set rootDir,
@@ -99,79 +100,84 @@ class GhcModiProcessBase
         dismissable: true
       return []
 
+  waitForAnswer: (proc, cmd) ->
+    new Promise (resolve, reject) ->
+      savedLines = []
+      exitCallback = null
+      parseData = null
+      cleanup = ->
+        proc.stdout.removeListener 'data', parseData
+        proc.removeListener 'exit', exitCallback
+      parseData = (data) ->
+        debug "Got response from ghc-modi:#{EOL}#{data}"
+        lines = data.split(EOL)
+        savedLines = savedLines.concat lines
+        result = savedLines[savedLines.length - 2]
+        if result is 'OK'
+          cleanup()
+          lines = savedLines.slice(0, -2)
+          resolve lines.map (line) ->
+            line.replace /\0/g, EOL
+      exitCallback = ->
+        cleanup()
+        console.error "#{savedLines}"
+        reject "Ghc-modi crashed on command #{cmd} with message #{savedLines}"
+      proc.stdout.on 'data', parseData
+      proc.on 'exit', exitCallback
+      setTimeout (->
+        cleanup()
+        console.error "#{savedLines}"
+        reject "Timeout on ghc-modi command #{cmd}; message so far: #{savedLines}"
+        ), 60000
+
+  interact: (proc, command) ->
+    resultP = @waitForAnswer proc, command
+    debug "Running ghc-modi command #{command.split(EOL)[0]}"
+    proc.stdin.write command
+    return resultP
+
   runModiCmd: (o) =>
     {dir, options, command, text, uri, args, legacyInteractive} = o
     debug "Trying to run ghc-modi in #{dir.getPath()}"
-    process = @spawnProcess(dir, legacyInteractive, options)
-    unless process
+    proc = @spawnProcess(dir, legacyInteractive, options)
+    unless proc
       debug "Failed. Falling back to ghc-mod"
       return @runModCmd o
     @interactiveAction =
-    @interactiveAction.then ->
-      process.stdout.pause()
+    @interactiveAction.then =>
       if text?
         debug "Loading file text for ghc-modi"
-        new Promise (resolve, reject) ->
-          process.stdout.once 'readable', ->
-            data = process.stdout.read()?.toString?()
-            if data is "OK#{EOL}"
-              debug "Successfully loaded file text for ghc-modi"
-              resolve()
-            else
-              debug "Failed to load file text for ghc-modi: #{data}"
-              reject "Failed to load file text for ghc-modi: #{data}"
-          process.stdin.write "map-file #{uri}#{EOL}#{text}#{EOT}"
-    .then ->
-      new Promise (resolve, reject) ->
-        savedLines = []
-        parseData = ->
-          data = process.stdout.read()?.toString?()
-          unless data?
-            console.error savedLines
-            return reject "Haskell-ghc-mod: ghc-modi crashed on
-              #{command} with message #{savedLines.join(EOL)}
-              in #{dir.getPath()}"
-          debug "Got response from ghc-modi:#{EOL}#{data}"
-          lines = data.split(EOL)
-          savedLines = savedLines.concat lines
-          result = savedLines[savedLines.length - 2]
-          if result?.match?(/^OK/)
-            lines = savedLines.slice(0, -2)
-            return resolve lines.map (line) ->
-              line.replace /\0/g, EOL
-          else
-            process.stdout.once 'readable', parseData
-        process.stdout.once 'readable', parseData
-        if uri?
-          cmd = [command, uri].concat args
-        else
-          cmd = [command].concat args
-        debug "Running ghc-modi command #{cmd}"
-        process.stdin.write cmd.join(' ').replace(EOL, ' ') + EOL
-    .then (res) ->
+        @interact proc, "map-file #{uri}#{EOL}#{text}#{EOT}"
+        .then ->
+          debug "Successfully loaded file text for ghc-modi"
+        .catch (err) ->
+          debug "Failed to load file text for ghc-modi"
+          throw err
+    .then =>
+      if uri?
+        cmd = [command, uri].concat args
+      else
+        cmd = [command].concat args
+
+      @interact proc, cmd.join(' ').replace(EOL, ' ') + EOL
+    .then (res) =>
       if text?
-        new Promise (resolve, reject) ->
-          debug "Unloading file text from ghc-modi"
-          process.stdout.once 'readable', ->
-            data = process.stdout.read()?.toString?()
-            if data is "OK#{EOL}"
-              debug "Successfully unloaded file text for ghc-modi"
-              resolve(res)
-            else
-              debug "Failed to unload file text for ghc-modi: #{data}"
-              reject "Failed to unload file text for ghc-modi: #{data}"
-          process.stdin.write "unmap-file #{uri}#{EOL}"
+        debug "Unloading file text from ghc-modi"
+        @interact proc, "unmap-file #{uri}#{EOL}"
+        .then ->
+          debug "Successfully unloaded file text for ghc-modi"
+          return res
+        .catch (err) ->
+          debug "Failed to unload file text for ghc-modi: #{err}"
+          throw err
       else
         res
     .catch (err) ->
-      atom.notifications.addError 'Looks like ghc-modi crashed',
+      atom.notifications.addError 'Looks like something went wrong',
         detail: "#{err}"
         dismissable: true
-      try process.stdin.write "unmap-file #{uri}#{EOL}"
+      try proc.stdin.write "unmap-file #{uri}#{EOL}"
       return []
-    .then (res) ->
-      try process.stdout.resume()
-      res
 
   killProcess: =>
     return unless @processMap?
