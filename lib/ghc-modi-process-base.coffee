@@ -105,9 +105,11 @@ class GhcModiProcessBase
       savedLines = []
       exitCallback = null
       parseData = null
+      timer = null
       cleanup = ->
         proc.stdout.removeListener 'data', parseData
         proc.removeListener 'exit', exitCallback
+        clearTimeout timer
       parseData = (data) ->
         debug "Got response from ghc-modi:#{EOL}#{data}"
         lines = data.split(EOL)
@@ -124,7 +126,7 @@ class GhcModiProcessBase
         reject "ghc-modi crashed on command #{cmd} with message #{savedLines}"
       proc.stdout.on 'data', parseData
       proc.on 'exit', exitCallback
-      setTimeout (->
+      timer = setTimeout (->
         cleanup()
         console.error "#{savedLines}"
         reject "Timeout on ghc-modi command #{cmd}; message so far: #{savedLines}"
