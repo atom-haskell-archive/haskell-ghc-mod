@@ -200,7 +200,7 @@
 
 ## 0.6.5
 * Fix typo (`rootDi` instead of `rootDir`)
-* After 60 minutes of inactivity, kill Ghc-Modi
+* After 60 minutes of inactivity, kill ghc-modi
 
 ## 0.6.4
 * Return at least something from getRootDir (attempt at fixing #17, #18)

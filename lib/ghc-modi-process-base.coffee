@@ -38,7 +38,7 @@ class GhcModiProcessBase
         CP.spawn(modiPath, [], options)
     proc.stdout.setEncoding 'utf-8'
     proc.stderr.on 'data', (data) ->
-      console.error "Ghc-modi said: #{data}"
+      console.error "ghc-modi said: #{data}"
     proc.on 'exit', (code) =>
       debug "ghc-modi for #{rootDir.getPath()} ended with #{code}"
       @processMap?.delete(rootDir)
@@ -121,7 +121,7 @@ class GhcModiProcessBase
       exitCallback = ->
         cleanup()
         console.error "#{savedLines}"
-        reject "Ghc-modi crashed on command #{cmd} with message #{savedLines}"
+        reject "ghc-modi crashed on command #{cmd} with message #{savedLines}"
       proc.stdout.on 'data', parseData
       proc.on 'exit', exitCallback
       setTimeout (->

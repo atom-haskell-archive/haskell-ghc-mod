@@ -33,7 +33,7 @@ class GhcModiProcessRedirect extends GhcModiProcessBase
     else
       d = new Directory path
       unless d?.isDirectory?()
-        console.warn "Ghc-mod returned non-directory while getting project root dir"
+        console.warn "ghc-mod returned non-directory while getting project root dir"
         Util.getRootDir buffer
       else
         d
