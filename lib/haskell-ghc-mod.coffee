@@ -181,16 +181,22 @@ module.exports = HaskellGhcMod =
             new ImportListView
               items: lines
               onConfirmed: (mod) ->
-                pos = null
-                indent = null
-                buffer.backwardsScan /^(\s*)import/, ({match, range}) ->
-                  r = buffer.rangeForRow range.start.row
-                  pos = r.end
-                  indent = match[1]
-                pi = if pos?
-                  {pos, indent}
-                if pi?
-                  editor.setTextInBufferRange [pi.pos, pi.pos], "\n#{pi.indent}import #{mod}"
+                piP = new Promise (resolve) ->
+                  buffer.backwardsScan /^(\s*)(import|module)/, ({match, range, stop}) ->
+                    resolve
+                      pos: buffer.rangeForRow(range.start.row).end
+                      indent:
+                        switch match[2]
+                          when "import"
+                            "\n" + match[1]
+                          when "module"
+                            "\n\n" + match[1]
+                  resolve
+                    pos: buffer.getFirstPosition()
+                    indent: ""
+                    end: "\n"
+                piP.then (pi) ->
+                  editor.setTextInBufferRange [pi.pos, pi.pos], "#{pi.indent}import #{mod}#{pi.end ? ''}"
 
     upi.onShouldShowTooltip (editor, crange) ->
       switch atom.config.get('haskell-ghc-mod.onMouseHoverShow')
