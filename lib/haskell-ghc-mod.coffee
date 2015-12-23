@@ -152,12 +152,26 @@ module.exports = HaskellGhcMod =
           .then ({range, type}) ->
             n = editor.indentationForBufferRow(range.start.row)
             indent = ' '.repeat n * editor.getTabLength()
-            editor.scanInBufferRange /[\w'.]+/, range, ({matchText, stop}) ->
-              symbol = matchText
-              pos = [range.start.row, 0]
+            inScope = (scope) ->
+              editor
+              .scopeDescriptorForBufferPosition(crange.start)
+              .getScopesArray()
+              .some (v) -> v is scope
+            symbolP = switch
+              when inScope "keyword.operator.haskell"
+                "(#{editor.getTextInBufferRange editor.bufferRangeForScopeAtCursor "keyword.operator.haskell"})"
+              when inScope "entity.name.function.infix.haskell"
+                editor.getTextInBufferRange editor.bufferRangeForScopeAtCursor "entity.name.function.infix.haskell"
+              else
+                new Promise (resolve) ->
+                  editor.scanInBufferRange /[\w'.]+/, range, ({matchText, stop}) ->
+                    resolve(matchText)
+                    stop()
+                  resolve("unknown")
+            pos = [range.start.row, 0]
+            Promise.resolve(symbolP).then (symbol) ->
               editor.setTextInBufferRange [pos, pos],
                 indent + symbol + " :: " + type + "\n"
-              stop()
       'haskell-ghc-mod:insert-import': ({target, detail}) =>
         editor = target.getModel()
         buffer = editor.getBuffer()
