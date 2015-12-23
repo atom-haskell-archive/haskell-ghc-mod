@@ -93,9 +93,3 @@ module.exports = Util =
               FS.close info.fd, -> FS.unlink info.path
               resolve res.map (line) ->
                 line.split(info.path).join(uri)
-    .catch (err) ->
-      atom.notifications.addError "Haskell-ghc-mod: Error when writing
-        temp. file",
-        detail: "#{err}"
-        dismissable: true
-      return []
