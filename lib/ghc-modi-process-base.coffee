@@ -14,7 +14,14 @@ class GhcModiProcessBase
     @disposables.add @emitter = new Emitter
     @interactiveAction = Promise.resolve()
 
-  spawnProcess: (rootDir, legacyInteractive, options) =>
+  run: ({interactive, dir, options, command, text, uri, args}) =>
+    args ?= []
+    unless interactive
+      @runModCmd {options, command, text, uri, args}
+    else
+      @runModiCmd {dir, options, command, text, uri, args}
+
+  spawnProcess: (rootDir, options) =>
     return unless @processMap?
     return unless atom.config.get('haskell-ghc-mod.enableGhcModi')
     timer = setTimeout (=>
@@ -30,7 +37,7 @@ class GhcModiProcessBase
     debug "Spawning new ghc-modi instance for #{rootDir.getPath()} with
           #{"options.#{k} = #{v}" for k, v of options}"
     proc =
-      if legacyInteractive
+      if @legacyInteractive
         modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
         CP.spawn(modPath, ['legacy-interactive'], options)
       else
@@ -42,7 +49,7 @@ class GhcModiProcessBase
     proc.on 'exit', (code) =>
       debug "ghc-modi for #{rootDir.getPath()} ended with #{code}"
       @processMap?.delete(rootDir)
-      @spawnProcess(rootDir, legacyInteractive, options) if code != 0
+      @spawnProcess(rootDir, options) if code != 0
     @processMap.set rootDir,
       process: proc
       timer: timer
@@ -139,9 +146,9 @@ class GhcModiProcessBase
     return resultP
 
   runModiCmd: (o) =>
-    {dir, options, command, text, uri, args, legacyInteractive} = o
+    {dir, options, command, text, uri, args} = o
     debug "Trying to run ghc-modi in #{dir.getPath()}"
-    proc = @spawnProcess(dir, legacyInteractive, options)
+    proc = @spawnProcess(dir, options)
     unless proc
       debug "Failed. Falling back to ghc-mod"
       return @runModCmd o

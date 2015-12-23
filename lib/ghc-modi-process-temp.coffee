@@ -9,20 +9,15 @@ class GhcModiProcessTemp extends GhcModiProcessBase
     super
     @bufferDirMap = new WeakMap #TextBuffer -> Directory
 
-  run: ({interactive, dir, options, command, text, uri, args}) =>
-    args ?= []
-    unless interactive
-      if text?
-        withTempFile text, uri, (tempuri) =>
-          @runModCmd {options, command, uri: tempuri, args}
-      else
-        @runModCmd {options, command, uri, args}
+  run: (opts) =>
+    {text, uri} = opts
+    if text?
+      withTempFile text, uri, (tempuri) =>
+        opts.uri = tempuri
+        opts.text = null
+        super opts
     else
-      if text?
-        withTempFile text, uri, (tempuri) =>
-          @runModiCmd {dir, options, command, uri: tempuri, args}
-      else
-        @runModiCmd {dir, options, command, uri, args}
+      super opts
 
   getRootDir: (buffer) ->
     dir = @bufferDirMap.get buffer
