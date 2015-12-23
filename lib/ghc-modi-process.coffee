@@ -168,6 +168,8 @@ class GhcModiProcess
     rootDir = @getRootDir(buffer)
 
     @queueCmd 'find',
+      interactive: true
+      dir: rootDir
       options: Util.getProcessOptions(rootDir.getPath())
       command: 'find'
       args: [symbol]
