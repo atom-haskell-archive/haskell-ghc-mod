@@ -1,3 +1,8 @@
+## 1.2.3
+* Use interactive mode for 'find'
+* Insert imports when no other imports present (#68)
+* Fix insert type with operators (#73)
+
 ## 1.2.2
 * Clear interactive command timeout on exit
 * Less verbose interactive debug messages
