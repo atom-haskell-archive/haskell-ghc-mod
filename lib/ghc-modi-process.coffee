@@ -25,10 +25,6 @@ class GhcModiProcess
       ['version'],
       opts
     if res.error?
-      atom.notifications.addError "Haskell-ghc-mod: ghc-mod failed to launch
-        it is probably missing or misconfigured",
-        detail: res.error
-        dismissable: true
       throw res.error
     vers =
       /^ghc-mod version (\d+)\.(\d+)\.(\d+)\.(\d+)/.exec(res.stdout)

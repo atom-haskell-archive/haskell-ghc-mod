@@ -80,21 +80,34 @@ module.exports = HaskellGhcMod =
                     amount of memory.'
 
   activate: (state) ->
-    @process = new GhcModiProcess
+    try
+      @process = new GhcModiProcess
+    catch err
+      atom.notifications.addFatalError """
+        Haskell-ghc-mod: ghc-mod failed to launch.
+        It is probably missing or misconfigured.
+
+        Restart Atom after configuring.
+        """,
+        detail: err
+        stack: err.stack
+        dismissable: true
     @disposables = null
 
   deactivate: ->
-    @process?.destroy()
+    @process?.destroy?()
     @process = null
     @completionBackend = null
     @disposables?.dispose?()
     @disposables = null
 
   provideCompletionBackend: ->
+    return unless @process?
     @completionBackend ?= new CompletionBackend @process
     @completionBackend
 
   consumeUPI: (service) ->
+    return unless @process?
     upi = service.registerPlugin @disposables = new CompositeDisposable
 
     upi.setMessageTypes
@@ -234,8 +247,6 @@ module.exports = HaskellGhcMod =
     @disposables.add @process.onBackendIdle ->
       upi.setStatus status: 'ready'
 
-    @process.onBackendActive
-
     upi.setMenu 'ghc-mod', [
       {label: 'Check', command: 'haskell-ghc-mod:check-file'}
       {label: 'Lint', command: 'haskell-ghc-mod:lint-file'}
@@ -277,6 +288,7 @@ module.exports = HaskellGhcMod =
       scope: 'file'
       lintOnFly: lintOnFly
       lint: (textEditor) =>
+        return unless @process?
         return if textEditor.isEmpty()
         @process[func](textEditor.getBuffer(), lintOnFly).then (res) ->
           res.map ({uri, position, message, severity}) ->

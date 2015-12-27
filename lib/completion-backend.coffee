@@ -13,11 +13,14 @@ class CompletionBackend
   modListMap: null
   compilerOptions: []
 
-  constructor: (@process) ->
+  constructor: (proc) ->
     @bufferMap = new WeakMap # buffer => BufferInfo
     @dirMap = new WeakMap # dir => Map ModuleName ModuleInfo
     @modListMap = new WeakMap # dir => [ModuleName]
 
+    @setProcess proc
+
+  setProcess: (@process) ->
     @process?.onDidDestroy =>
       @process = null
 
