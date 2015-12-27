@@ -15,8 +15,17 @@ class InteractiveProcess
           #{"options.#{k} = #{v}" for k, v of options}"
     @proc = CP.spawn(path, cmd, options)
     @proc.stdout.setEncoding 'utf-8'
+    @proc.stderr.setEncoding 'utf-8'
+    lastLine = ""
     @proc.stderr.on 'data', (data) ->
-      console.error "ghc-modi said: #{data}"
+      [first, rest..., last] = data.split(EOL)
+      if last?
+        console.warn "ghc-modi said: #{lastLine + first}"
+        lastLine = last
+      else
+        lastLine = lastLine + first
+      rest.forEach (line) ->
+        console.warn "ghc-modi said: #{line}"
     @resetTimer()
     @proc.on 'exit', (code) =>
       @disposables.dispose()
