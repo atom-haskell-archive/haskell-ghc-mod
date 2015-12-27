@@ -1,3 +1,6 @@
+## 1.2.5
+* Fix InteractiveProcess::onExit
+
 ## 1.2.4
 * Buffer ghc-modi warnings
 * Show ghc-mod warnings in console
