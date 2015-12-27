@@ -28,10 +28,10 @@ class InteractiveProcess
         console.warn "ghc-modi said: #{line}"
     @resetTimer()
     @proc.on 'exit', (code) =>
-      @disposables.dispose()
       clearTimeout @timer
       debug "ghc-modi for #{options.cwd} ended with #{code}"
       @emitter.emit 'did-exit', code
+      @disposables.dispose()
 
   onExit: (action) ->
     @emitter.on 'did-exit', action
