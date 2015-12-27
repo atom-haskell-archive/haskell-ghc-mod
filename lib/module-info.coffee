@@ -19,7 +19,8 @@ module.exports=
       @disposables = new CompositeDisposable
       @disposables.add @emitter = new Emitter
       @update rootPath, done
-      @timeout = setTimeout (=> @destroy), @invalidateInterval
+      @timeout = setTimeout (=> @destroy()), @invalidateInterval
+      @disposables.add @process.onDidDestroy => @destroy()
 
     destroy: =>
       return unless @symbols?
