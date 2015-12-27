@@ -3,8 +3,7 @@ Util = require './util'
 {extname} = require('path')
 Queue = require 'promise-queue'
 
-GhcModiProcessTemp = require './ghc-modi-process-temp.coffee'
-GhcModiProcessRedirect = require './ghc-modi-process-redirect.coffee'
+GhcModiProcessReal = require './ghc-modi-process-real.coffee'
 CP = require 'child_process'
 
 {EOL} = require('os')
@@ -23,18 +22,62 @@ class GhcModiProcess
     opts = Util.getProcessOptions()
     opts.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
     res = CP.spawnSync atom.config.get('haskell-ghc-mod.ghcModPath'),
-      ['--map-file', 'test', 'version'],
+      ['version'],
       opts
     if res.error?
       atom.notifications.addError "Haskell-ghc-mod: ghc-mod failed to launch
         it is probably missing or misconfigured",
         detail: res.error
         dismissable: true
-    if res.status != 0
-      # no redirect support
-      @backend = new GhcModiProcessTemp
-    else
-      @backend = new GhcModiProcessRedirect
+      throw res.error
+    vers =
+      /^ghc-mod version (\d+)\.(\d+)\.(\d+)\.(\d+)/.exec(res.stdout)
+      .slice(1, 5).map (i) -> parseInt i
+    caps =
+      legacyInteractive: false
+      fileMap: false
+      rootExec: false
+      quoteArgs: false
+    atLeast = (b) ->
+      for v, i in b
+        if vers[i] > v
+          return true
+        else if vers[i] < v
+          return false
+      return true
+
+    exact = (b) ->
+      for v, i in b
+        if vers[i] isnt v
+          return false
+      return true
+
+    if not atLeast [4, 1]
+      atom.notifications.addError "
+        Haskell-ghc-mod: ghc-mod < 4.1 is not supported.
+        Use at your own risk or update your ghc-mod installation",
+        dismissable: true
+    else if not atLeast [5]
+      atom.notifications.addWarning "
+        Haskell-ghc-mod: ghc-mod 4.* is deprecated.
+        Please update your ghc-mod installation",
+        dismissable: true
+    if exact [5, 3]
+      atom.notifications.addError "
+        Haskell-ghc-mod: ghc-mod 5.3.* is not supported.
+        Use at your own risk or update your ghc-mod installation",
+        dismissable: true
+    if atLeast [5, 3]
+      caps.legacyInteractive = true
+    if atLeast [5, 4]
+      caps.fileMap = true
+      caps.rootExec = true
+    if atLeast [5, 5]
+      caps.rootExec = false
+      caps.quoteArgs = true
+    Util.debug vers
+    Util.debug caps
+    @backend = new GhcModiProcessReal caps
 
   createQueues: =>
     @commandQueues =

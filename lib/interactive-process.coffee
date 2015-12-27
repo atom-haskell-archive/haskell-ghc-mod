@@ -6,7 +6,7 @@ EOT = "#{EOL}\x04#{EOL}"
 
 module.exports =
 class InteractiveProcess
-  constructor: (path, cmd, options) ->
+  constructor: (path, cmd, options, @caps) ->
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
     @interactiveAction = Promise.resolve()
@@ -14,6 +14,7 @@ class InteractiveProcess
     debug "Spawning new ghc-modi instance for #{options.cwd} with
           #{"options.#{k} = #{v}" for k, v of options}"
     @proc = CP.spawn(path, cmd, options)
+    @proc.stdout.setEncoding 'utf-8'
     @proc.stderr.on 'data', (data) ->
       console.error "ghc-modi said: #{data}"
     @resetTimer()
@@ -39,7 +40,7 @@ class InteractiveProcess
 
   do: (action) ->
     @resetTimer()
-    interact = (command) =>
+    interact = (command, args, data) =>
       resultP =
         new Promise (resolve, reject) =>
           savedLines = []
@@ -72,7 +73,14 @@ class InteractiveProcess
             reject mkError "Timeout", "#{savedLines}"
             ), 60000
       debug "Running ghc-modi command #{command.split(EOL)[0]}"
-      @proc.stdin.write command
+      args_ =
+        if @caps.quoteArgs
+          args.map (x) -> "\x02#{x}\x03"
+        else
+          args
+      @proc.stdin.write "#{command} #{args_.join(' ').replace(EOL, ' ')}#{EOL}"
+      if data?
+        @proc.stdin.write "#{data}#{EOT}"
       return resultP
     @interactiveAction = @interactiveAction.then ->
       action(interact)

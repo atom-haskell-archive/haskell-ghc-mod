@@ -1,25 +1,55 @@
-{BufferedProcess, Emitter, CompositeDisposable} = require('atom')
+{BufferedProcess, Emitter, CompositeDisposable, Directory} = require('atom')
 CP = require('child_process')
 InteractiveProcess = require './interactive-process'
-{debug, mkError} = require './util'
+{debug, mkError, withTempFile} = require './util'
+Util = require './util'
 {EOL} = require('os')
 EOT = "#{EOL}\x04#{EOL}"
 
 module.exports =
-class GhcModiProcessBase
-  processMap: null
-
-  constructor: ->
+class GhcModiProcessReal
+  constructor: (@caps) ->
     @processMap = new WeakMap
+    @bufferDirMap = new WeakMap #TextBuffer -> Directory
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
 
+  getRootDir: (buffer) ->
+    dir = @bufferDirMap.get buffer
+    if dir?
+      return dir
+    dir =
+      if @caps.rootExec
+        bufferDir = buffer.file?.getParent?() ? Util.getRootDirFallback buffer
+        modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
+        options = Util.getProcessOptions(bufferDir.getPath())
+        options.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
+        res = CP.spawnSync modPath, ['root'], options
+        if res.error? or not res.stdout?
+          console.warn "Encountered error #{res.error} while getting project root dir"
+          Util.getRootDir buffer
+        else
+          [path] = res.stdout.split(EOL)
+          d = new Directory path
+          unless d?.isDirectory?()
+            console.warn "ghc-mod returned non-directory while getting project root dir"
+            Util.getRootDir buffer
+          else
+            d
+      else
+        Util.getRootDir buffer
+    @bufferDirMap.set buffer, dir
+    dir
+
   run: ({interactive, dir, options, command, text, uri, args}) =>
     args ?= []
-    P = unless interactive
-      @runModCmd {options, command, text, uri, args}
-    else
-      @runModiCmd {dir, options, command, text, uri, args}
+    fun = if interactive then @runModiCmd else @runModCmd
+    P =
+      if text? and not @caps.fileMap
+        withTempFile text, uri, (tempuri) ->
+          fun {dir, options, command, uri: tempuri, args}
+      else
+        fun {dir, options, command, text, uri, args}
     P.catch (err) ->
       debug "#{err}"
       atom.notifications.addError "
@@ -44,12 +74,12 @@ class GhcModiProcessBase
     debug "Spawning new ghc-modi instance for #{rootDir.getPath()} with
           #{"options.#{k} = #{v}" for k, v of options}"
     proc =
-      if @legacyInteractive
+      if @caps.legacyInteractive
         modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
-        new InteractiveProcess(modPath, ['legacy-interactive'], options)
+        new InteractiveProcess(modPath, ['legacy-interactive'], options, @caps)
       else
         modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
-        new InteractiveProcess(modiPath, [], options)
+        new InteractiveProcess(modiPath, [], options, @caps)
     proc.onExit (code) =>
       debug "ghc-modi for #{rootDir.getPath()} ended with #{code}"
       @processMap?.delete(rootDir)
@@ -113,22 +143,21 @@ class GhcModiProcessBase
       Promise.resolve()
       .then ->
         if text?
-          interact "map-file #{uri}#{EOL}#{text}#{EOT}"
+          interact "map-file", [uri], text
       .then ->
-        if uri?
-          cmd = [command, uri].concat args
-        else
-          cmd = [command].concat args
-
-        interact cmd.join(' ').replace(EOL, ' ') + EOL
+        interact command,
+          if uri?
+            [uri].concat(args)
+          else
+            args
       .then (res) ->
         if text?
-          interact "unmap-file #{uri}#{EOL}"
+          interact "unmap-file", [uri]
           .then -> res
         else
           res
       .catch (err) ->
-        try interact "unmap-file #{uri}#{EOL}"
+        try interact "unmap-file", [uri]
         throw err
 
   killProcess: =>
