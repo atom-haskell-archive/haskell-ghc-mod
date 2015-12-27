@@ -1,3 +1,6 @@
+## 1.2.6
+* Destroy moduleInfo on process destroy (#75)
+
 ## 1.2.5
 * Fix InteractiveProcess::onExit
 
