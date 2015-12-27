@@ -93,3 +93,8 @@ module.exports = Util =
               FS.close info.fd, -> FS.unlink info.path
               resolve res.map (line) ->
                 line.split(info.path).join(uri)
+
+  mkError: (name, message) ->
+    err = new Error message
+    err.name = name
+    return err
