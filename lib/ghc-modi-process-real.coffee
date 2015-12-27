@@ -107,6 +107,8 @@ class GhcModiProcessReal
           result = result.concat(data.split(EOL))
         stderr: (data) ->
           err = err.concat(data.split(EOL))
+          data.split(EOL).slice(0, -1).forEach (line) ->
+            console.warn "ghc-mod said: #{line}"
         exit: (code) ->
           debug "#{modPath} ended with code #{code}"
           if code != 0
