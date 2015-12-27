@@ -1,3 +1,6 @@
+## 1.2.7
+* Better error reporting on failing to run ghc-mod
+
 ## 1.2.6
 * Destroy moduleInfo on process destroy (#75)
 
