@@ -58,6 +58,7 @@ module.exports = Util =
     options =
       cwd: rootPath
       env: env
+      encoding: 'utf-8'
 
   getSymbolInRange: (regex, buffer, crange) ->
     if crange.isEmpty()

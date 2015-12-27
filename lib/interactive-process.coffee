@@ -14,7 +14,6 @@ class InteractiveProcess
     debug "Spawning new ghc-modi instance for #{options.cwd} with
           #{"options.#{k} = #{v}" for k, v of options}"
     @proc = CP.spawn(path, cmd, options)
-    @proc.stdout.setEncoding 'utf-8'
     @proc.stderr.on 'data', (data) ->
       console.error "ghc-modi said: #{data}"
     @resetTimer()
