@@ -1,3 +1,12 @@
+## 1.2.4
+* Buffer ghc-modi warnings
+* Show ghc-mod warnings in console
+* Check ghc-mod version; capability resolver
+* Set encoding in getProcessOptions()
+* Move ghc-modi interaction to InteractiveProcess
+* Handle ghc-mod errors in one place
+* Refactor GhcModiProcess::run into base class
+
 ## 1.2.3
 * Use interactive mode for 'find'
 * Insert imports when no other imports present (#68)
