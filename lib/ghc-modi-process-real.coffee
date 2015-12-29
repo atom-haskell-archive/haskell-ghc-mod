@@ -54,8 +54,8 @@ class GhcModiProcessReal
       debug "#{err}"
       atom.notifications.addError "
         Haskell-ghc-mod: ghc-mod
-        #{if interactive? then 'interactive ' else ''}command
-        #{command?.join? ' ' ? command} failed with error #{err.name}",
+        #{if interactive? then 'interactive ' else ''}command #{command}
+        #{uri ? ''} #{args?.join?(' ') ? args} failed with error #{err.name}",
         detail: """
           URI: #{uri}
           message: #{err.message}
