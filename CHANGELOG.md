@@ -1,3 +1,9 @@
+## 1.3.0
+* Go-to-decl context menu item
+* Go-to-decl initial
+* Move EOT to Util
+* Cleaner debug vers,caps
+
 ## 1.2.8
 * Fix spawn leak
 * Fix error reporting
