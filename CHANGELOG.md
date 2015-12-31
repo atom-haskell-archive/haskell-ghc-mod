@@ -1,3 +1,7 @@
+## 1.2.8
+* Fix spawn leak
+* Fix error reporting
+
 ## 1.2.7
 * Better error reporting on failing to run ghc-mod
 
