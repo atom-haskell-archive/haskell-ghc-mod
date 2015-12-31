@@ -152,6 +152,18 @@ module.exports = HaskellGhcMod =
           detail: detail
           tooltip: (crange) ->
             infoTooltip target.getModel().getBuffer(), crange
+      'haskell-ghc-mod:go-to-declaration': ({target, detail}) =>
+        editor = target.getModel()
+        upi.withEventRange {editor, detail}, ({crange}) =>
+          @process.getInfoInBuffer(editor.getBuffer(), crange)
+          .then ({range, info}) ->
+            res = /.*-- Defined at (.+):(\d+):(\d+)$/.exec info
+            return unless res?
+            [_, fn, line, col] = res
+            console.log fn, line, col
+            atom.workspace.open fn,
+              initialLine: parseInt(line) - 1
+              initialColumn: parseInt(col) - 1
       'haskell-ghc-mod:show-info-fallback-to-type': ({target, detail}) ->
         upi.showTooltip
           editor: target.getModel()
