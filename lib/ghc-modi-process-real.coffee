@@ -9,8 +9,8 @@ EOT = "#{EOL}\x04#{EOL}"
 module.exports =
 class GhcModiProcessReal
   constructor: (@caps) ->
-    @processMap = new WeakMap
-    @bufferDirMap = new WeakMap #TextBuffer -> Directory
+    @processMap = new Map #FilePath -> InteractiveProcess
+    @bufferDirMap = new WeakMap #TextBuffer -> FilePath
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
 
@@ -66,7 +66,7 @@ class GhcModiProcessReal
   spawnProcess: (rootDir, options) =>
     return unless @processMap?
     return unless atom.config.get('haskell-ghc-mod.enableGhcModi')
-    proc = @processMap.get(rootDir)
+    proc = @processMap.get(rootDir.getPath())
     debug "Checking for ghc-modi in #{rootDir.getPath()}"
     if proc?
       debug "Found running ghc-modi instance for #{rootDir.getPath()}"
@@ -82,8 +82,8 @@ class GhcModiProcessReal
         new InteractiveProcess(modiPath, [], options, @caps)
     proc.onExit (code) =>
       debug "ghc-modi for #{rootDir.getPath()} ended with #{code}"
-      @processMap?.delete(rootDir)
-    @processMap.set rootDir, proc
+      @processMap?.delete(rootDir.getPath())
+    @processMap.set rootDir.getPath(), proc
     return proc
 
   runModCmd: ({options, command, text, uri, args}) ->
@@ -165,14 +165,14 @@ class GhcModiProcessReal
   killProcess: =>
     return unless @processMap?
     debug "Killing all ghc-modi processes"
-    atom.workspace.getTextEditors().forEach (editor) =>
-      @killProcessForDir @getRootDir(editor.getBuffer())
+    @processMap.forEach (proc) ->
+      proc.kill()
 
   killProcessForDir: (dir) =>
     return unless @processMap?
     debug "Killing ghc-modi process for #{dir.getPath()}"
-    @processMap.get(dir)?.kill?()
-    @processMap.delete(dir)
+    @processMap.get(dir.getPath())?.kill?()
+    @processMap.delete(dir.getPath())
 
   destroy: =>
     return unless @processMap?
