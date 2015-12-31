@@ -280,6 +280,9 @@ module.exports = HaskellGhcMod =
           ,
             'label': 'Insert Import'
             'command': 'haskell-ghc-mod:insert-import'
+          ,
+            'label': 'Go To Declaration'
+            'command': 'haskell-ghc-mod:go-to-declaration'
         ]
       ]
 
