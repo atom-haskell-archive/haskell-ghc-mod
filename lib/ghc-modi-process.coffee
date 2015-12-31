@@ -71,8 +71,7 @@ class GhcModiProcess
     if atLeast [5, 5]
       caps.rootExec = false
       caps.quoteArgs = true
-    Util.debug vers
-    Util.debug caps
+    Util.debug vers, caps
     @backend = new GhcModiProcessReal caps
 
   createQueues: =>
