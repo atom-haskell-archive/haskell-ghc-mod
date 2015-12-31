@@ -1,8 +1,7 @@
 {Emitter, CompositeDisposable} = require('atom')
 CP = require('child_process')
-{debug, mkError} = require './util'
+{debug, mkError, EOT} = require './util'
 {EOL} = require('os')
-EOT = "#{EOL}\x04#{EOL}"
 
 module.exports =
 class InteractiveProcess

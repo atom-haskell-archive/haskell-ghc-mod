@@ -2,8 +2,11 @@
 {delimiter, sep, extname} = require 'path'
 Temp = require('temp')
 FS = require('fs')
+{EOL} = require('os')
 
 module.exports = Util =
+  EOT: "#{EOL}\x04#{EOL}"
+
   debug: (messages...) ->
     if atom.config.get('haskell-ghc-mod.debug')
       console.log "haskell-ghc-mod debug:", messages...

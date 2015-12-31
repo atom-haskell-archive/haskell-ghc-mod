@@ -1,10 +1,9 @@
 {BufferedProcess, Emitter, CompositeDisposable, Directory} = require('atom')
 CP = require('child_process')
 InteractiveProcess = require './interactive-process'
-{debug, mkError, withTempFile} = require './util'
+{debug, mkError, withTempFile, EOT} = require './util'
 Util = require './util'
 {EOL} = require('os')
-EOT = "#{EOL}\x04#{EOL}"
 
 module.exports =
 class GhcModiProcessReal
