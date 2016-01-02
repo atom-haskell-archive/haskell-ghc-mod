@@ -1,5 +1,5 @@
 {CompositeDisposable, Emitter} = require 'atom'
-Util = require './util'
+Util = require '../util'
 
 module.exports=
   class ModuleInfo

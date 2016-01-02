@@ -1,8 +1,7 @@
 {BufferedProcess, Emitter, CompositeDisposable, Directory} = require('atom')
 CP = require('child_process')
 InteractiveProcess = require './interactive-process'
-{debug, warn, mkError, withTempFile, EOT} = require './util'
-Util = require './util'
+{debug, warn, mkError, withTempFile, EOT} = Util = require '../util'
 {EOL} = require('os')
 
 module.exports =

@@ -1,5 +1,5 @@
 {Range, Point, Emitter, CompositeDisposable} = require 'atom'
-Util = require './util'
+Util = require '../util'
 {extname} = require('path')
 Queue = require 'promise-queue'
 

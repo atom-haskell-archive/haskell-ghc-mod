@@ -2,7 +2,7 @@ FZ = require 'fuzzaldrin'
 {Disposable, Range} = require 'atom'
 BufferInfo = require './buffer-info'
 ModuleInfo = require './module-info'
-Util = require './util'
+Util = require '../util'
 
 module.exports =
 class CompletionBackend

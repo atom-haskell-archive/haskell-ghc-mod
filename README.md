@@ -87,4 +87,4 @@ Since 1.0.0, haskell-ghc-mod provides `haskell-completion-backend` service.
 
 You can find description in [completion-backend.coffee][2]
 
-[2]:https://github.com/atom-haskell/haskell-ghc-mod/blob/master/lib/completion-backend.coffee
+[2]:https://github.com/atom-haskell/haskell-ghc-mod/blob/master/lib/completion-backend/completion-backend.coffee

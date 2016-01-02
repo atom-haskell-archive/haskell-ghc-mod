@@ -1,6 +1,6 @@
 {Emitter, CompositeDisposable} = require('atom')
 CP = require('child_process')
-{debug, warn, mkError, EOT} = require './util'
+{debug, warn, mkError, EOT} = require '../util'
 {EOL} = require('os')
 
 module.exports =

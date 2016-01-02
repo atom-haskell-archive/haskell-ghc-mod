@@ -75,7 +75,7 @@ module.exports = HaskellGhcMod =
                     amount of memory.'
 
   activate: (state) ->
-    GhcModiProcess = require './ghc-modi-process'
+    GhcModiProcess = require './ghc-mod/ghc-modi-process'
     @process = new GhcModiProcess
     @disposables = null
 
@@ -88,7 +88,7 @@ module.exports = HaskellGhcMod =
 
   provideCompletionBackend: ->
     return unless @process?
-    CompletionBackend = require './completion-backend'
+    CompletionBackend = require './completion-backend/completion-backend'
     @completionBackend ?= new CompletionBackend @process
     @completionBackend
 
