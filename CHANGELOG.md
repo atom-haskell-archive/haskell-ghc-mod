@@ -1,3 +1,7 @@
+## 1.4.0
+* ghc-mod error reporting
+* Don't enable quoteArgs yet
+
 ## 1.3.1
 * Better error reporting
 
