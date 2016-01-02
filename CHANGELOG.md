@@ -1,3 +1,6 @@
+## 1.3.1
+* Better error reporting
+
 ## 1.3.0
 * Go-to-decl context menu item
 * Go-to-decl initial
