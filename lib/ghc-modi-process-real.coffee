@@ -49,13 +49,14 @@ class GhcModiProcessReal
           fun {dir, options, command, uri: tempuri, args}
       else
         fun {dir, options, command, text, uri, args}
-    P.catch (err) ->
+    P.catch (err) =>
       debug "#{err}"
       atom.notifications.addFatalError "
         Haskell-ghc-mod: ghc-mod
         #{if interactive? then 'interactive ' else ''}command #{command}
         failed with error #{err.name}",
         detail: """
+          caps: #{JSON.stringify(@caps)}
           URI: #{uri}
           Args: #{args}
           message: #{err.message}

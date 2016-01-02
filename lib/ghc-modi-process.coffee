@@ -30,6 +30,7 @@ class GhcModiProcess
       /^ghc-mod version (\d+)\.(\d+)\.(\d+)\.(\d+)/.exec(res.stdout)
       .slice(1, 5).map (i) -> parseInt i
     caps =
+      version: vers
       legacyInteractive: false
       fileMap: false
       rootExec: false
@@ -71,7 +72,7 @@ class GhcModiProcess
     if atLeast [5, 5]
       caps.rootExec = false
       # caps.quoteArgs = true
-    Util.debug vers, caps
+    Util.debug JSON.stringify(caps)
     @backend = new GhcModiProcessReal caps
 
   createQueues: =>
