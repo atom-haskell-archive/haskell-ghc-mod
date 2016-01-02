@@ -3,6 +3,13 @@
   "main": "./lib/haskell-ghc-mod",
   "version": "1.4.1",
   "description": "Provides backends for ide-haskell and autocomplete-haskell",
+  "keywords": [
+    "ide-haskell",
+    "ide",
+    "haskell",
+    "ghc-mod",
+    "backend"
+  ],
   "repository": "https://github.com/atom-haskell/haskell-ghc-mod",
   "license": "MIT",
   "engines": {
