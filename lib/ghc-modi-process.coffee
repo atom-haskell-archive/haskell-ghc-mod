@@ -19,22 +19,58 @@ class GhcModiProcess
 
     @createQueues()
 
+    @backendPromise =
+      @getVersion()
+      .then @getCaps
+      .then (caps) =>
+        @backend = new GhcModiProcessReal caps
+      .catch (err) ->
+        atom.notifications.addFatalError "
+          Haskell-ghc-mod: ghc-mod failed to launch.
+          It is probably missing or misconfigured. #{err.code}",
+          detail: """
+            #{err}
+            PATH: #{process.env.PATH}
+            path: #{process.env.path}
+            Path: #{process.env.Path}
+            """
+          stack: err.stack
+          dismissable: true
+
+  createQueues: =>
+    @commandQueues =
+      checklint: new Queue(2)
+      browse: null
+      typeinfo: new Queue(1)
+      find: new Queue(1)
+      init: new Queue(4)
+      list: new Queue(1)
+    @disposables.add atom.config.observe 'haskell-ghc-mod.maxBrowseProcesses', (value) =>
+      @commandQueues.browse = new Queue(value)
+
+  getVersion: ->
     opts = Util.getProcessOptions()
     opts.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
-    res = CP.spawnSync atom.config.get('haskell-ghc-mod.ghcModPath'),
-      ['version'],
-      opts
-    if res.error?
-      throw res.error
-    vers =
-      /^ghc-mod version (\d+)\.(\d+)\.(\d+)\.(\d+)/.exec(res.stdout)
-      .slice(1, 5).map (i) -> parseInt i
+    new Promise (resolve, reject) ->
+      CP.execFile atom.config.get('haskell-ghc-mod.ghcModPath'),
+        ['version'], opts,
+        (error, stdout, stderr) ->
+          if error?
+            error.stack = (new Error).stack
+            return reject error
+          resolve (
+            /^ghc-mod version (\d+)\.(\d+)\.(\d+)\.(\d+)/.exec(stdout)
+            .slice(1, 5).map (i) -> parseInt i
+            )
+
+  getCaps: (vers) ->
     caps =
       version: vers
       legacyInteractive: false
       fileMap: false
       rootExec: false
       quoteArgs: false
+
     atLeast = (b) ->
       for v, i in b
         if vers[i] > v
@@ -73,25 +109,14 @@ class GhcModiProcess
       caps.rootExec = false
       # caps.quoteArgs = true
     Util.debug JSON.stringify(caps)
-    @backend = new GhcModiProcessReal caps
-
-  createQueues: =>
-    @commandQueues =
-      checklint: new Queue(2)
-      browse: null
-      typeinfo: new Queue(1)
-      find: new Queue(1)
-      init: new Queue(4)
-      list: new Queue(1)
-    @disposables.add atom.config.observe 'haskell-ghc-mod.maxBrowseProcesses', (value) =>
-      @commandQueues.browse = new Queue(value)
+    return caps
 
   killProcess: =>
-    @backend.killProcess()
+    @backend?.killProcess?()
 
   # Tear down any state and detach
   destroy: =>
-    @backend.destroy()
+    @backend?.destroy?()
     @emitter.emit 'did-destroy'
     @disposables.dispose()
     @commandQueues = null
@@ -109,6 +134,14 @@ class GhcModiProcess
     @emitter.on 'queue-idle', callback
 
   queueCmd: (queueName, runArgs) =>
+    unless @backend?
+      return @backendPromise.then =>
+        if @backend?
+          @queueCmd(queueName, runArgs)
+        else
+          []
+    runArgs.dir ?= @getRootDir(runArgs.buffer) if runArgs.buffer?
+    runArgs.options ?= Util.getProcessOptions(runArgs.dir.getPath())
     qe = (qn) =>
       q = @commandQueues[qn]
       q.getQueueLength() + q.getPendingLength() is 0
@@ -123,19 +156,16 @@ class GhcModiProcess
     return promise
 
   runList: (buffer) =>
-    rootDir = @getRootDir(buffer)
     @queueCmd 'list',
-      options: Util.getProcessOptions(rootDir.getPath())
+      buffer: buffer
       command: 'list'
 
   runLang: =>
     @queueCmd 'init',
-      options: Util.getProcessOptions()
       command: 'lang'
 
   runFlag: =>
     @queueCmd 'init',
-      options: Util.getProcessOptions()
       command: 'flag'
 
   runBrowse: (rootPath, modules) =>
@@ -155,12 +185,9 @@ class GhcModiProcess
         {name, typeSignature, symbolType}
 
   getTypeInBuffer: (buffer, crange) =>
-    rootDir = @getRootDir(buffer)
-
     @queueCmd 'typeinfo',
       interactive: true
-      dir: rootDir
-      options: Util.getProcessOptions(rootDir.getPath())
+      buffer: buffer
       command: 'type',
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
@@ -184,12 +211,9 @@ class GhcModiProcess
   getInfoInBuffer: (buffer, crange) =>
     {symbol, range} = Util.getSymbolInRange(/[\w.']*/, buffer, crange)
 
-    rootDir = @getRootDir(buffer)
-
     @queueCmd 'typeinfo',
       interactive: true
-      dir: rootDir
-      options: Util.getProcessOptions(rootDir.getPath())
+      buffer: buffer
       command: 'info'
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
@@ -204,27 +228,23 @@ class GhcModiProcess
   findSymbolProvidersInBuffer: (buffer, crange) =>
     {symbol} = Util.getSymbolInRange(/[\w']*/, buffer, crange)
 
-    rootDir = @getRootDir(buffer)
-
     @queueCmd 'find',
       interactive: true
-      dir: rootDir
-      options: Util.getProcessOptions(rootDir.getPath())
+      buffer: buffer
       command: 'find'
       args: [symbol]
 
   doCheckOrLintBuffer: (cmd, buffer, fast) =>
     return Promise.resolve [] if buffer.isEmpty()
-    rootDir = @getRootDir(buffer)
 
     @queueCmd 'checklint',
       interactive: fast
-      dir: rootDir
-      options: Util.getProcessOptions(rootDir.getPath())
+      buffer: buffer
       command: cmd
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
-    .then (lines) ->
+    .then (lines) =>
+      rootDir = @getRootDir buffer
       lines.map (line) ->
         match =
           line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)

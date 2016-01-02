@@ -76,20 +76,7 @@ module.exports = HaskellGhcMod =
 
   activate: (state) ->
     GhcModiProcess = require './ghc-modi-process'
-    try
-      @process = new GhcModiProcess
-    catch err
-      atom.notifications.addFatalError "
-        Haskell-ghc-mod: ghc-mod failed to launch.
-        It is probably missing or misconfigured. #{err.code}",
-        detail: """
-          #{err}
-          PATH: #{process.env.PATH}
-          path: #{process.env.path}
-          Path: #{process.env.Path}
-          """
-        stack: err.stack
-        dismissable: true
+    @process = new GhcModiProcess
     @disposables = null
 
   deactivate: ->
