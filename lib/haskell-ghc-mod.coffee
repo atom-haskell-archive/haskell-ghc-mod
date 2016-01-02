@@ -83,13 +83,15 @@ module.exports = HaskellGhcMod =
     try
       @process = new GhcModiProcess
     catch err
-      atom.notifications.addFatalError """
+      atom.notifications.addFatalError "
         Haskell-ghc-mod: ghc-mod failed to launch.
-        It is probably missing or misconfigured.
-
-        Restart Atom after configuring.
-        """,
-        detail: err
+        It is probably missing or misconfigured. #{err.code}",
+        detail: """
+          #{err}
+          PATH: #{process.env.PATH}
+          path: #{process.env.path}
+          Path: #{process.env.Path}
+          """
         stack: err.stack
         dismissable: true
     @disposables = null
