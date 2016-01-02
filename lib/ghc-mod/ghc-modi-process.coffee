@@ -141,7 +141,7 @@ class GhcModiProcess
         else
           []
     runArgs.dir ?= @getRootDir(runArgs.buffer) if runArgs.buffer?
-    runArgs.options ?= Util.getProcessOptions(runArgs.dir.getPath())
+    runArgs.options ?= Util.getProcessOptions(runArgs.dir?.getPath?())
     qe = (qn) =>
       q = @commandQueues[qn]
       q.getQueueLength() + q.getPendingLength() is 0
