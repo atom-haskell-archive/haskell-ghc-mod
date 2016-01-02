@@ -1,8 +1,3 @@
-GhcModiProcess = require './ghc-modi-process'
-CompletionBackend = require './completion-backend'
-{CompositeDisposable} = require 'atom'
-ImportListView = require './views/import-list-view'
-
 module.exports = HaskellGhcMod =
   process: null
 
@@ -80,6 +75,7 @@ module.exports = HaskellGhcMod =
                     amount of memory.'
 
   activate: (state) ->
+    GhcModiProcess = require './ghc-modi-process'
     try
       @process = new GhcModiProcess
     catch err
@@ -105,11 +101,14 @@ module.exports = HaskellGhcMod =
 
   provideCompletionBackend: ->
     return unless @process?
+    CompletionBackend = require './completion-backend'
     @completionBackend ?= new CompletionBackend @process
     @completionBackend
 
   consumeUPI: (service) ->
     return unless @process?
+    {CompositeDisposable} = require 'atom'
+    ImportListView = require './views/import-list-view'
     upi = service.registerPlugin @disposables = new CompositeDisposable
 
     upi.setMessageTypes
