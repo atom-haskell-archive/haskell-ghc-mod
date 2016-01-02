@@ -1,6 +1,6 @@
 {Emitter, CompositeDisposable} = require('atom')
 CP = require('child_process')
-{debug, mkError, EOT} = require './util'
+{debug, warn, mkError, EOT} = require './util'
 {EOL} = require('os')
 
 module.exports =
@@ -9,6 +9,7 @@ class InteractiveProcess
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
     @interactiveAction = Promise.resolve()
+    @cwd = options.cwd
 
     debug "Spawning new ghc-modi instance for #{options.cwd} with
           #{"options.#{k} = #{v}" for k, v of options}"
@@ -19,12 +20,12 @@ class InteractiveProcess
     @proc.stderr.on 'data', (data) ->
       [first, rest..., last] = data.split(EOL)
       if last?
-        console.warn "ghc-modi said: #{lastLine + first}"
+        warn "ghc-modi said: #{lastLine + first}"
         lastLine = last
       else
         lastLine = lastLine + first
       rest.forEach (line) ->
-        console.warn "ghc-modi said: #{line}"
+        warn "ghc-modi said: #{line}"
     @resetTimer()
     @proc.on 'exit', (code) =>
       clearTimeout @timer
@@ -80,15 +81,19 @@ class InteractiveProcess
             console.error "#{savedLines}"
             reject mkError "Timeout", "#{savedLines}"
             ), 60000
-      debug "Running ghc-modi command #{command.split(EOL)[0]}"
       args_ =
         if @caps.quoteArgs
           args.map (x) -> "\x02#{x}\x03"
         else
           args
+      debug "Running ghc-modi command #{command}", args...
       @proc.stdin.write "#{command} #{args_.join(' ').replace(EOL, ' ')}#{EOL}"
       if data?
+        debug "Writing data to stdin..."
         @proc.stdin.write "#{data}#{EOT}"
       return resultP
-    @interactiveAction = @interactiveAction.then ->
-      action(interact)
+    @interactiveAction = @interactiveAction.then =>
+      debug "Started interactive action block in #{@cwd}"
+      action(interact).then (res) ->
+        debug "Ended interactive action block in #{@cwd}"
+        return res

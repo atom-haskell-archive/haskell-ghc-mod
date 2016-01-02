@@ -4,13 +4,34 @@ Temp = require('temp')
 FS = require('fs')
 {EOL} = require('os')
 
+debuglog = []
+logKeep = 30000 #ms
+
+savelog = (messages...) ->
+  ts = Date.now()
+  debuglog.push
+    timestamp: ts
+    messages: messages
+  debuglog = debuglog.filter ({timestamp}) -> (ts - timestamp) < logKeep
+
 module.exports = Util =
   EOT: "#{EOL}\x04#{EOL}"
 
   debug: (messages...) ->
     if atom.config.get('haskell-ghc-mod.debug')
       console.log "haskell-ghc-mod debug:", messages...
-      console.trace "haskell-ghc-mod trace:"
+    savelog messages...
+
+  warn: (messages...) ->
+    console.warn "haskell-ghc-mod warning:", messages...
+    savelog messages...
+
+  getDebugLog: ->
+    ts = Date.now()
+    debuglog = debuglog.filter ({timestamp}) -> (ts - timestamp) < logKeep
+    debuglog.map ({timestamp, messages}) ->
+      "#{(timestamp - ts) / 1000}s: #{messages.join ','}"
+    .join EOL
 
   getRootDirFallback: (buffer) ->
     [dir] = atom.project.getDirectories().filter (dir) ->

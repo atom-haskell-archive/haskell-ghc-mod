@@ -1,7 +1,7 @@
 {BufferedProcess, Emitter, CompositeDisposable, Directory} = require('atom')
 CP = require('child_process')
 InteractiveProcess = require './interactive-process'
-{debug, mkError, withTempFile, EOT} = require './util'
+{debug, warn, mkError, withTempFile, EOT} = require './util'
 Util = require './util'
 {EOL} = require('os')
 
@@ -25,13 +25,13 @@ class GhcModiProcessReal
         options.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
         res = CP.spawnSync modPath, ['root'], options
         if res.error? or not res.stdout?
-          console.warn "Encountered error #{res.error} while getting project root dir"
+          warn "Encountered error #{res.error} while getting project root dir"
           Util.getRootDir buffer
         else
           [path] = res.stdout.split(EOL)
           d = new Directory path
           unless d?.isDirectory?()
-            console.warn "ghc-mod returned non-directory while getting project root dir"
+            warn "ghc-mod returned non-directory while getting project root dir"
             Util.getRootDir buffer
           else
             d
@@ -51,14 +51,18 @@ class GhcModiProcessReal
         fun {dir, options, command, text, uri, args}
     P.catch (err) ->
       debug "#{err}"
-      atom.notifications.addError "
+      atom.notifications.addFatalError "
         Haskell-ghc-mod: ghc-mod
         #{if interactive? then 'interactive ' else ''}command #{command}
-        #{uri ? ''} #{args?.join?(' ') ? args} failed with error #{err.name}",
+        failed with error #{err.name}",
         detail: """
           URI: #{uri}
+          Args: #{args}
           message: #{err.message}
+          log:
+          #{Util.getDebugLog()}
           """
+        stack: err.stack
         dismissable: true
       return []
 
@@ -107,7 +111,7 @@ class GhcModiProcessReal
         stderr: (data) ->
           err = err.concat(data.split(EOL))
           data.split(EOL).slice(0, -1).forEach (line) ->
-            console.warn "ghc-mod said: #{line}"
+            warn "ghc-mod said: #{line}"
         exit: (code) ->
           debug "#{modPath} ended with code #{code}"
           if code != 0
@@ -119,7 +123,7 @@ class GhcModiProcessReal
         debug "sending stdin text to #{modPath}"
         process.process.stdin.write "#{text}#{EOT}"
       process.onWillThrowError ({error, handle}) ->
-        console.warn "Using fallback child_process because of #{error.message}"
+        warn "Using fallback child_process because of #{error.message}"
         child = CP.execFile modPath, cmd, options, (cperror, stdout, stderr) ->
           if cperror?
             reject cperror
