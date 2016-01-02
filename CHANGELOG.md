@@ -1,3 +1,7 @@
+## 1.4.1
+* FIX: Fat arrow
+* Include ghc-mod version into error report
+
 ## 1.4.0
 * ghc-mod error reporting
 * Don't enable quoteArgs yet
