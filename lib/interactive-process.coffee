@@ -94,6 +94,6 @@ class InteractiveProcess
       return resultP
     @interactiveAction = @interactiveAction.then =>
       debug "Started interactive action block in #{@cwd}"
-      action(interact).then (res) ->
+      action(interact).then (res) =>
         debug "Ended interactive action block in #{@cwd}"
         return res
