@@ -2,6 +2,7 @@
 Util = require '../util'
 {extname} = require('path')
 Queue = require 'promise-queue'
+{unlitSync} = require 'atom-haskell-utils'
 
 GhcModiProcessReal = require './ghc-modi-process-real.coffee'
 CP = require 'child_process'
@@ -237,23 +238,44 @@ class GhcModiProcess
   doCheckOrLintBuffer: (cmd, buffer, fast) =>
     return Promise.resolve [] if buffer.isEmpty()
 
+    # A dirty hack to make lint work with lhs
+    olduri = uri = buffer.getUri()
+    text =
+      if cmd is 'lint' and extname(uri) is '.lhs'
+        uri = uri.slice 0, -1
+        unlitSync olduri, buffer.getText()
+      else if buffer.isModified()
+        buffer.getText()
+    if text?.error?
+      # TODO: Reject
+      [m, uri, line, mess] = text.error.match(/^(.*?):([0-9]+): *(.*) *$/)
+      return Promise.resolve [
+        uri: uri
+        position: new Point(line - 1, 0)
+        message: mess
+        severity: 'lint'
+      ]
+    # end of dirty hack
+
     @queueCmd 'checklint',
       interactive: fast
       buffer: buffer
       command: cmd
-      uri: buffer.getUri()
-      text: buffer.getText() if buffer.isModified()
+      uri: uri
+      text: text
     .then (lines) =>
       rootDir = @getRootDir buffer
       lines.map (line) ->
         match =
           line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
         unless match?
+          #TODO: reject (i.e. throw)
           console.log("ghc-mod says: #{line}")
-          line = "#{buffer.getUri()}:0:0:Error: #{line}"
+          line = "#{olduri}:0:0:Error: #{line}"
           match=
             line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
         [m, file, row, col, warning] = match
+        file = olduri if uri.endsWith(file)
         severity =
           if cmd == 'lint'
             'lint'
@@ -274,7 +296,6 @@ class GhcModiProcess
     @doCheckOrLintBuffer "check", buffer, fast
 
   doLintBuffer: (buffer, fast) =>
-    return Promise.resolve [] if extname(buffer.getUri()) is '.lhs'
     @doCheckOrLintBuffer "lint", buffer, fast
 
   doCheckAndLint: (buffer, fast) =>

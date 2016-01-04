@@ -23,7 +23,8 @@
     "fs": "~0.0.2",
     "fuzzaldrin": "^2.1.0",
     "promise-queue": "^2.2.0",
-    "atom-space-pen-views": "^2.0.3"
+    "atom-space-pen-views": "^2.0.3",
+    "atom-haskell-utils": "^0.5.0"
   },
   "consumedServices": {
     "ide-haskell-upi": {
