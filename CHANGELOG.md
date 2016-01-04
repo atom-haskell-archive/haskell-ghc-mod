@@ -1,3 +1,13 @@
+## 1.5.0
+* Use library-supplied getRootDir/Fallback
+* Lint lhs files
+* Fix TypeError
+* Add package keywords
+* Organize source files
+* Activate on language-haskell:grammar-used
+* Async version
+* Defer `require`s until needed
+
 ## 1.4.1
 * FIX: Fat arrow
 * Include ghc-mod version into error report
