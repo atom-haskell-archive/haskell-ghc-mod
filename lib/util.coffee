@@ -3,6 +3,7 @@
 Temp = require('temp')
 FS = require('fs')
 {EOL} = require('os')
+HsUtil = require 'atom-haskell-utils'
 
 debuglog = []
 logKeep = 30000 #ms
@@ -33,38 +34,9 @@ module.exports = Util =
       "#{(timestamp - ts) / 1000}s: #{messages.join ','}"
     .join EOL
 
-  getRootDirFallback: (buffer) ->
-    [dir] = atom.project.getDirectories().filter (dir) ->
-      dir.contains(buffer.getUri())
-    unless dir?
-      dir = atom.project.getDirectories()[0]
-    if dir?.getPath?() is 'atom://config'
-      dir = null
-    unless dir?.isDirectory?()
-      dir = buffer.file?.getParent?() ? new Directory '.'
-    dir
+  getRootDirFallback: HsUtil.getRootDirFallback
 
-  getRootDir: (buffer) ->
-    dirHasCabalFile = (d) ->
-      return false unless d?
-      d.getEntriesSync().some (file) ->
-        file.isFile() and file.getBaseName().endsWith '.cabal'
-    dirHasSandboxFile = (d) ->
-      return false unless d?
-      d.getEntriesSync().some (file) ->
-        file.isFile() and (file.getBaseName() is 'cabal.sandbox.config')
-    findProjectRoot = (d, check) ->
-      until d?.isRoot?() or not d? or check d
-        d = d?.getParent?()
-      d if check d
-    dir = buffer.file?.getParent?() ? Util.getRootDirFallback buffer
-    dir = findProjectRoot(dir, dirHasCabalFile) ? findProjectRoot(dir, dirHasSandboxFile)
-    unless dir?.isDirectory?()
-      dir = Util.getRootDirFallback buffer
-    Util.debug "getRootDir path = #{dir.getPath()}",
-      "atom.project.getDirectories()[0] = #{atom.project.getDirectories()[0]?.getPath?()}",
-      "buffer.file?.getParent?() = #{buffer.file?.getParent?()?.getPath?()}"
-    return dir
+  getRootDir: HsUtil.getRootDir
 
   getProcessOptions: (rootPath) ->
     Util.debug "getProcessOptions(#{rootPath})"
