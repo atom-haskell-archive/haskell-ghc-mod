@@ -108,7 +108,7 @@ class GhcModiProcess
       caps.rootExec = true
     if atLeast [5, 5]
       caps.rootExec = false
-      # caps.quoteArgs = true
+      caps.quoteArgs = true
     Util.debug JSON.stringify(caps)
     return caps
 

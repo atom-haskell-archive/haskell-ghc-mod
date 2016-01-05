@@ -83,11 +83,11 @@ class InteractiveProcess
             ), 60000
       args_ =
         if @caps.quoteArgs
-          args.map (x) -> "\x02#{x}\x03"
+          ['ascii-escape', command].concat args.map (x) -> "\x02#{x}\x03"
         else
-          args
+          [command, args...]
       debug "Running ghc-modi command #{command}", args...
-      @proc.stdin.write "#{command} #{args_.join(' ').replace(EOL, ' ')}#{EOL}"
+      @proc.stdin.write "#{args_.join(' ').replace(EOL, ' ')}#{EOL}"
       if data?
         debug "Writing data to stdin..."
         @proc.stdin.write "#{data}#{EOT}"
