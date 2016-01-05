@@ -1,3 +1,6 @@
+## 1.5.1
+* Update and enable quoteArgs
+
 ## 1.5.0
 * Use library-supplied getRootDir/Fallback
 * Lint lhs files
