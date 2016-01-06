@@ -1,3 +1,6 @@
+## 1.5.3
+* BUGFIX: atom-haskell-utils bump
+
 ## 1.5.2
 * Fix isDirectory bug
 
