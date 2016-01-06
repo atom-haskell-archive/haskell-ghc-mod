@@ -1,3 +1,6 @@
+## 1.5.2
+* Fix isDirectory bug
+
 ## 1.5.1
 * Update and enable quoteArgs
 
