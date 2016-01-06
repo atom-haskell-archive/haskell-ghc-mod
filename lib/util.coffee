@@ -38,6 +38,8 @@ module.exports = Util =
 
   getRootDir: HsUtil.getRootDir
 
+  isDirectory: HsUtil.isDirectory
+
   getProcessOptions: (rootPath) ->
     Util.debug "getProcessOptions(#{rootPath})"
     env = {}

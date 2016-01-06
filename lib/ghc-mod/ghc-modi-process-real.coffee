@@ -28,12 +28,11 @@ class GhcModiProcessReal
           Util.getRootDir buffer
         else
           [path] = res.stdout.split(EOL)
-          d = new Directory path
-          unless d?.isDirectory?()
+          unless Util.isDirectory(path)
             warn "ghc-mod returned non-directory while getting project root dir"
             Util.getRootDir buffer
           else
-            d
+            new Directory path
       else
         Util.getRootDir buffer
     @bufferDirMap.set buffer, dir
