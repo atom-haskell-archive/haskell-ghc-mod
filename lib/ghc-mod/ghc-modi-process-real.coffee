@@ -143,6 +143,7 @@ class GhcModiProcessReal
     unless proc
       debug "Failed. Falling back to ghc-mod"
       return @runModCmd o
+    uri = dir.relativize(uri) if uri? and dir? and not @caps.quoteArgs
     proc.do (interact) ->
       Promise.resolve()
       .then ->
