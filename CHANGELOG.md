@@ -1,3 +1,6 @@
+## 1.5.4
+* Prefer relative paths with ghc-modi<5.5.0.0
+
 ## 1.5.3
 * BUGFIX: atom-haskell-utils bump
 
