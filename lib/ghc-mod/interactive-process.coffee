@@ -83,11 +83,7 @@ class InteractiveProcess
             ), 60000
       args_ =
         if @caps.quoteArgs
-          ['ascii-escape', command].concat args.map (x) ->
-            if x.length isnt 0
-              "\x02#{x}\x03"
-            else
-              ""
+          ['ascii-escape', command].concat args.map (x) -> "\x02#{x}\x03"
         else
           [command, args...]
       debug "Running ghc-modi command #{command}", args...

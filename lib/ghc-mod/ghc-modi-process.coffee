@@ -192,7 +192,7 @@ class GhcModiProcess
       command: 'type',
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
-      args: ["", crange.start.row + 1, crange.start.column + 1]
+      args: [crange.start.row + 1, crange.start.column + 1]
     .then (lines) ->
       [range, type] = lines.reduce ((acc, line) ->
         return acc if acc != ''
@@ -218,7 +218,7 @@ class GhcModiProcess
       command: 'info'
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
-      args: ["", symbol]
+      args: [symbol]
     .then (lines) ->
       info = lines.join(EOL)
       if info is 'Cannot show info' or not info
