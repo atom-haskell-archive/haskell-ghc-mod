@@ -1,3 +1,6 @@
+## 1.5.5
+* Don't quote empty strings
+
 ## 1.5.4
 * Prefer relative paths with ghc-modi<5.5.0.0
 
