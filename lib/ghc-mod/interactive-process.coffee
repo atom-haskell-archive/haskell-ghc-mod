@@ -87,7 +87,7 @@ class InteractiveProcess
         else
           [command, args...]
       debug "Running ghc-modi command #{command}", args...
-      @proc.stdin.write "#{args_.join(' ').replace(EOL, ' ')}#{EOL}"
+      @proc.stdin.write "#{args_.join(' ').replace(/(?:\r?\n|\r)/g, ' ')}#{EOL}"
       if data?
         debug "Writing data to stdin..."
         @proc.stdin.write "#{data}#{EOT}"
