@@ -1,3 +1,6 @@
+## 1.5.6
+* Remove empty arguments altogether
+
 ## 1.5.5
 * Don't quote empty strings
 
