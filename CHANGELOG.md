@@ -1,3 +1,6 @@
+## 1.5.7
+* Replace anything resembling newline in int. proc.
+
 ## 1.5.6
 * Remove empty arguments altogether
 
