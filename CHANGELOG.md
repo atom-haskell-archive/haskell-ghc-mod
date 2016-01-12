@@ -1,3 +1,6 @@
+## 1.5.8
+* Hopefully fix tokenization problems
+
 ## 1.5.7
 * Replace anything resembling newline in int. proc.
 
