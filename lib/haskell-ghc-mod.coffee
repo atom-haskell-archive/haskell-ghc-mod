@@ -139,16 +139,15 @@ module.exports = HaskellGhcMod =
           editor: target.getModel()
           detail: detail
           tooltip: (crange) ->
-            infoTooltip target.getModel().getBuffer(), crange
+            infoTooltip target.getModel(), crange
       'haskell-ghc-mod:go-to-declaration': ({target, detail}) =>
         editor = target.getModel()
         upi.withEventRange {editor, detail}, ({crange}) =>
-          @process.getInfoInBuffer(editor.getBuffer(), crange)
+          @process.getInfoInBuffer(editor, crange)
           .then ({range, info}) ->
             res = /.*-- Defined at (.+):(\d+):(\d+)$/.exec info
             return unless res?
             [_, fn, line, col] = res
-            console.log fn, line, col
             atom.workspace.open fn,
               initialLine: parseInt(line) - 1
               initialColumn: parseInt(col) - 1
@@ -159,37 +158,25 @@ module.exports = HaskellGhcMod =
           tooltip: (crange) ->
             infoTypeTooltip target.getModel().getBuffer(), crange
       'haskell-ghc-mod:insert-type': ({target, detail}) =>
+        Util = require './util'
         editor = target.getModel()
         upi.withEventRange {editor, detail}, ({crange}) =>
           @process.getTypeInBuffer(editor.getBuffer(), crange)
-          .then ({range, type}) ->
-            n = editor.indentationForBufferRow(range.start.row)
+          .then (o) ->
+            {type} = o
+            n = editor.indentationForBufferRow(o.range.start.row)
             indent = ' '.repeat n * editor.getTabLength()
-            inScope = (scope) ->
-              editor
-              .scopeDescriptorForBufferPosition(crange.start)
-              .getScopesArray()
-              .some (v) -> v is scope
-            symbolP = switch
-              when inScope "keyword.operator.haskell"
-                "(#{editor.getTextInBufferRange editor.bufferRangeForScopeAtCursor "keyword.operator.haskell"})"
-              when inScope "entity.name.function.infix.haskell"
-                editor.getTextInBufferRange editor.bufferRangeForScopeAtCursor "entity.name.function.infix.haskell"
-              else
-                new Promise (resolve) ->
-                  editor.scanInBufferRange /[\w'.]+/, range, ({matchText, stop}) ->
-                    resolve(matchText)
-                    stop()
-                  resolve("unknown")
+            {scope, range, symbol} =
+              Util.getSymbolAtPoint editor, o.range.start
+            symbol = "(#{symbol})" if range is 'keyword.operator.haskell'
             pos = [range.start.row, 0]
-            Promise.resolve(symbolP).then (symbol) ->
-              editor.setTextInBufferRange [pos, pos],
-                indent + symbol + " :: " + type + "\n"
+            editor.setTextInBufferRange [pos, pos],
+              indent + symbol + " :: " + type + "\n"
       'haskell-ghc-mod:insert-import': ({target, detail}) =>
         editor = target.getModel()
         buffer = editor.getBuffer()
         upi.withEventRange {editor, detail}, ({crange}) =>
-          @process.findSymbolProvidersInBuffer buffer, crange
+          @process.findSymbolProvidersInBuffer editor, crange
           .then (lines) ->
             new ImportListView
               items: lines
@@ -216,7 +203,7 @@ module.exports = HaskellGhcMod =
         when 'Type'
           typeTooltip editor.getBuffer(), crange
         when 'Info'
-          infoTooltip editor.getBuffer(), crange
+          infoTooltip editor, crange
         when 'Info, fallback to Type'
           infoTypeTooltip editor.getBuffer(), crange
         else

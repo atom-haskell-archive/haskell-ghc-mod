@@ -209,8 +209,9 @@ class GhcModiProcess
       else
         throw new Error "No type"
 
-  getInfoInBuffer: (buffer, crange) =>
-    {symbol, range} = Util.getSymbolInRange(/[\w.']*/, buffer, crange)
+  getInfoInBuffer: (editor, crange) =>
+    buffer = editor.getBuffer()
+    {symbol, range} = Util.getSymbolInRange(editor, crange)
 
     @queueCmd 'typeinfo',
       interactive: true
@@ -226,8 +227,9 @@ class GhcModiProcess
       else
         return {range, info}
 
-  findSymbolProvidersInBuffer: (buffer, crange) =>
-    {symbol} = Util.getSymbolInRange(/[\w']*/, buffer, crange)
+  findSymbolProvidersInBuffer: (editor, crange) =>
+    buffer = editor.getBuffer()
+    {symbol} = Util.getSymbolInRange(editor, crange)
 
     @queueCmd 'find',
       interactive: true

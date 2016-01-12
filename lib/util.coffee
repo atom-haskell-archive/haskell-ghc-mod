@@ -58,21 +58,49 @@ module.exports = Util =
       env: env
       encoding: 'utf-8'
 
-  getSymbolInRange: (regex, buffer, crange) ->
-    if crange.isEmpty()
-      {start, end} = buffer.rangeForRow crange.start.row
-      crange2 = new Range(crange.start, crange.end)
-      buffer.backwardsScanInRange regex, new Range(start, crange.start),
-        ({range, stop}) ->
-          crange2.start = range.start
-      buffer.scanInRange regex, new Range(crange.end, end),
-        ({range, stop}) ->
-          crange2.end = range.end
-    else
-      crange2 = crange
+  getSymbolAtPoint: (editor, point) ->
+    inScope = (scope, point) ->
+      editor
+      .scopeDescriptorForBufferPosition(point)
+      .getScopesArray()
+      .some (v) -> v is scope
 
-    symbol: buffer.getTextInRange crange2
-    range: crange2
+    tb = editor.getBuffer()
+    line = tb.rangeForRow point.row
+    find = (test) ->
+      start = end = point
+      start_ = start.translate [0, -1]
+      while test(start_) and start_.isGreaterThan(line.start)
+        start = start_
+        start_ = start.translate [0, -1]
+      while test(end) and end.isLessThan(line.end)
+        end = end.translate [0, 1]
+      return new Range start, end
+
+    regex = /[\w'.]/
+    scopes = [
+      'keyword.operator.haskell'
+      'entity.name.function.infix.haskell'
+    ]
+    for scope in scopes
+      range = find (p) -> inScope(scope, p)
+      if not range.isEmpty()
+        symbol = tb.getTextInRange range
+        return {scope, range, symbol}
+
+    # else
+    range = find ((p) -> tb.getTextInRange([p, p.translate([0, 1])]).match(regex)?)
+    symbol = tb.getTextInRange range
+    return {range, symbol}
+
+  getSymbolInRange: (editor, crange) ->
+    buffer = editor.getBuffer()
+    if crange.isEmpty()
+      Util.getSymbolAtPoint editor, crange.start
+    else
+      symbol: buffer.getTextInRange crange
+      range: crange
+
 
   withTempFile: (contents, uri, gen) ->
     new Promise (resolve, reject) ->
