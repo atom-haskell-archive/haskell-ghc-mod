@@ -1,3 +1,7 @@
+## 1.6.0
+* Actually parse cabal.sanbox.config, stack bin-path
+* Update README.md with link to stack info
+
 ## 1.5.9
 * Fix #94
 
