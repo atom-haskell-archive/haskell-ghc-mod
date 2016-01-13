@@ -1,3 +1,7 @@
+## 1.6.1
+* Try to fix #95
+* Remove debug print
+
 ## 1.6.0
 * Actually parse cabal.sanbox.config, stack bin-path
 * Update README.md with link to stack info
