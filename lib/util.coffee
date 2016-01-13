@@ -64,7 +64,7 @@ module.exports = Util =
         sbc = Util.parseSandboxConfig("#{rootPath}#{sep}cabal.sandbox.config")
         if sbc?['install-dirs']?['bindir']?
           sandbox = sbc['install-dirs']['bindir']
-          try if FS.statSync(sandbox).isDirectory()
+          if Util.isDirectory(sandbox)
             sbd = true
             apd.unshift sandbox
       if atom.config.get('haskell-ghc-mod.stackSandbox')
