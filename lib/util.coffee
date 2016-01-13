@@ -80,7 +80,6 @@ module.exports = Util =
           apd.unshift sandbox
     env.PATH = joinPath(apd)
     Util.debug "PATH = #{env.PATH}"
-    console.log "PATH = #{env.PATH}"
     options =
       cwd: rootPath
       env: env
