@@ -10,6 +10,8 @@ If ghc-mod/ghc-modi is not in your PATH, set full path to those in config.
 
 ## Dependencies
 
+NOTE: when using with stack, see https://github.com/atom-haskell/haskell-ghc-mod/wiki/Using-with-stack
+
 You need to have `ghc-mod`, `ghc-modi` (part of ghc-mod) and `hlint` executables
 installed on your system. `ghc-mod` needs to be able to find `hlint` (eiter add `hlint` directory to PATH, or install both in the same cabal sandbox).
 
@@ -35,6 +37,8 @@ $ apm install language-haskell haskell-ghc-mod ide-haskell autocomplete-haskell
 ```
 
 ## Configuration
+
+NOTE: when using with stack, see https://github.com/atom-haskell/haskell-ghc-mod/wiki/Using-with-stack
 
 Only configuration options you will likely need to set are `ghcModPath` and,
 for ghc-mod<5.4.0.0, `ghcModiPath`. Both need to be set to full path to `ghc-mod` and `ghc-modi` programs respectively, if those are not in your PATH.
