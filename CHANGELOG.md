@@ -1,3 +1,6 @@
+## 1.6.3
+* atom-haskell-utils
+
 ## 1.6.2
 * atom-haskell-utils version bump
 
