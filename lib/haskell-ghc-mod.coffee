@@ -28,6 +28,14 @@ module.exports = HaskellGhcMod =
                     Separate with comma.'
       items:
         type: 'string'
+    cabalSandbox:
+      type: 'boolean'
+      default: true
+      description: 'Add cabal sandbox bin-path to PATH'
+    stackSandbox:
+      type: 'boolean'
+      default: true
+      description: 'Add stack bin-path to PATH'
     syncTimeout:
       type: 'integer'
       description: 'Some ghc-mod operations need to be run in sync. This option

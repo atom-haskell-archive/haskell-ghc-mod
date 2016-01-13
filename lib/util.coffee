@@ -2,8 +2,10 @@
 {delimiter, sep, extname} = require 'path'
 Temp = require('temp')
 FS = require('fs')
+CP = require('child_process')
 {EOL} = require('os')
 HsUtil = require 'atom-haskell-utils'
+objclone = require 'clone'
 
 debuglog = []
 logKeep = 30000 #ms
@@ -40,7 +42,16 @@ module.exports = Util =
 
   isDirectory: HsUtil.isDirectory
 
-  getProcessOptions: (rootPath) ->
+  getProcessOptions: (rootPath) =>
+    rootPath ?= Util.getRootDirFallback().getPath()
+    @processOptionsCache ?= new Map()
+    if @processOptionsCache.has(rootPath)
+      return @processOptionsCache.get(rootPath)
+    joinPath = (ds) ->
+      set = new Set(ds)
+      res = []
+      set.forEach (d) -> res.push d
+      return res.join(delimiter)
     Util.debug "getProcessOptions(#{rootPath})"
     env = {}
     for k, v of process.env
@@ -48,15 +59,34 @@ module.exports = Util =
     apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories')
           .concat process.env.PATH.split delimiter
     if rootPath
-      sandbox = "#{rootPath}#{sep}.cabal-sandbox#{sep}bin"
-      try if FS.statSync(sandbox).isDirectory()
-        apd.unshift sandbox
-    env.PATH = "#{apd.join(delimiter)}"
+      sbd = false
+      if atom.config.get('haskell-ghc-mod.cabalSandbox')
+        sbc = Util.parseSandboxConfig("#{rootPath}#{sep}cabal.sandbox.config")
+        if sbc?['install-dirs']?['bindir']?
+          sandbox = sbc['install-dirs']['bindir']
+          try if FS.statSync(sandbox).isDirectory()
+            sbd = true
+            apd.unshift sandbox
+      if atom.config.get('haskell-ghc-mod.stackSandbox')
+        env.PATH = joinPath(apd)
+        stackpath =
+          try CP.execSync "stack path --bin-path",
+            encoding: 'utf-8'
+            cwd: rootPath
+            env: env
+        if stackpath
+          apd = stackpath.split(delimiter).concat apd
+        if sbd
+          apd.unshift sandbox
+    env.PATH = joinPath(apd)
     Util.debug "PATH = #{env.PATH}"
+    console.log "PATH = #{env.PATH}"
     options =
       cwd: rootPath
       env: env
       encoding: 'utf-8'
+    @processOptionsCache.set(rootPath, options)
+    return objclone(options)
 
   getSymbolAtPoint: (editor, point) ->
     inScope = (scope, point) ->
@@ -125,3 +155,29 @@ module.exports = Util =
     err = new Error message
     err.name = name
     return err
+
+  parseSandboxConfig: (file) ->
+    sbc = try FS.readFileSync file, encoding: 'utf-8'
+    return unless sbc?
+    vars = {}
+
+    scope = vars
+
+    rv = (v) ->
+      for k1, v1 of scope
+        v = v.split("$#{k1}").join(v1)
+      return v
+
+    sbc.split(/\r?\n|\r/).forEach (line) ->
+      unless line.match(/^\s*--/) or line.match(/^\s*$/)
+        [l] = line.split /--/
+        if m = line.match /^\s*([\w-]+):\s*(.*)\s*$/
+          [_, name, val] = m
+          scope[name] = rv(val)
+        else
+          newscope = {}
+          scope[line] = newscope
+          scope = newscope
+
+
+    return vars

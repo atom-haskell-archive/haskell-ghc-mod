@@ -18,8 +18,8 @@ class GhcModiProcessReal
       return dir
     dir =
       if @caps.rootExec
-        bufferDir = buffer.file?.getParent?() ? Util.getRootDirFallback buffer
         modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
+        bufferDir = buffer.file?.getParent?() ? Util.getRootDirFallback buffer
         options = Util.getProcessOptions(bufferDir.getPath())
         options.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
         res = CP.spawnSync modPath, ['root'], options
