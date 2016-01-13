@@ -1,3 +1,6 @@
+## 1.5.9
+* Fix #94
+
 ## 1.5.8
 * Hopefully fix tokenization problems
 
