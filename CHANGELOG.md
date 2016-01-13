@@ -1,3 +1,6 @@
+## 1.6.2
+* atom-haskell-utils version bump
+
 ## 1.6.1
 * Try to fix #95
 * Remove debug print
