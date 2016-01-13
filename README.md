@@ -36,6 +36,8 @@ $ apm install language-haskell haskell-ghc-mod ide-haskell autocomplete-haskell
 
 ## Configuration
 
+NOTE: when using with stack, see https://github.com/atom-haskell/haskell-ghc-mod/wiki/Using-with-stack
+
 Only configuration options you will likely need to set are `ghcModPath` and,
 for ghc-mod<5.4.0.0, `ghcModiPath`. Both need to be set to full path to `ghc-mod` and `ghc-modi` programs respectively, if those are not in your PATH.
 
