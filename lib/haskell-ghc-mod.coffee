@@ -107,17 +107,17 @@ module.exports = HaskellGhcMod =
       'haskell-ghc-mod:shutdown-backend': =>
         @process?.killProcess?()
 
-    typeTooltip = =>
-      @process.getTypeInBuffer(arguments...)
+    typeTooltip = (b, p) =>
+      @process.getTypeInBuffer(b, p)
       .then ({range, type}) -> {range, text: type}
-    infoTooltip = =>
-      @process.getInfoInBuffer(arguments...)
+    infoTooltip = (e, p) =>
+      @process.getInfoInBuffer(e, p)
       .then ({range, info}) -> {range, text: info}
-    infoTypeTooltip = ->
+    infoTypeTooltip = (e, p) ->
       args = arguments
-      infoTooltip(args...)
+      infoTooltip(e, p)
       .catch ->
-        typeTooltip(args...)
+        typeTooltip(e.getBuffer(), p)
 
     @disposables.add atom.commands.add 'atom-text-editor[data-grammar~="haskell"]',
       'haskell-ghc-mod:check-file': ({target}) =>
@@ -156,7 +156,7 @@ module.exports = HaskellGhcMod =
           editor: target.getModel()
           detail: detail
           tooltip: (crange) ->
-            infoTypeTooltip target.getModel().getBuffer(), crange
+            infoTypeTooltip target.getModel(), crange
       'haskell-ghc-mod:insert-type': ({target, detail}) =>
         Util = require './util'
         editor = target.getModel()
@@ -205,7 +205,7 @@ module.exports = HaskellGhcMod =
         when 'Info'
           infoTooltip editor, crange
         when 'Info, fallback to Type'
-          infoTypeTooltip editor.getBuffer(), crange
+          infoTypeTooltip editor, crange
         else
           Promise.reject ignore: true #this won't set backend status
 
