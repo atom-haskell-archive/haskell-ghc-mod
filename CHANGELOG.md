@@ -1,3 +1,7 @@
+## 1.6.4
+* Fix getSymbolAtPoint handling of symbol at start of line (pull request #97 from @jacksonja)
+* Use Util.isDirectory instead of FS.statSync
+
 ## 1.6.3
 * atom-haskell-utils
 
