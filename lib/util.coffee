@@ -99,7 +99,7 @@ module.exports = Util =
     find = (test) ->
       start = end = point
       start_ = start.translate [0, -1]
-      while test(start_) and start_.isGreaterThan(line.start)
+      while test(start_) and start_.isGreaterThanOrEqual(line.start)
         start = start_
         start_ = start.translate [0, -1]
       while test(end) and end.isLessThan(line.end)
