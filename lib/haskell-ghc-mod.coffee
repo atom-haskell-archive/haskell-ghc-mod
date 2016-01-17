@@ -169,7 +169,7 @@ module.exports = HaskellGhcMod =
         Util = require './util'
         editor = target.getModel()
         upi.withEventRange {editor, detail}, ({crange}) =>
-          @process.getTypeInBuffer(editor.getBuffer(), crange)
+          @process.getTypeInBufferForInsert(editor, crange)
           .then (o) ->
             {type} = o
             n = editor.indentationForBufferRow(o.range.start.row)

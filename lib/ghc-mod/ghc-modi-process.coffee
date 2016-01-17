@@ -185,6 +185,25 @@ class GhcModiProcess
           symbolType = 'function'
         {name, typeSignature, symbolType}
 
+  getTypeInBufferForInsert: (editor, crange) =>
+    buffer = editor.getBuffer()
+    {symbol, range} = Util.getSymbolInRange(editor, crange)
+
+    @queueCmd 'typeinfo',
+      interactive: true
+      buffer: buffer
+      command: 'info',
+      uri: buffer.getUri()
+      text: buffer.getText() if buffer.isModified()
+      args: [symbol]
+    .then (lines) ->
+      info = lines.join(EOL)
+      if info is 'Cannot show info' or not info
+        throw new Error "No type"
+      else
+        type = info.split("--")[0].split("::")[1].trim()
+        return {range, type}
+
   getTypeInBuffer: (buffer, crange) =>
     @queueCmd 'typeinfo',
       interactive: true
