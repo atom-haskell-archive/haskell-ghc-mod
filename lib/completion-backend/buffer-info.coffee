@@ -40,7 +40,7 @@ module.exports=
         ([\w.]+) #name
         (?:\s+as\s+([\w.]+))? #alias
         (?:\s+(hiding))?
-        (?:\s+\(([^)]+)\))? #import list
+        (?:\s*\((.+)\)\s*$)? #import list
         ///gm
       @buffer.scan regex, ({match}) ->
         modules.push
