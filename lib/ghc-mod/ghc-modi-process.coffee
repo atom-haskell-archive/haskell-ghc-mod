@@ -176,7 +176,9 @@ class GhcModiProcess
       args: ['-d'].concat(modules)
     .then (lines) ->
       lines.map (s) ->
-        [name, typeSignature] = s.split('::').map (s) -> s.trim()
+        [name, typeSignature...] = s.split(' :: ')
+        typeSignature = typeSignature.join(' :: ').trim()
+        name = name.trim()
         if /^(?:type|data|newtype)/.test(typeSignature)
           symbolType = 'type'
         else if /^(?:class)/.test(typeSignature)
