@@ -38,8 +38,13 @@ class GhcModiProcessReal
     @bufferDirMap.set buffer, dir
     dir
 
-  run: ({interactive, dir, options, command, text, uri, args}) =>
+  run: ({interactive, dir, options, command, text, uri, dashArgs, args}) =>
     args ?= []
+    dashArgs ?= []
+    if @caps.optparse
+      args = dashArgs.concat(['--']).concat(args)
+    else
+      args = dashArgs.concat(args)
     fun = if interactive then @runModiCmd else @runModCmd
     P =
       if text? and not @caps.fileMap

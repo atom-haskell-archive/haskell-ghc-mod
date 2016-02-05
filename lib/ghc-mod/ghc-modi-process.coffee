@@ -71,6 +71,7 @@ class GhcModiProcess
       fileMap: false
       rootExec: false
       quoteArgs: false
+      optparse: false
 
     atLeast = (b) ->
       for v, i in b
@@ -109,6 +110,7 @@ class GhcModiProcess
     if atLeast [5, 5]
       caps.rootExec = false
       caps.quoteArgs = true
+      caps.optparse = true
     Util.debug JSON.stringify(caps)
     return caps
 
@@ -173,7 +175,8 @@ class GhcModiProcess
     @queueCmd 'browse',
       options: Util.getProcessOptions(rootPath)
       command: 'browse'
-      args: ['-d'].concat(modules)
+      dashArgs: ['-d']
+      args: modules
     .then (lines) ->
       lines.map (s) ->
         [name, typeSignature...] = s.split(' :: ')
