@@ -1,3 +1,6 @@
+## 1.6.6
+* Fix #106
+
 ## 1.6.5
 * Partial fix for explicit type w/ctors import
 * Fix ide-haskell/issues/136
