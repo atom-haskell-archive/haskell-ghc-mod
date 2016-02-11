@@ -78,6 +78,7 @@ You can edit Atom keybindings by opening 'Edit → Open Your Keymap'. Here is a 
   'ctrl-alt-T': 'haskell-ghc-mod:insert-type' #this is an example binding
   '': 'haskell-ghc-mod:show-info-fallback-to-type'
   '': 'haskell-ghc-mod:insert-import'
+  '': 'haskell-ghc-mod:go-to-declaration'
 
 'atom-workspace':
   '': 'haskell-ghc-mod:shutdown-backend'
