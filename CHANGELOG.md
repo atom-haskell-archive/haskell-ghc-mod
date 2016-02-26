@@ -1,3 +1,8 @@
+## 1.7.0
+* Output message highlighter
+* Tooltip highlighting
+* Add go-to-declaration to keymap example (pull request #116 from @PetrGlad)
+
 ## 1.6.6
 * Fix #106
 
