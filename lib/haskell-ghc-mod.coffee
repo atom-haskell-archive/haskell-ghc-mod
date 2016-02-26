@@ -81,6 +81,10 @@ module.exports = HaskellGhcMod =
                     are used in autocompletion backend initialization.
                     Note that on larger projects it may require a considerable
                     amount of memory.'
+    highlightTooltips:
+      type: 'boolean'
+      default: true
+      description: 'Show highlighting for type/info tooltips'
 
   activate: (state) ->
     GhcModiProcess = require './ghc-mod/ghc-modi-process'
@@ -117,10 +121,22 @@ module.exports = HaskellGhcMod =
 
     typeTooltip = (b, p) =>
       @process.getTypeInBuffer(b, p)
-      .then ({range, type}) -> {range, text: type}
+      .then ({range, type}) ->
+        range: range
+        text:
+          text: type
+          highlighter:
+            if atom.config.get('haskell-ghc-mod.highlightTooltips')
+              'hint.type.haskell'
     infoTooltip = (e, p) =>
       @process.getInfoInBuffer(e, p)
-      .then ({range, info}) -> {range, text: info}
+      .then ({range, info}) ->
+        range: range
+        text:
+          text: info
+          highlighter:
+            if atom.config.get('haskell-ghc-mod.highlightTooltips')
+              'source.haskell'
     infoTypeTooltip = (e, p) ->
       args = arguments
       infoTooltip(e, p)
