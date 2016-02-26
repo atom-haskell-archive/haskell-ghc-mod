@@ -159,15 +159,18 @@ module.exports = HaskellGhcMod =
           (m) -> m
       upi.setMessages messages.map(setHighlighter), types
 
+    unless atom.config.get 'haskell-ghc-mod.useLinter'
+      @disposables.add atom.commands.add 'atom-text-editor[data-grammar~="haskell"]',
+        'haskell-ghc-mod:check-file': ({target}) =>
+          editor = target.getModel()
+          @process.doCheckBuffer(editor.getBuffer()).then (res) ->
+            setMessages res, ['error', 'warning']
+        'haskell-ghc-mod:lint-file': ({target}) =>
+          editor = target.getModel()
+          @process.doLintBuffer(editor.getBuffer()).then (res) ->
+            setMessages res, ['lint']
+
     @disposables.add atom.commands.add 'atom-text-editor[data-grammar~="haskell"]',
-      'haskell-ghc-mod:check-file': ({target}) =>
-        editor = target.getModel()
-        @process.doCheckBuffer(editor.getBuffer()).then (res) ->
-          setMessages res, ['error', 'warning']
-      'haskell-ghc-mod:lint-file': ({target}) =>
-        editor = target.getModel()
-        @process.doLintBuffer(editor.getBuffer()).then (res) ->
-          setMessages res, ['lint']
       'haskell-ghc-mod:show-type': ({target, detail}) ->
         upi.showTooltip
           editor: target.getModel()
@@ -261,11 +264,12 @@ module.exports = HaskellGhcMod =
         @process.doLintBuffer(buffer, fast).then (res) ->
           setMessages res, ['lint']
 
-    @disposables.add upi.onDidSaveBuffer (buffer) ->
-      checkLint buffer, 'Save'
+    unless atom.config.get 'haskell-ghc-mod.useLinter'
+      @disposables.add upi.onDidSaveBuffer (buffer) ->
+        checkLint buffer, 'Save'
 
-    @disposables.add upi.onDidStopChanging (buffer) ->
-      checkLint buffer, 'Change', true
+      @disposables.add upi.onDidStopChanging (buffer) ->
+        checkLint buffer, 'Change', true
 
 
     @disposables.add @process.onBackendActive ->
@@ -274,9 +278,17 @@ module.exports = HaskellGhcMod =
     @disposables.add @process.onBackendIdle ->
       upi.setStatus status: 'ready'
 
+    unless atom.config.get 'haskell-ghc-mod.useLinter'
+      upi.setMenu 'ghc-mod', [
+        {label: 'Check', command: 'haskell-ghc-mod:check-file'}
+        {label: 'Lint', command: 'haskell-ghc-mod:lint-file'}
+      ]
+    else
+      upi.setMenu 'ghc-mod', [
+        {label: 'Check', command: 'linter:lint'}
+      ]
+
     upi.setMenu 'ghc-mod', [
-      {label: 'Check', command: 'haskell-ghc-mod:check-file'}
-      {label: 'Lint', command: 'haskell-ghc-mod:lint-file'}
       {label: 'Stop Backend', command: 'haskell-ghc-mod:shutdown-backend'}
     ]
 
@@ -307,30 +319,41 @@ module.exports = HaskellGhcMod =
     return unless atom.config.get 'haskell-ghc-mod.useLinter'
     [
       func: 'doCheckBuffer'
-      lintOnFly: false
-      scopes: ['source.haskell', 'text.tex.latex.haskell']
+      lintOnFly: 'onChangeCheck'
+      enabledConf: 'onSaveCheck'
     ,
       func: 'doLintBuffer'
-      lintOnFly: true
-      scopes: ['source.haskell']
-    ].map ({func, scopes, lintOnFly}) =>
-      grammarScopes: scopes
+      lintOnFly: 'onChangeLint'
+      enabledConf: 'onSaveLint'
+    ].map ({func, lintOnFly, enabledConf}) =>
+      linter =
+      grammarScopes: ['source.haskell', 'text.tex.latex.haskell']
       scope: 'file'
-      lintOnFly: lintOnFly
+      lintOnFly: false
       lint: (textEditor) =>
         return unless @process?
+        return unless atom.config.get("haskell-ghc-mod.#{enabledConf}") or
+          atom.config.get("haskell-ghc-mod.#{lintOnFly}")
         return if textEditor.isEmpty()
         @process[func](textEditor.getBuffer(), lintOnFly).then (res) ->
           res.map ({uri, position, message, severity}) ->
             [message, messages...] = message.split /^(?!\s)/gm
             {
               type: severity
-              text: message
-              multiline: true
+              text: message.replace(/\n+$/, '')
               filePath: uri
               range: [position, position.translate [0, 1]]
               trace: messages.map (text) ->
                 type: 'trace'
-                text: text
-                multiline: true
+                text: text.replace(/\n+$/, '')
             }
+
+      # NOTE: some pretty gnarly hacks here...
+      disp = atom.config.observe "haskell-ghc-mod.#{lintOnFly}", (value) ->
+        linter.lintOnFly = value
+
+      Object.observe linter, ->
+        if linter.deactivated
+          disp.dispose()
+
+      return linter
