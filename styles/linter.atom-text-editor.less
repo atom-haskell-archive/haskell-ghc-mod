@@ -1,7 +1,7 @@
 @import "ui-variables";
 @import 'octicon-utf-codes';
 
-atom-text-editor[data-grammar~='haskell']::shadow .linter-highlight, .linter-highlight{
+:host[data-grammar~='haskell'] .linter-highlight, .linter-highlight{
   &.lint {
     /* Style for Message Badges */
     &:not(.line-number){
