@@ -85,6 +85,10 @@ module.exports = HaskellGhcMod =
       type: 'boolean'
       default: true
       description: 'Show highlighting for type/info tooltips'
+    highlightMessages:
+      type: 'boolean'
+      default: true
+      description: 'Show highlighting for output panel messages'
 
   activate: (state) ->
     GhcModiProcess = require './ghc-mod/ghc-modi-process'
@@ -143,15 +147,27 @@ module.exports = HaskellGhcMod =
       .catch ->
         typeTooltip(e.getBuffer(), p)
 
+    setMessages = (messages, types) ->
+      setHighlighter =
+        if atom.config.get('haskell-ghc-mod.highlightMessages')
+          (m) ->
+            m.message=
+              text: m.message
+              highlighter: 'hint.message.haskell'
+            m
+        else
+          (m) -> m
+      upi.setMessages messages.map(setHighlighter), types
+
     @disposables.add atom.commands.add 'atom-text-editor[data-grammar~="haskell"]',
       'haskell-ghc-mod:check-file': ({target}) =>
         editor = target.getModel()
         @process.doCheckBuffer(editor.getBuffer()).then (res) ->
-          upi.setMessages res, ['error', 'warning']
+          setMessages res, ['error', 'warning']
       'haskell-ghc-mod:lint-file': ({target}) =>
         editor = target.getModel()
         @process.doLintBuffer(editor.getBuffer()).then (res) ->
-          upi.setMessages res, ['lint']
+          setMessages res, ['lint']
       'haskell-ghc-mod:show-type': ({target, detail}) ->
         upi.showTooltip
           editor: target.getModel()
@@ -237,13 +253,13 @@ module.exports = HaskellGhcMod =
       if atom.config.get("haskell-ghc-mod.on#{opt}Check") and
          atom.config.get("haskell-ghc-mod.on#{opt}Lint")
         @process.doCheckAndLint(buffer, fast).then (res) ->
-          upi.setMessages res, ['error', 'warning', 'lint']
+          setMessages res, ['error', 'warning', 'lint']
       else if atom.config.get("haskell-ghc-mod.on#{opt}Check")
         @process.doCheckBuffer(buffer, fast).then (res) ->
-          upi.setMessages res, ['error', 'warning']
+          setMessages res, ['error', 'warning']
       else if atom.config.get("haskell-ghc-mod.on#{opt}Lint")
         @process.doLintBuffer(buffer, fast).then (res) ->
-          upi.setMessages res, ['lint']
+          setMessages res, ['lint']
 
     @disposables.add upi.onDidSaveBuffer (buffer) ->
       checkLint buffer, 'Save'
