@@ -1,3 +1,6 @@
+## 1.9.2
+* Handling no value in onShouldShowTooltip delegated to ide-haskell
+
 ## 1.9.1
 * Fix atom-haskell/ide-haskell#145
 
