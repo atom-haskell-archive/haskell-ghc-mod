@@ -257,13 +257,9 @@ module.exports = HaskellGhcMod =
               infoTooltip editor, crange
             when 'Info, fallback to Type'
               infoTypeTooltip editor, crange
-            else
-              Promise.reject ignore: true #this won't set backend status
         when 'selection'
           if atom.config.get('haskell-ghc-mod.showTypeOnSelection')
             typeTooltip editor.getBuffer(), crange
-        else
-          Promise.reject ignore: true #this won't set backend status
 
     checkLint = (buffer, opt, fast) =>
       if atom.config.get("haskell-ghc-mod.on#{opt}Check") and
