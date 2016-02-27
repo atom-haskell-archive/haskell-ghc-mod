@@ -1,3 +1,6 @@
+## 1.9.0
+* Show type on selection (disabled by default)
+
 ## 1.8.0
 * Some black magic to work around tabs
 * Somewhat better linter integration
