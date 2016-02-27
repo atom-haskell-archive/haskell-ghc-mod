@@ -69,6 +69,12 @@ module.exports = HaskellGhcMod =
       default: 'Info, fallback to Type'
       enum: ['Nothing', 'Type', 'Info', 'Info, fallback to Type']
 
+    showTypeOnSelection:
+      type: 'boolean'
+      default: false
+      description:
+        'Show type of selected expression if editor selection changed'
+
     useLinter:
       type: 'boolean'
       default: false
@@ -241,16 +247,21 @@ module.exports = HaskellGhcMod =
                 piP.then (pi) ->
                   editor.setTextInBufferRange [pi.pos, pi.pos], "#{pi.indent}import #{mod}#{pi.end ? ''}"
 
-    upi.onShouldShowTooltip (editor, crange) ->
-      switch atom.config.get('haskell-ghc-mod.onMouseHoverShow')
-        when 'Type'
-          typeTooltip editor.getBuffer(), crange
-        when 'Info'
-          infoTooltip editor, crange
-        when 'Info, fallback to Type'
-          infoTypeTooltip editor, crange
-        else
-          Promise.reject ignore: true #this won't set backend status
+    upi.onShouldShowTooltip (editor, crange, type) ->
+      switch type
+        when 'mouse', undefined
+          switch atom.config.get('haskell-ghc-mod.onMouseHoverShow')
+            when 'Type'
+              typeTooltip editor.getBuffer(), crange
+            when 'Info'
+              infoTooltip editor, crange
+            when 'Info, fallback to Type'
+              infoTypeTooltip editor, crange
+            else
+              Promise.reject ignore: true #this won't set backend status
+        when 'selection'
+          if atom.config.get('haskell-ghc-mod.showTypeOnSelection')
+            typeTooltip editor.getBuffer(), crange
 
     checkLint = (buffer, opt, fast) =>
       if atom.config.get("haskell-ghc-mod.on#{opt}Check") and
