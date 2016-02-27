@@ -1,3 +1,8 @@
+## 1.8.0
+* Some black magic to work around tabs
+* Somewhat better linter integration
+* Do away with ::shadow selector
+
 ## 1.7.0
 * Output message highlighter
 * Tooltip highlighting
