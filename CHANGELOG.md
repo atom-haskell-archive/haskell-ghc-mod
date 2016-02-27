@@ -1,3 +1,6 @@
+## 1.9.1
+* Fix atom-haskell/ide-haskell#145
+
 ## 1.9.0
 * Show type on selection (disabled by default)
 
