@@ -1,3 +1,6 @@
+## 1.9.4
+* Fix an error where tabUnshift would fail
+
 ## 1.9.3
 * Create new instance for tab[Un]Shift
 * Improved insert-type
