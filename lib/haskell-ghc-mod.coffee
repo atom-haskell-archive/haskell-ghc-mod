@@ -209,15 +209,15 @@ module.exports = HaskellGhcMod =
       'haskell-ghc-mod:insert-type': ({target, detail}) =>
         Util = require './util'
         editor = target.getModel()
-        upi.withEventRange {editor, detail}, ({crange}) =>
+        upi.withEventRange {editor, detail}, ({crange, pos}) =>
           @process.getTypeInBuffer(editor.getBuffer(), crange)
           .then (o) ->
             {type} = o
             n = editor.indentationForBufferRow(o.range.start.row)
             indent = ' '.repeat n * editor.getTabLength()
             {scope, range, symbol} =
-              Util.getSymbolAtPoint editor, o.range.start
-            symbol = "(#{symbol})" if range is 'keyword.operator.haskell'
+              Util.getSymbolAtPoint editor, pos
+            symbol = "(#{symbol})" if scope is 'keyword.operator.haskell'
             pos = [range.start.row, 0]
             editor.setTextInBufferRange [pos, pos],
               indent + symbol + " :: " + type + "\n"
