@@ -1,3 +1,6 @@
+## 1.9.5
+* Handle ghc-mod 4.1.2 version
+
 ## 1.9.4
 * Fix an error where tabUnshift would fail
 
