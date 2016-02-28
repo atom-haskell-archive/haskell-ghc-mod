@@ -191,7 +191,7 @@ class GhcModiProcess
         {name, typeSignature, symbolType}
 
   getTypeInBuffer: (buffer, crange) =>
-    Util.tabShiftForRange(buffer, crange)
+    crange = Util.tabShiftForRange(buffer, crange)
     @queueCmd 'typeinfo',
       interactive: true
       buffer: buffer
@@ -208,7 +208,7 @@ class GhcModiProcess
         myrange = new Range [pos[0], pos[1]], [pos[2], pos[3]]
         return acc if myrange.isEmpty()
         return acc unless myrange.containsRange(crange)
-        Util.tabUnshiftForRange(buffer, myrange)
+        myrange = Util.tabUnshiftForRange(buffer, myrange)
         return [myrange, type]),
         ''
       range = crange unless range
@@ -294,7 +294,7 @@ class GhcModiProcess
           else
             'error'
         messPos = new Point(row - 1, col - 1)
-        Util.tabUnshiftForPoint(buffer, messPos)
+        messPos = Util.tabUnshiftForPoint(buffer, messPos)
 
         return {
           uri: (try rootDir.getFile(rootDir.relativize(file)).getPath()) ? file
