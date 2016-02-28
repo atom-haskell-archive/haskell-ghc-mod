@@ -218,6 +218,9 @@ module.exports = HaskellGhcMod =
             {scope, range, symbol} =
               Util.getSymbolAtPoint editor, pos
             symbol = "(#{symbol})" if scope is 'keyword.operator.haskell'
+            # lhs
+            if 'meta.embedded.haskell' in editor.scopeDescriptorForBufferPosition(pos).getScopesArray()
+              indent = editor.getBuffer().getTextInRange([[range.start.row, 0], [range.start.row, 2]]) + indent
             pos = [range.start.row, 0]
             editor.setTextInBufferRange [pos, pos],
               indent + symbol + " :: " + type + "\n"
