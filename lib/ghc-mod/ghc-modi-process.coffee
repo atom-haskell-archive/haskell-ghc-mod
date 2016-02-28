@@ -60,7 +60,7 @@ class GhcModiProcess
             error.stack = (new Error).stack
             return reject error
           resolve (
-            /^ghc-mod version (\d+)\.(\d+)\.(\d+)\.(\d+)/.exec(stdout)
+            /^ghc-mod version (\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/.exec(stdout)
             .slice(1, 5).map (i) -> parseInt i
             )
 
