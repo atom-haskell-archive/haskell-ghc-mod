@@ -196,6 +196,7 @@ module.exports = Util =
     columnl = 0
     columnr = point.column
     while(columnl < columnr)
+      break unless line? and line[columnl]?
       if line[columnl] is '\t'
         columnr -= 7
       columnl += 1
