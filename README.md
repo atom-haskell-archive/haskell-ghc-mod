@@ -15,7 +15,7 @@ NOTE: when using with stack, see https://github.com/atom-haskell/haskell-ghc-mod
 You need to have `ghc-mod`, `ghc-modi` (part of ghc-mod) and `hlint` executables
 installed on your system. `ghc-mod` needs to be able to find `hlint` (eiter add `hlint` directory to PATH, or install both in the same cabal sandbox).
 
-Supported `ghc-mod` versions are from 4.1.0 to 5.2.1.2, and 5.4.x. 5.3.x might work, but is not officially supported.
+Supported `ghc-mod` versions are 5.4.x. and up. Versions from 4.1 to 5.2 might work, but are deprecated. 5.3 is not supported.
 
 Quick setup is as follows:
 
