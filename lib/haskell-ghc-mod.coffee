@@ -220,10 +220,14 @@ module.exports = HaskellGhcMod =
             symbol = "(#{symbol})" if scope is 'keyword.operator.haskell'
             # lhs
             if 'meta.embedded.haskell' in editor.scopeDescriptorForBufferPosition(pos).getScopesArray()
-              indent = editor.getBuffer().getTextInRange([[range.start.row, 0], [range.start.row, 2]]) + indent
-            pos = [range.start.row, 0]
-            editor.setTextInBufferRange [pos, pos],
-              indent + symbol + " :: " + type + "\n"
+              indent = editor.getTextInBufferRange([[o.range.start.row, 0], o.range.start])
+            if editor.getTextInBufferRange(o.range).match(/[=]/)?
+              pos = [range.start.row, 0]
+              editor.setTextInBufferRange [pos, pos],
+                indent + symbol + " :: " + type + "\n"
+            else if not scope? #neither keyword nor infix
+              editor.setTextInBufferRange o.range,
+                "(#{editor.getTextInBufferRange(o.range)} :: #{type})"
       'haskell-ghc-mod:insert-import': ({target, detail}) =>
         editor = target.getModel()
         buffer = editor.getBuffer()
