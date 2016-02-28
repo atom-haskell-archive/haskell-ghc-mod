@@ -206,6 +206,7 @@ class GhcModiProcess
         pos = tokens[0].trim().split(' ').map (i) -> i - 1
         type = tokens[1]
         myrange = new Range [pos[0], pos[1]], [pos[2], pos[3]]
+        return acc if myrange.isEmpty()
         return acc unless myrange.containsRange(crange)
         Util.tabUnshiftForRange(buffer, myrange)
         return [myrange, type]),
