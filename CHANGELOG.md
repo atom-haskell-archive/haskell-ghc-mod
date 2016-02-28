@@ -1,3 +1,11 @@
+## 1.9.3
+* Create new instance for tab[Un]Shift
+* Improved insert-type
+* Insert inline type signatures
+* Filter empty type ranges out of ghc-mod output
+* Properly insert type into lhs
+* Fix insert-type for operators
+
 ## 1.9.2
 * Handling no value in onShouldShowTooltip delegated to ide-haskell
 
