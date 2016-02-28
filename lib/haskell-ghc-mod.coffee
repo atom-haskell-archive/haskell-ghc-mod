@@ -213,19 +213,19 @@ module.exports = HaskellGhcMod =
           @process.getTypeInBuffer(editor.getBuffer(), crange)
           .then (o) ->
             {type} = o
-            n = editor.indentationForBufferRow(o.range.start.row)
-            indent = ' '.repeat n * editor.getTabLength()
-            {scope, range, symbol} =
-              Util.getSymbolAtPoint editor, pos
-            symbol = "(#{symbol})" if scope is 'keyword.operator.haskell'
-            # lhs
-            if 'meta.embedded.haskell' in editor.scopeDescriptorForBufferPosition(pos).getScopesArray()
-              indent = editor.getTextInBufferRange([[o.range.start.row, 0], o.range.start])
+            {scope, range, symbol} = Util.getSymbolAtPoint editor, pos
             if editor.getTextInBufferRange(o.range).match(/[=]/)?
-              pos = [range.start.row, 0]
-              editor.setTextInBufferRange [pos, pos],
-                indent + symbol + " :: " + type + "\n"
-            else if not scope? #neither keyword nor infix
+              indent = editor.getTextInBufferRange([[o.range.start.row, 0], o.range.start])
+              symbol = "(#{symbol})" if scope is 'keyword.operator.haskell'
+              birdTrack = ''
+              if 'meta.embedded.haskell' in editor.scopeDescriptorForBufferPosition(pos).getScopesArray()
+                birdTrack = indent.slice 0, 2
+                indent = indent.slice(2)
+              if indent.match(/\S/)?
+                indent = indent.replace /\S/g, ' '
+              editor.setTextInBufferRange [o.range.start, o.range.start],
+                "#{symbol} :: #{type}\n#{birdTrack}#{indent}"
+            else if not scope? #neither operator nor infix
               editor.setTextInBufferRange o.range,
                 "(#{editor.getTextInBufferRange(o.range)} :: #{type})"
       'haskell-ghc-mod:insert-import': ({target, detail}) =>
