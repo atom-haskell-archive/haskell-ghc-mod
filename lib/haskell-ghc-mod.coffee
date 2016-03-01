@@ -78,7 +78,8 @@ module.exports = HaskellGhcMod =
     useLinter:
       type: 'boolean'
       default: false
-      description: 'Use Atom Linter service for check and lint
+      description: 'Use \'linter\' package instead of \'ide-haskell\'
+                    to display check and lint results
                     (requires restart)'
     maxBrowseProcesses:
       type: 'integer'
