@@ -1,3 +1,7 @@
+## 1.9.6
+* Linter support docs
+* Update supported versions
+
 ## 1.9.5
 * Handle ghc-mod 4.1.2 version
 
