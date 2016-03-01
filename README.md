@@ -34,7 +34,7 @@ User interface is provided by [ide-haskell](https://atom.io/packages/ide-haskell
 
 haskell-ghc-mod can use [linter](https://atom.io/packages/linter) package instead of ide-haskell to show check and lint results. You still need ide-haskell for type/info tooltips though.
 
-To use linter, enable 'Use Linter' option in haskell-ghc-mod settings. Bear in mind, that it will disable ide-haskell markers for check/lint results. As of now, no additional checks are preformed, so linter package is not installed or disabled, you won't see check/lint results at all.
+To use linter, enable 'Use Linter' option in haskell-ghc-mod settings. Bear in mind, that it will disable ide-haskell markers for check/lint results. As of now, no additional checks are preformed, so if linter package is not installed or disabled, you won't see check/lint results at all.
 
 ## Installation
 
