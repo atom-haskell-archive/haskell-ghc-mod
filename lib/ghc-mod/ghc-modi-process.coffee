@@ -267,12 +267,17 @@ class GhcModiProcess
       ]
     # end of dirty hack
 
+    if cmd is 'lint'
+      args = [].concat atom.config.get('haskell-ghc-mod.hlintOptions').map((v) -> ['--hlintOpt', v])...
+      console.error args
+
     @queueCmd 'checklint',
       interactive: fast
       buffer: buffer
       command: cmd
       uri: uri
       text: text
+      args: args
     .then (lines) =>
       rootDir = @getRootDir buffer
       lines.map (line) ->

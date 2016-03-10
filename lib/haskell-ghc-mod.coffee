@@ -96,6 +96,10 @@ module.exports = HaskellGhcMod =
       type: 'boolean'
       default: true
       description: 'Show highlighting for output panel messages'
+    hlintOptions:
+      type: 'array'
+      default: []
+      description: 'Command line options to pass to hlint (comma-separated)'
 
   activate: (state) ->
     GhcModiProcess = require './ghc-mod/ghc-modi-process'
