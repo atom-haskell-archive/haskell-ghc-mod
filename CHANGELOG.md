@@ -1,3 +1,7 @@
+## 1.10.0
+* User-supplied hlint options
+* Typo
+
 ## 1.9.6
 * Linter support docs
 * Update supported versions
