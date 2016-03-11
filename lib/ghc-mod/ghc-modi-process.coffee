@@ -269,7 +269,6 @@ class GhcModiProcess
 
     if cmd is 'lint'
       args = [].concat atom.config.get('haskell-ghc-mod.hlintOptions').map((v) -> ['--hlintOpt', v])...
-      console.error args
 
     @queueCmd 'checklint',
       interactive: fast
