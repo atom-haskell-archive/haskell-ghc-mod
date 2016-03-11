@@ -1,3 +1,6 @@
+## 1.10.1
+* Removed debug log
+
 ## 1.10.0
 * User-supplied hlint options
 * Typo
