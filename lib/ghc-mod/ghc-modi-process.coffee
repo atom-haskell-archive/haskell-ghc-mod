@@ -279,26 +279,21 @@ class GhcModiProcess
       args: args
     .then (lines) =>
       rootDir = @getRootDir buffer
+      rx = /^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/
       lines
       .filter (line) ->
-        res = false
         switch
           when line.startsWith 'Dummy:0:0:Error:'
             atom.notifications.addError line.slice(16)
           when line.startsWith 'Dummy:0:0:Warning:'
             atom.notifications.addError line.slice(18)
-          else
-            res = true
-        return res
+          when line.match(rx)?
+            return true
+          when line.trim().length > 0
+            console.log("ghc-mod says: #{line}")
+        return false
       .map (line) ->
-        match =
-          line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
-        unless match?
-          #TODO: reject (i.e. throw)
-          console.log("ghc-mod says: #{line}")
-          line = "#{olduri}:0:0:Error: #{line}"
-          match=
-            line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
+        match = line.match(rx)
         [m, file, row, col, warning] = match
         file = olduri if uri.endsWith(file)
         severity =
