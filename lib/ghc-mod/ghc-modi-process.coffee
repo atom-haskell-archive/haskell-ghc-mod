@@ -279,7 +279,18 @@ class GhcModiProcess
       args: args
     .then (lines) =>
       rootDir = @getRootDir buffer
-      lines.map (line) ->
+      lines
+      .filter (line) ->
+        res = false
+        switch
+          when line.startsWith 'Dummy:0:0:Error:'
+            atom.notifications.addError line.slice(16)
+          when line.startsWith 'Dummy:0:0:Warning:'
+            atom.notifications.addError line.slice(18)
+          else
+            res = true
+        return res
+      .map (line) ->
         match =
           line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/)
         unless match?
