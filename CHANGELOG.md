@@ -1,3 +1,6 @@
+## 1.10.2
+* Show dummy messages as notifications
+
 ## 1.10.1
 * Removed debug log
 
