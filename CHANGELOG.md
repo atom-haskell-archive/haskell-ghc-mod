@@ -1,3 +1,7 @@
+## 1.11.0
+* Added case split
+* Warning should be shown as warnings
+
 ## 1.10.3
 * Filter out empty lines etc
 
