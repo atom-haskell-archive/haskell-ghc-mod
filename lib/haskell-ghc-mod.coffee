@@ -194,6 +194,13 @@ module.exports = HaskellGhcMod =
           detail: detail
           tooltip: (crange) ->
             infoTooltip target.getModel(), crange
+      'haskell-ghc-mod:case-split': ({target, detail}) =>
+        editor = target.getModel()
+        upi.withEventRange {editor, detail}, ({crange}) =>
+          @process.doCaseSplit(editor.getBuffer(), crange)
+          .then (res) ->
+            res.forEach ({range, replacement}) ->
+              editor.setTextInBufferRange(range, replacement)
       'haskell-ghc-mod:go-to-declaration': ({target, detail}) =>
         editor = target.getModel()
         upi.withEventRange {editor, detail}, ({crange}) =>
@@ -322,6 +329,9 @@ module.exports = HaskellGhcMod =
           ,
             'label': 'Show Info'
             'command': 'haskell-ghc-mod:show-info'
+          ,
+            'label': 'Case Split'
+            'command': 'haskell-ghc-mod:case-split'
           ,
             'label': 'Insert Type'
             'command': 'haskell-ghc-mod:insert-type'

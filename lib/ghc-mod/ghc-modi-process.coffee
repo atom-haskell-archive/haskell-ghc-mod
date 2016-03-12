@@ -217,6 +217,32 @@ class GhcModiProcess
       else
         throw new Error "No type"
 
+  doCaseSplit: (buffer, crange) =>
+    crange = Util.tabShiftForRange(buffer, crange)
+    @queueCmd 'typeinfo',
+      interactive: true
+      buffer: buffer
+      command: 'split',
+      uri: buffer.getUri()
+      text: buffer.getText() if buffer.isModified()
+      args: [crange.start.row + 1, crange.start.column + 1]
+    .then (lines) ->
+      rx = /^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+"([^]*)"$/ # [^] basically means "anything", incl. newlines
+      lines
+      .filter (line) ->
+        unless line.match(rx)?
+          console.log "ghc-mod says: #{line}"
+          return false
+        return true
+      .map (line) ->
+        [line_, rowstart, colstart, rowend, colend, text] = line.match(rx)
+        range:
+          Range.fromObject [
+            [parseInt(rowstart) - 1, parseInt(colstart) - 1],
+            [parseInt(rowend) - 1, parseInt(colend) - 1]
+          ]
+        replacement: text
+
   getInfoInBuffer: (editor, crange) =>
     buffer = editor.getBuffer()
     {symbol, range} = Util.getSymbolInRange(editor, crange)
