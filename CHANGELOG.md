@@ -1,3 +1,6 @@
+## 1.10.3
+* Filter out empty lines etc
+
 ## 1.10.2
 * Show dummy messages as notifications
 
