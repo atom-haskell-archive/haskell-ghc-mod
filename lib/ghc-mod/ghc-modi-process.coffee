@@ -286,7 +286,7 @@ class GhcModiProcess
           when line.startsWith 'Dummy:0:0:Error:'
             atom.notifications.addError line.slice(16)
           when line.startsWith 'Dummy:0:0:Warning:'
-            atom.notifications.addError line.slice(18)
+            atom.notifications.addWarning line.slice(18)
           when line.match(rx)?
             return true
           when line.trim().length > 0
