@@ -1,4 +1,5 @@
 {CompositeDisposable, Emitter} = require 'atom'
+{parseHsModuleImportsSync} = require 'atom-haskell-utils'
 
 module.exports=
   class BufferInfo
@@ -33,22 +34,38 @@ module.exports=
 
     getImports: =>
       return [] unless @buffer?
-      modules = []
-      regex = ///
-        ^import
-        \s+(qualified\s+)? #qualified
-        ([\w.]+) #name
-        (?:\s+as\s+([\w.]+))? #alias
-        (?:\s+(hiding))?
-        (?:\s*\((.+)\)\s*$)? #import list
-        ///gm
-      @buffer.scan regex, ({match}) ->
-        modules.push
-          qualified: match[1]?
-          name: match[2]
-          alias: match[3]
-          hiding: match[4]?
-          importList: match[5]?.split(',')?.map (s) -> s.trim()
+      modules = parseHsModuleImportsSync(@buffer.getText()).imports.map (imp) ->
+        getName = (thing) ->
+          switch
+            when thing.Ident?
+              thing.Ident
+            when thing.Symbol?
+              thing.Symbol
+        getCName = (thing) ->
+          switch
+            when thing.VarName?
+              getName(thing.VarName)
+            when thing.ConName?
+              getName(thing.ConName)
+        qualified: imp.importQualified
+        name: imp.importModule
+        alias: imp.importAs
+        hiding: imp.importSpecs?[0] ? false
+        importList:
+          if imp.importSpecs?
+            Array.prototype.concat.apply [], imp.importSpecs[1].map (spec) ->
+              switch
+                when spec.IVar
+                  [getName(spec.IVar)]
+                when spec.IAbs
+                  [getName(spec.IAbs[1])]
+                when spec.IThingAll
+                  #TODO: Get 'All'? How?
+                  [getName(spec.IThingAll)]
+                when spec.IThingWith
+                  Array.prototype.concat.apply [getName(spec.IThingWith[0])],
+                    spec.IThingWith[1].map (v) -> getCName(v)
+
       unless (modules.some ({name}) -> name == 'Prelude')
         modules.push
           qualified: false
@@ -58,7 +75,4 @@ module.exports=
 
     getModuleName: =>
       return unless @buffer?
-      moduleName = undefined
-      @buffer.scan /^\s*module\s+([\w.']+)/, ({match}) ->
-        moduleName = match[1]
-      moduleName
+      parseHsModuleImportsSync(@buffer.getText()).name
