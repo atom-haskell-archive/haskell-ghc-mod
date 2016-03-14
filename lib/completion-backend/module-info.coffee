@@ -80,7 +80,10 @@ module.exports=
       symbols =
         if importDesc.importList?
           @symbols.filter (s) ->
-            importDesc.hiding != (s.name in importDesc.importList)
+            importDesc.hiding != (
+              (s.name in importDesc.importList) or
+              (not importDesc.hiding and importDesc.importList.some ({all}) -> s.typeSignature.indexOf(all) > -1)
+              ) #TODO: Ugly hack to get (..) -- some false positives will happen
         else
           @symbols
       si = symbols.map (s) ->

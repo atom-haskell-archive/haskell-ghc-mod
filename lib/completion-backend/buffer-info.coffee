@@ -60,8 +60,8 @@ module.exports=
                 when spec.IAbs
                   [getName(spec.IAbs[1])]
                 when spec.IThingAll
-                  #TODO: Get 'All'? How?
-                  [getName(spec.IThingAll)]
+                  #TODO: This is rather ugly
+                  [getName(spec.IThingAll), all: getName(spec.IThingAll)]
                 when spec.IThingWith
                   Array.prototype.concat.apply [getName(spec.IThingWith[0])],
                     spec.IThingWith[1].map (v) -> getCName(v)
