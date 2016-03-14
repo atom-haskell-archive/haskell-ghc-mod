@@ -82,8 +82,8 @@ module.exports=
           @symbols.filter (s) ->
             importDesc.hiding != (
               (s.name in importDesc.importList) or
-              (not importDesc.hiding and importDesc.importList.some ({all}) -> s.typeSignature.indexOf(all) > -1)
-              ) #TODO: Ugly hack to get (..) -- some false positives will happen
+              (importDesc.importList.some ({parent}) -> parent? and s.parent is parent)
+              )
         else
           @symbols
       si = symbols.map (s) ->

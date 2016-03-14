@@ -41,6 +41,8 @@ class GhcModiProcessReal
   run: ({interactive, dir, options, command, text, uri, dashArgs, args}) =>
     args ?= []
     dashArgs ?= []
+    if typeof(dashArgs) is 'function'
+      dashArgs = dashArgs(@caps)
     if @caps.optparse
       args = dashArgs.concat(['--']).concat(args)
     else

@@ -23,8 +23,8 @@ class GhcModiProcess
     @backendPromise =
       @getVersion()
       .then @getCaps
-      .then (caps) =>
-        @backend = new GhcModiProcessReal caps
+      .then (@caps) =>
+        @backend = new GhcModiProcessReal @caps
       .catch (err) ->
         atom.notifications.addFatalError "
           Haskell-ghc-mod: ghc-mod failed to launch.
@@ -72,6 +72,8 @@ class GhcModiProcess
       rootExec: false
       quoteArgs: false
       optparse: false
+      typeConstraints: false
+      browseParents: false
 
     atLeast = (b) ->
       for v, i in b
@@ -111,6 +113,9 @@ class GhcModiProcess
       caps.rootExec = false
       caps.quoteArgs = true
       caps.optparse = true
+    if atLeast [5, 6]
+      caps.typeConstraints = true
+      caps.browseParents = true
     Util.debug JSON.stringify(caps)
     return caps
 
@@ -175,12 +180,17 @@ class GhcModiProcess
     @queueCmd 'browse',
       options: Util.getProcessOptions(rootPath)
       command: 'browse'
-      dashArgs: ['-d']
+      dashArgs: (caps) ->
+        args = ['-d']
+        args.push '-p' if caps.browseParents
+        args
       args: modules
-    .then (lines) ->
-      lines.map (s) ->
+    .then (lines) =>
+      lines.map (s) =>
         [name, typeSignature...] = s.split(' :: ')
         typeSignature = typeSignature.join(' :: ').trim()
+        if @caps.browseParents
+          [typeSignature, parent] = typeSignature.split(' ; ').map (v) -> v.trim()
         name = name.trim()
         if /^(?:type|data|newtype)/.test(typeSignature)
           symbolType = 'type'
@@ -188,7 +198,7 @@ class GhcModiProcess
           symbolType = 'class'
         else
           symbolType = 'function'
-        {name, typeSignature, symbolType}
+        {name, typeSignature, symbolType, parent}
 
   getTypeInBuffer: (buffer, crange) =>
     crange = Util.tabShiftForRange(buffer, crange)
@@ -198,6 +208,10 @@ class GhcModiProcess
       command: 'type',
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
+      dashArgs: (caps) ->
+        args = []
+        args.push '-c' if caps.typeConstraints
+        args
       args: [crange.start.row + 1, crange.start.column + 1]
     .then (lines) ->
       [range, type] = lines.reduce ((acc, line) ->
