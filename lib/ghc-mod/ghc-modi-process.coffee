@@ -113,7 +113,7 @@ class GhcModiProcess
       caps.rootExec = false
       caps.quoteArgs = true
       caps.optparse = true
-    if atLeast [5, 6]
+    if atLeast([5, 6]) or atom.config.get('haskell-ghc-mod.experimental')
       caps.typeConstraints = true
       caps.browseParents = true
     Util.debug JSON.stringify(caps)

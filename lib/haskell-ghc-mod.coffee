@@ -100,6 +100,11 @@ module.exports = HaskellGhcMod =
       type: 'array'
       default: []
       description: 'Command line options to pass to hlint (comma-separated)'
+    experimental:
+      type: 'boolean'
+      default: false
+      description: 'Enable experimentai features, which are expected to land in
+                    next release of ghc-mod'
 
   activate: (state) ->
     GhcModiProcess = require './ghc-mod/ghc-modi-process'
