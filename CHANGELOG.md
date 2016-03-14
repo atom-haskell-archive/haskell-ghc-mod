@@ -1,3 +1,11 @@
+## 1.11.1
+* Make case-split non-interactive
+* Extend 'experimental' setting description
+* Experimental features toggle
+* Ghc-mod 5.6 initial Type constraints Browse parents
+* Handle (..) imports
+* True module import parsing
+
 ## 1.11.0
 * Added case split
 * Warning should be shown as warnings
