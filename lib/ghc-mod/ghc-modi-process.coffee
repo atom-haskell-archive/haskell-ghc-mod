@@ -74,6 +74,7 @@ class GhcModiProcess
       optparse: false
       typeConstraints: false
       browseParents: false
+      interactiveCaseSplit: false
 
     atLeast = (b) ->
       for v, i in b
@@ -116,6 +117,7 @@ class GhcModiProcess
     if atLeast([5, 6]) or atom.config.get('haskell-ghc-mod.experimental')
       caps.typeConstraints = true
       caps.browseParents = true
+      caps.interactiveCaseSplit = true
     Util.debug JSON.stringify(caps)
     return caps
 
@@ -234,7 +236,7 @@ class GhcModiProcess
   doCaseSplit: (buffer, crange) =>
     crange = Util.tabShiftForRange(buffer, crange)
     @queueCmd 'typeinfo',
-      interactive: true
+      interactive: @caps?.interactiveCaseSplit ? false
       buffer: buffer
       command: 'split',
       uri: buffer.getUri()
