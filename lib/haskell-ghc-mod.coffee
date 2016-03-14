@@ -104,7 +104,8 @@ module.exports = HaskellGhcMod =
       type: 'boolean'
       default: false
       description: 'Enable experimentai features, which are expected to land in
-                    next release of ghc-mod'
+                    next release of ghc-mod. ENABLE ONLY IF YOU KNOW WHAT YOU
+                    ARE DOING'
 
   activate: (state) ->
     GhcModiProcess = require './ghc-mod/ghc-modi-process'
