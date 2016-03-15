@@ -1,3 +1,6 @@
+## 1.11.2
+* Fix #125
+
 ## 1.11.1
 * Make case-split non-interactive
 * Extend 'experimental' setting description
