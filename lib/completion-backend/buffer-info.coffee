@@ -32,9 +32,17 @@ module.exports=
         return new Disposable ->
       @buffer.onDidSave callback
 
+    parse: ->
+      try
+        parseHsModuleImportsSync(@buffer.getText())
+      catch error
+        console.error error
+        name: undefined
+        imports: []
+
     getImports: =>
       return [] unless @buffer?
-      modules = parseHsModuleImportsSync(@buffer.getText()).imports.map (imp) ->
+      modules = @parse().imports.map (imp) ->
         getName = (thing) ->
           switch
             when thing.Ident?
@@ -75,4 +83,4 @@ module.exports=
 
     getModuleName: =>
       return unless @buffer?
-      parseHsModuleImportsSync(@buffer.getText()).name
+      @parse().name
