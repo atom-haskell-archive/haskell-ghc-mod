@@ -203,6 +203,7 @@ class GhcModiProcess
         {name, typeSignature, symbolType, parent}
 
   getTypeInBuffer: (buffer, crange) =>
+    return Promise.resolve null unless buffer.getUri()?
     crange = Util.tabShiftForRange(buffer, crange)
     @queueCmd 'typeinfo',
       interactive: true
@@ -234,6 +235,7 @@ class GhcModiProcess
         throw new Error "No type"
 
   doCaseSplit: (buffer, crange) =>
+    return Promise.resolve [] unless buffer.getUri()?
     crange = Util.tabShiftForRange(buffer, crange)
     @queueCmd 'typeinfo',
       interactive: @caps?.interactiveCaseSplit ? false
@@ -261,6 +263,7 @@ class GhcModiProcess
 
   getInfoInBuffer: (editor, crange) =>
     buffer = editor.getBuffer()
+    return Promise.resolve null unless buffer.getUri()?
     {symbol, range} = Util.getSymbolInRange(editor, crange)
 
     @queueCmd 'typeinfo',
@@ -289,6 +292,7 @@ class GhcModiProcess
 
   doCheckOrLintBuffer: (cmd, buffer, fast) =>
     return Promise.resolve [] if buffer.isEmpty()
+    return Promise.resolve [] unless buffer.getUri()?
 
     # A dirty hack to make lint work with lhs
     olduri = uri = buffer.getUri()
