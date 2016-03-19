@@ -6,6 +6,7 @@ CP = require('child_process')
 {EOL} = require('os')
 HsUtil = require 'atom-haskell-utils'
 objclone = require 'clone'
+{consistentEnv} = require 'consistent-env';
 
 debuglog = []
 logKeep = 30000 #ms
@@ -54,7 +55,7 @@ module.exports = Util =
       return res.join(delimiter)
     Util.debug "getProcessOptions(#{rootPath})"
     env = {}
-    for k, v of process.env
+    for k, v of consistentEnv()
       env[k] = v
     apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories')
           .concat process.env.PATH.split delimiter
