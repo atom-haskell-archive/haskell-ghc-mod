@@ -69,7 +69,7 @@ module.exports = Util =
             sbd = true
             apd.unshift sandbox
       if atom.config.get('haskell-ghc-mod.stackSandbox')
-        env.PATH = joinPath(apd)
+        env.PATH = joinPath(apd) if env.PATH == ''
         stackpath =
           try CP.execSync "stack path --bin-path",
             encoding: 'utf-8'
@@ -79,7 +79,7 @@ module.exports = Util =
           apd = stackpath.split(delimiter).concat apd
         if sbd
           apd.unshift sandbox
-    env.PATH = joinPath(apd)
+    env.PATH = joinPath(apd) if env.PATH == ''
     Util.debug "PATH = #{env.PATH}"
     options =
       cwd: rootPath
