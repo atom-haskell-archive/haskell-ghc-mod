@@ -1,3 +1,6 @@
+## 1.11.3
+* Don't run commands on buffer without URI
+
 ## 1.11.2
 * Fix #125
 
