@@ -6,7 +6,7 @@ CP = require('child_process')
 {EOL} = require('os')
 HsUtil = require 'atom-haskell-utils'
 objclone = require 'clone'
-{consistentEnv} = require 'consistent-env';
+consistentEnv = require 'consistent-env';
 
 debuglog = []
 logKeep = 30000 #ms
