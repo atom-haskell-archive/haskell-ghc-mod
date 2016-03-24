@@ -1,3 +1,6 @@
+## 1.11.4
+* Collect different capitalizations of PATH on win32
+
 ## 1.11.3
 * Don't run commands on buffer without URI
 
