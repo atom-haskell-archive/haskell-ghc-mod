@@ -6,6 +6,7 @@ CP = require('child_process')
 {EOL} = require('os')
 HsUtil = require 'atom-haskell-utils'
 objclone = require 'clone'
+consistentEnv = require 'consistent-env';
 
 debuglog = []
 logKeep = 30000 #ms
@@ -54,7 +55,7 @@ module.exports = Util =
       return res.join(delimiter)
     Util.debug "getProcessOptions(#{rootPath})"
     env = {}
-    for k, v of process.env
+    for k, v of consistentEnv()
       env[k] = v
 
     if process.platform is 'win32'
@@ -85,7 +86,7 @@ module.exports = Util =
             sbd = true
             apd.unshift sandbox
       if atom.config.get('haskell-ghc-mod.stackSandbox')
-        env.PATH = joinPath(apd)
+        env.PATH = joinPath(apd) if env.PATH == ''
         stackpath =
           try CP.execSync "stack path --bin-path",
             encoding: 'utf-8'
@@ -95,7 +96,7 @@ module.exports = Util =
           apd = stackpath.split(delimiter).concat apd
         if sbd
           apd.unshift sandbox
-    env.PATH = joinPath(apd)
+    env.PATH = joinPath(apd) if env.PATH == ''
     Util.debug "PATH = #{env.PATH}"
     options =
       cwd: rootPath
