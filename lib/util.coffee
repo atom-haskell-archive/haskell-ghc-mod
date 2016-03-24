@@ -56,8 +56,25 @@ module.exports = Util =
     env = {}
     for k, v of process.env
       env[k] = v
+
+    if process.platform is 'win32'
+      PATH = []
+      capMask = (str, mask) ->
+        a = str.split ''
+        for c, i in a
+          if mask & Math.pow(2, i)
+            a[i] = a[i].toUpperCase()
+        return a.join ''
+      for m in [0b1111..0]
+        vn = capMask("path", m)
+        if env[vn]?
+          PATH.push env[vn]
+      env.PATH = PATH.join delimiter
+
+    env.PATH ?= ""
+
     apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories')
-          .concat process.env.PATH.split delimiter
+          .concat env.PATH.split delimiter
     if rootPath
       sbd = false
       if atom.config.get('haskell-ghc-mod.cabalSandbox')
