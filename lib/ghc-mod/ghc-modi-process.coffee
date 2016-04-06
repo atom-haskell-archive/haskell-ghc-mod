@@ -152,6 +152,9 @@ class GhcModiProcess
           []
     runArgs.dir ?= @getRootDir(runArgs.buffer) if runArgs.buffer?
     runArgs.options ?= Util.getProcessOptions(runArgs.dir?.getPath?())
+    rd = runArgs.dir or Util.getRootDir(runArgs.options.cwd)
+    if rd?.getEntriesSync?().some((e) -> e.isFile() and e.getBaseName() is '.disable-ghc-mod')
+      return Promise.resolve []
     qe = (qn) =>
       q = @commandQueues[qn]
       q.getQueueLength() + q.getPendingLength() is 0
