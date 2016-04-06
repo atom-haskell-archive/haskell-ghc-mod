@@ -91,6 +91,7 @@ module.exports = Util =
             encoding: 'utf-8'
             cwd: rootPath
             env: env
+            timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
         if stackpath
           apd = stackpath.split(delimiter).concat apd
         if sbd
