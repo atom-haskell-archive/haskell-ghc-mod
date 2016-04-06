@@ -1,3 +1,6 @@
+## 1.12.0
+* Option to disable ghc-mod for some projects
+
 ## 1.11.5
 * Add timeout to `stack path` call
 
