@@ -1,3 +1,6 @@
+## 1.11.5
+* Add timeout to `stack path` call
+
 ## 1.11.4
 * Collect different capitalizations of PATH on win32
 
