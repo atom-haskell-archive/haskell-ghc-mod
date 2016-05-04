@@ -1,3 +1,6 @@
+## 1.12.1
+* Make imports parsing asynchronous
+
 ## 1.12.0
 * Option to disable ghc-mod for some projects
 
