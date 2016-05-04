@@ -1,3 +1,6 @@
+## 1.12.2
+* Handle parse errors in parseHsModuleImports
+
 ## 1.12.1
 * Make imports parsing asynchronous
 
