@@ -56,17 +56,18 @@ module.exports=
           #{rootDir.getPath()}
           != #{rootPath}"
         return
-      unless bufferInfo.getModuleName() == @name
-        Util.debug "#{@name} moduleName mismatch:
-          #{bufferInfo.getModuleName()}
-          != #{@name}"
-        return
-      Util.debug "#{@name} buffer is set"
-      @disposables.add bufferInfo.onDidSave =>
-        Util.debug "#{@name} did-save triggered"
-        @update(rootPath)
-      @disposables.add bufferInfo.onDidDestroy =>
-        @unsetBuffer()
+      bufferInfo.getModuleName()
+      .then (name) =>
+        unless name == @name
+          Util.debug "#{@name} moduleName mismatch:
+            #{name} != #{@name}"
+          return
+        Util.debug "#{@name} buffer is set"
+        @disposables.add bufferInfo.onDidSave =>
+          Util.debug "#{@name} did-save triggered"
+          @update(rootPath)
+        @disposables.add bufferInfo.onDidDestroy =>
+          @unsetBuffer()
 
     unsetBuffer: =>
       return unless @disposables?

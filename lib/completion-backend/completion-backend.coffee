@@ -37,13 +37,15 @@ class CompletionBackend
     {bufferInfo} = @getBufferInfo {buffer}
     {rootDir, moduleMap} = @getModuleMap {bufferInfo}
     if bufferInfo? and moduleMap?
-      Promise.all bufferInfo.getImports().map (imp) =>
-        @getModuleInfo
-          moduleName: imp.name
-          rootDir: rootDir
-          moduleMap: moduleMap
-        .then ({moduleInfo}) ->
-          moduleInfo.select(imp, symbolTypes)
+      bufferInfo.getImports()
+      .then (imports) =>
+        Promise.all imports.map (imp) =>
+          @getModuleInfo
+            moduleName: imp.name
+            rootDir: rootDir
+            moduleMap: moduleMap
+          .then ({moduleInfo}) ->
+            moduleInfo.select(imp, symbolTypes)
       .then (promises) ->
         [].concat promises...
     else
@@ -75,35 +77,37 @@ class CompletionBackend
   getModuleInfo: ({moduleName, bufferInfo, rootDir, moduleMap}) =>
     unless moduleName? or bufferInfo?
       throw new Error("No moduleName or bufferInfo specified")
-    moduleName ?= bufferInfo.getModuleName()
-    unless moduleName
-      Util.debug "warn: nameless module in
-        #{bufferInfo.buffer.getUri()}"
-      return
-    unless moduleMap? and rootDir?
-      unless bufferInfo?
-        throw new Error("No bufferInfo specified and no moduleMap+rootDir")
-      {rootDir, moduleMap} = @getModuleMap({bufferInfo, rootDir})
+    # moduleName ?= bufferInfo.getModuleName()
+    Promise.resolve (moduleName or bufferInfo.getModuleName())
+    .then (moduleName) =>
+      unless moduleName
+        Util.debug "warn: nameless module in
+          #{bufferInfo.buffer.getUri()}"
+        return
+      unless moduleMap? and rootDir?
+        unless bufferInfo?
+          throw new Error("No bufferInfo specified and no moduleMap+rootDir")
+        {rootDir, moduleMap} = @getModuleMap({bufferInfo, rootDir})
 
-    moduleInfo = moduleMap.get moduleName
-    unless moduleInfo?.symbols? #hack to help with #20, #21
-      new Promise (resolve) =>
-        moduleMap.set moduleName,
-          moduleInfo = new ModuleInfo moduleName, @process, rootDir.getPath(), ->
-            resolve {bufferInfo, rootDir, moduleMap, moduleInfo}
+      moduleInfo = moduleMap.get moduleName
+      unless moduleInfo?.symbols? #hack to help with #20, #21
+        new Promise (resolve) =>
+          moduleMap.set moduleName,
+            moduleInfo = new ModuleInfo moduleName, @process, rootDir.getPath(), ->
+              resolve {bufferInfo, rootDir, moduleMap, moduleInfo}
 
-        if bufferInfo?
-          moduleInfo.setBuffer bufferInfo, rootDir.getPath()
-        else
-          atom.workspace.getTextEditors().forEach (editor) =>
-            {bufferInfo} = @getBufferInfo {buffer: editor.getBuffer()}
+          if bufferInfo?
             moduleInfo.setBuffer bufferInfo, rootDir.getPath()
+          else
+            atom.workspace.getTextEditors().forEach (editor) =>
+              {bufferInfo} = @getBufferInfo {buffer: editor.getBuffer()}
+              moduleInfo.setBuffer bufferInfo, rootDir.getPath()
 
-        moduleInfo.onDidDestroy ->
-          moduleMap.delete moduleName
-          Util.debug "#{moduleName} removed from map"
-    else
-      Promise.resolve {bufferInfo, rootDir, moduleMap, moduleInfo}
+          moduleInfo.onDidDestroy ->
+            moduleMap.delete moduleName
+            Util.debug "#{moduleName} removed from map"
+      else
+        Promise.resolve {bufferInfo, rootDir, moduleMap, moduleInfo}
 
   ### Public interface below ###
 
@@ -137,14 +141,17 @@ class CompletionBackend
     if @bufferMap.has buffer
       return new Disposable ->
 
-    {bufferInfo} = @getBufferInfo {buffer}
+    setImmediate =>
+      {bufferInfo} = @getBufferInfo {buffer}
 
-    {rootDir, moduleMap} = @getModuleMap {bufferInfo}
+      {rootDir, moduleMap} = @getModuleMap {bufferInfo}
 
-    @getModuleInfo {bufferInfo, rootDir, moduleMap}
+      @getModuleInfo {bufferInfo, rootDir, moduleMap}
 
-    bufferInfo.getImports().forEach ({name}) =>
-      @getModuleInfo {moduleName: name, rootDir, moduleMap}
+      bufferInfo.getImports()
+      .then (imports) =>
+        imports.forEach ({name}) =>
+          @getModuleInfo {moduleName: name, rootDir, moduleMap}
 
     new Disposable =>
       @unregisterCompletionBuffer buffer
