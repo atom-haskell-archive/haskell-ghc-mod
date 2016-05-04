@@ -34,20 +34,19 @@ module.exports=
 
     parse: ->
       new Promise (resolve) =>
-        try
-          newText = @buffer.getText()
-          if @oldText is newText
-            resolve @oldImports
-          else
-            parseHsModuleImports @buffer.getText(), (imports) =>
-              @oldText = newText
-              @oldImports = imports
-              resolve @oldImports
-        catch error
-          console.error error
-          resolve
-            name: undefined
-            imports: []
+        newText = @buffer.getText()
+        if @oldText is newText
+          resolve @oldImports
+        else
+          parseHsModuleImports @buffer.getText(), (imports) =>
+            @oldText = newText
+            if imports.error?
+              console.error "#{imports.error} in #{imports.file} on #{imports.line},#{imports.col}"
+              resolve @oldImports =
+                name: undefined
+                imports: []
+            else
+              resolve @oldImports = imports
 
     getImports: =>
       return Promise.resolve([]) unless @buffer?
