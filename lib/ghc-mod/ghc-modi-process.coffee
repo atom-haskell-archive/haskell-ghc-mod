@@ -195,7 +195,7 @@ class GhcModiProcess
         [name, typeSignature...] = s.split(' :: ')
         typeSignature = typeSignature.join(' :: ').trim()
         if @caps.browseParents
-          [typeSignature, parent] = typeSignature.split(' ; ').map (v) -> v.trim()
+          [typeSignature, parent] = typeSignature.split(' -- from:').map (v) -> v.trim()
         name = name.trim()
         if /^(?:type|data|newtype)/.test(typeSignature)
           symbolType = 'type'
