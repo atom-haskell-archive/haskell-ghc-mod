@@ -1,3 +1,7 @@
+## 1.12.3
+* More debug output with sandboxes
+* Update type signature/parent separator
+
 ## 1.12.2
 * Handle parse errors in parseHsModuleImports
 
