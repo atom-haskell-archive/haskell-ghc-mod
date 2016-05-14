@@ -78,23 +78,38 @@ module.exports = Util =
     if rootPath
       sbd = false
       if atom.config.get('haskell-ghc-mod.cabalSandbox')
+        Util.debug("Looking for cabal sandbox...")
         sbc = Util.parseSandboxConfig("#{rootPath}#{sep}cabal.sandbox.config")
         if sbc?['install-dirs']?['bindir']?
           sandbox = sbc['install-dirs']['bindir']
+          Util.debug("Found cabal sandbox: ", sandbox)
           if Util.isDirectory(sandbox)
             sbd = true
             apd.unshift sandbox
+          else
+            Util.warn("Cabal sandbox ", sandbox, " is not a directory")
+        else
+          Util.warn("No cabal sandbox found")
       if atom.config.get('haskell-ghc-mod.stackSandbox')
+        Util.debug("Looking for stack sandbox...")
         env.PATH = joinPath(apd)
+        Util.debug("Running stack with PATH ", env.PATH)
         stackpath =
-          try CP.execSync "stack path --bin-path",
-            encoding: 'utf-8'
-            cwd: rootPath
-            env: env
-            timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
+          try
+            CP.execSync "stack path --bin-path",
+              encoding: 'utf-8'
+              cwd: rootPath
+              env: env
+              timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
+          catch error
+            Util.warn("Running stack failed with ", error)
         if stackpath
+          Util.debug("Found stack sandbox ", stackpath)
           apd = stackpath.split(delimiter).concat apd
+        else
+          Util.warn("No stack sandbox found")
         if sbd
+          Util.debug("Reinstating cabal sandbox as first in PATH")
           apd.unshift sandbox
     env.PATH = joinPath(apd)
     Util.debug "PATH = #{env.PATH}"
