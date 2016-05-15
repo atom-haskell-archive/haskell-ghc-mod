@@ -103,7 +103,7 @@ module.exports = Util =
               timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
           catch error
             Util.warn("Running stack failed with ", error)
-            return null
+            null
         if stackpath
           Util.debug("Found stack sandbox ", stackpath)
           apd = stackpath.split(delimiter).concat apd
