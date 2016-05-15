@@ -1,3 +1,6 @@
+## 1.12.4
+* Fix #143
+
 ## 1.12.3
 * More debug output with sandboxes
 * Update type signature/parent separator
