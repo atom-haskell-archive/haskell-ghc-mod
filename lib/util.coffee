@@ -96,8 +96,9 @@ module.exports = Util =
         Util.debug("Running stack with PATH ", env.PATH)
         stackpath =
           try
-            CP.execSync "stack path --bin-path",
+            CP.execFileSync 'stack', ['path', '--bin-path'],
               encoding: 'utf-8'
+              stdio: ['pipe', 'pipe', 'ignore']
               cwd: rootPath
               env: env
               timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
