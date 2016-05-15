@@ -1,3 +1,6 @@
+## 1.12.6
+* Attempt at fixing stack sandbox resolution on Win
+
 ## 1.12.5
 * Oops
 
