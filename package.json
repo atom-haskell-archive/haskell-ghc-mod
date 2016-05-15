@@ -1,7 +1,7 @@
 {
   "name": "haskell-ghc-mod",
   "main": "./lib/haskell-ghc-mod",
-  "version": "1.12.3",
+  "version": "1.12.4",
   "description": "Provides backends for ide-haskell and autocomplete-haskell",
   "keywords": [
     "ide-haskell",
