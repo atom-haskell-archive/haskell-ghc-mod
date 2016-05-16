@@ -137,11 +137,11 @@ module.exports = Util =
         newp.push apd...
         env.PATH = joinPath(newp)
         Util.debug "PATH = #{env.PATH}"
-        options =
+        return {
           cwd: rootPath
           env: env
           encoding: 'utf-8'
-        return objclone(options)
+        }
     @processOptionsCache.set(rootPath, res)
     return res
 

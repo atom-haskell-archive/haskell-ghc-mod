@@ -52,8 +52,11 @@ class GhcModiProcess
   getVersion: ->
     Util.getProcessOptions()
     .then (opts) ->
-      opts.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
-      return opts
+      opts1 = {}
+      for k, v of opts
+        opts1[k] = v
+      opts1.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
+      return opts1
     .then (opts) ->
       new Promise (resolve, reject) ->
         CP.execFile atom.config.get('haskell-ghc-mod.ghcModPath'),
