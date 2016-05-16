@@ -16,25 +16,7 @@ class GhcModiProcessReal
     dir = @bufferDirMap.get buffer
     if dir?
       return dir
-    dir =
-      if @caps.rootExec
-        modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
-        bufferDir = buffer.file?.getParent?() ? Util.getRootDirFallback buffer
-        options = Util.getProcessOptions(bufferDir.getPath())
-        options.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
-        res = CP.spawnSync modPath, ['root'], options
-        if res.error? or not res.stdout?
-          warn "Encountered error #{res.error} while getting project root dir"
-          Util.getRootDir buffer
-        else
-          [path] = res.stdout.split(EOL)
-          unless path and Util.isDirectory(path)
-            warn "ghc-mod returned non-directory while getting project root dir"
-            Util.getRootDir buffer
-          else
-            new Directory path
-      else
-        Util.getRootDir buffer
+    dir = Util.getRootDir buffer
     @bufferDirMap.set buffer, dir
     dir
 
@@ -82,13 +64,8 @@ class GhcModiProcessReal
       return proc
     debug "Spawning new ghc-modi instance for #{rootDir.getPath()} with
           #{"options.#{k} = #{v}" for k, v of options}"
-    proc =
-      if @caps.legacyInteractive
-        modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
-        new InteractiveProcess(modPath, ['legacy-interactive'], options, @caps)
-      else
-        modiPath = atom.config.get('haskell-ghc-mod.ghcModiPath')
-        new InteractiveProcess(modiPath, [], options, @caps)
+    modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
+    proc = new InteractiveProcess(modPath, ['legacy-interactive'], options, @caps)
     proc.onExit (code) =>
       debug "ghc-modi for #{rootDir.getPath()} ended with #{code}"
       @processMap?.delete(rootDir.getPath())

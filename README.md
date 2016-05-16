@@ -15,7 +15,7 @@ NOTE: when using with stack, see https://github.com/atom-haskell/haskell-ghc-mod
 You need to have `ghc-mod`, `ghc-modi` (part of ghc-mod) and `hlint` executables
 installed on your system. `ghc-mod` needs to be able to find `hlint` (eiter add `hlint` directory to PATH, or install both in the same cabal sandbox).
 
-Supported `ghc-mod` versions are 5.4.x. and up. Versions from 4.1 to 5.2 might work, but are deprecated. 5.3 is not supported.
+Supported `ghc-mod` versions are 5.5.x. and up. 5.4 is deprecated, but should work in most cases. Earlier versions most likely won't work.
 
 Quick setup is as follows:
 
@@ -46,11 +46,7 @@ $ apm install language-haskell haskell-ghc-mod ide-haskell autocomplete-haskell
 
 NOTE: when using with stack, see https://github.com/atom-haskell/haskell-ghc-mod/wiki/Using-with-stack
 
-Only configuration options you will likely need to set are `ghcModPath` and,
-for ghc-mod<5.4.0.0, `ghcModiPath`. Both need to be set to full path to `ghc-mod` and `ghc-modi` programs respectively, if those are not in your PATH.
-
-Note, that ghc-mod>=5.4.0.0 doesn't use `ghcModiPath` setting (instead running
-ghc-mod in interactive mode directly).
+Only configuration option you will likely need to set is `ghcModPath`. It needs to be set to full path to `ghc-mod` executable, if it is not in your PATH. For example, if you have `ghc-mod` in `/home/user/.cabal/bin/`, you need to write `/home/user/.cabal/bin/ghc-mod` in `ghcModPath`. Note that shell expansions are *not* suported, i.e. you can't use `~` or `$HOME`.
 
 There can be some problems with ghc-modi upstream, most notably, it does not
 work on paths with whitespace. If you experience problems, try disabling

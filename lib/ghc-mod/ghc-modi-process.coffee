@@ -67,9 +67,7 @@ class GhcModiProcess
   getCaps: (vers) ->
     caps =
       version: vers
-      legacyInteractive: false
       fileMap: false
-      rootExec: false
       quoteArgs: false
       optparse: false
       typeConstraints: false
@@ -90,28 +88,19 @@ class GhcModiProcess
           return false
       return true
 
-    if not atLeast [4, 1]
+    if not atLeast [5, 4]
       atom.notifications.addError "
-        Haskell-ghc-mod: ghc-mod < 4.1 is not supported.
+        Haskell-ghc-mod: ghc-mod < 5.4 is not supported.
         Use at your own risk or update your ghc-mod installation",
         dismissable: true
-    else if not atLeast [5]
+    if exact [5, 4]
       atom.notifications.addWarning "
-        Haskell-ghc-mod: ghc-mod 4.* is deprecated.
-        Please update your ghc-mod installation",
-        dismissable: true
-    if exact [5, 3]
-      atom.notifications.addError "
-        Haskell-ghc-mod: ghc-mod 5.3.* is not supported.
+        Haskell-ghc-mod: ghc-mod 5.4.* is deprecated.
         Use at your own risk or update your ghc-mod installation",
         dismissable: true
-    if atLeast [5, 3]
-      caps.legacyInteractive = true
     if atLeast [5, 4]
       caps.fileMap = true
-      caps.rootExec = true
     if atLeast [5, 5]
-      caps.rootExec = false
       caps.quoteArgs = true
       caps.optparse = true
     if atLeast([5, 6]) or atom.config.get('haskell-ghc-mod.experimental')
