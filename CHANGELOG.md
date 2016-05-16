@@ -1,3 +1,10 @@
+## 1.13.0
+* Check compiler version
+* Fix pesky timeout problem
+* Use promise in getProcessOptions
+* Remove redundant condition
+* Removed support for older ghc-mod versions
+
 ## 1.12.6
 * Attempt at fixing stack sandbox resolution on Win
 
