@@ -1,3 +1,6 @@
+## 1.13.1
+* Fixup for sporadic spaces in hlint parse error
+
 ## 1.13.0
 * Check compiler version
 * Fix pesky timeout problem
