@@ -74,16 +74,19 @@ module.exports = Util =
         cwd: rootPath
         env: env
         timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
-      CP.execFile 'stack', ['path', '--bin-path'], opts, (error, stdout, stderr) ->
+      CP.execFile 'stack', ['path', '--snapshot-install-root', '--local-install-root'], opts, (error, stdout, stderr) ->
         if error?
           Util.warn("Running stack failed with ", error)
           reject error
         else
           Util.warn stderr if stderr
           resolve stdout
-    .then (stackpath) ->
-      Util.debug("Found stack sandbox ", stackpath)
-      return stackpath.split(delimiter)
+    .then (out) ->
+      lines = out.split(EOL)
+      sir = lines.filter((l) -> l.startsWith('snapshot-install-root: '))[0].slice(23) + "#{sep}bin"
+      lir = lines.filter((l) -> l.startsWith('local-install-root: '))[0].slice(20) + "#{sep}bin"
+      Util.debug("Found stack sandbox ", lir, sir)
+      return [lir, sir]
     .catch (err) ->
       Util.warn("No stack sandbox found because ", err)
 
