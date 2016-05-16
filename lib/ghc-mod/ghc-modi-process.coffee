@@ -1,4 +1,4 @@
-{Range, Point, Emitter, CompositeDisposable} = require 'atom'
+{Range, Point, Emitter, CompositeDisposable, Directory} = require 'atom'
 Util = require '../util'
 {extname} = require('path')
 Queue = require 'promise-queue'
@@ -50,19 +50,22 @@ class GhcModiProcess
       @commandQueues.browse = new Queue(value)
 
   getVersion: ->
-    opts = Util.getProcessOptions()
-    opts.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
-    new Promise (resolve, reject) ->
-      CP.execFile atom.config.get('haskell-ghc-mod.ghcModPath'),
-        ['version'], opts,
-        (error, stdout, stderr) ->
-          if error?
-            error.stack = (new Error).stack
-            return reject error
-          resolve (
-            /^ghc-mod version (\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/.exec(stdout)
-            .slice(1, 5).map (i) -> parseInt i
-            )
+    Util.getProcessOptions()
+    .then (opts) ->
+      opts.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
+      return opts
+    .then (opts) ->
+      new Promise (resolve, reject) ->
+        CP.execFile atom.config.get('haskell-ghc-mod.ghcModPath'),
+          ['version'], opts,
+          (error, stdout, stderr) ->
+            if error?
+              error.stack = (new Error).stack
+              return reject error
+            resolve (
+              /^ghc-mod version (\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/.exec(stdout)
+              .slice(1, 5).map (i) -> parseInt i
+              )
 
   getCaps: (vers) ->
     caps =
@@ -139,17 +142,35 @@ class GhcModiProcess
           @queueCmd(queueName, runArgs)
         else
           []
-    runArgs.dir ?= @getRootDir(runArgs.buffer) if runArgs.buffer?
-    runArgs.options ?= Util.getProcessOptions(runArgs.dir?.getPath?())
-    rd = runArgs.dir or Util.getRootDir(runArgs.options.cwd)
-    if rd?.getEntriesSync?().some((e) -> e.isFile() and e.getBaseName() is '.disable-ghc-mod')
-      return Promise.resolve []
     qe = (qn) =>
       q = @commandQueues[qn]
       q.getQueueLength() + q.getPendingLength() is 0
     promise = @commandQueues[queueName].add =>
       @emitter.emit 'backend-active'
-      @backend.run runArgs
+      runArgs.dir ?= @getRootDir(runArgs.buffer) if runArgs.buffer?
+      Util.getProcessOptions(runArgs.dir?.getPath?())
+      .then (procopts) ->
+        runArgs.options = procopts
+        return runArgs
+      .then (runArgs) ->
+        rd = runArgs.dir or Util.getRootDir(runArgs.options.cwd)
+        new Promise (resolve, reject) ->
+          rd.getEntries (error, files) ->
+            if error?
+              reject error
+            else
+              resolve files
+        .catch (error) ->
+          Util.warn error
+          return []
+        .then (files) ->
+          if files.some((e) -> e.isFile() and e.getBaseName() is '.disable-ghc-mod')
+            throw new Error("Disable-ghc-mod found")
+        .then -> return runArgs
+      .then @backend.run
+      .catch (err) ->
+        Util.warn err
+        return []
     promise.then (res) =>
       if qe(queueName)
         @emitter.emit 'queue-idle', {queue: queueName}
@@ -172,7 +193,7 @@ class GhcModiProcess
 
   runBrowse: (rootPath, modules) =>
     @queueCmd 'browse',
-      options: Util.getProcessOptions(rootPath)
+      dir: new Directory(rootPath)
       command: 'browse'
       dashArgs: (caps) ->
         args = ['-d']

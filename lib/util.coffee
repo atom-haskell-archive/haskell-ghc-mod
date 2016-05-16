@@ -16,6 +16,13 @@ savelog = (messages...) ->
     timestamp: ts
     messages: messages
   debuglog = debuglog.filter ({timestamp}) -> (ts - timestamp) < logKeep
+  return
+
+joinPath = (ds) ->
+  set = new Set(ds)
+  res = []
+  set.forEach (d) -> res.push d
+  return res.join(delimiter)
 
 module.exports = Util =
   EOT: "#{EOL}\x04#{EOL}"
@@ -42,20 +49,53 @@ module.exports = Util =
 
   isDirectory: HsUtil.isDirectory
 
+  getCabalSandbox: (rootPath) ->
+    Util.debug("Looking for cabal sandbox...")
+    Util.parseSandboxConfig("#{rootPath}#{sep}cabal.sandbox.config")
+    .then (sbc) ->
+      if sbc?['install-dirs']?['bindir']?
+        sandbox = sbc['install-dirs']['bindir']
+        Util.debug("Found cabal sandbox: ", sandbox)
+        if Util.isDirectory(sandbox)
+          sandbox
+        else
+          Util.warn("Cabal sandbox ", sandbox, " is not a directory")
+      else
+        Util.warn("No cabal sandbox found")
+
+  getStackSandbox: (rootPath, apd, env) ->
+    Util.debug("Looking for stack sandbox...")
+    env.PATH = joinPath(apd)
+    Util.debug("Running stack with PATH ", env.PATH)
+    new Promise (resolve, reject) ->
+      opts =
+        encoding: 'utf-8'
+        stdio: 'pipe'
+        cwd: rootPath
+        env: env
+        timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
+      CP.execFile 'stack', ['path', '--bin-path'], opts, (error, stdout, stderr) ->
+        if error?
+          Util.warn("Running stack failed with ", error)
+          reject error
+        else
+          Util.warn stderr if stderr
+          resolve stdout
+    .then (stackpath) ->
+      Util.debug("Found stack sandbox ", stackpath)
+      return stackpath.split(delimiter)
+    .catch (err) ->
+      Util.warn("No stack sandbox found because ", err)
+
   getProcessOptions: (rootPath) =>
     rootPath ?= Util.getRootDirFallback().getPath()
+    #cache
     @processOptionsCache ?= new Map()
     if @processOptionsCache.has(rootPath)
       return @processOptionsCache.get(rootPath)
-    joinPath = (ds) ->
-      set = new Set(ds)
-      res = []
-      set.forEach (d) -> res.push d
-      return res.join(delimiter)
+
     Util.debug "getProcessOptions(#{rootPath})"
-    env = {}
-    for k, v of process.env
-      env[k] = v
+    env = objclone(process.env)
 
     if process.platform is 'win32'
       PATH = []
@@ -76,50 +116,34 @@ module.exports = Util =
     apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories')
           .concat env.PATH.split delimiter
     sbd = false
-    if atom.config.get('haskell-ghc-mod.cabalSandbox')
-      Util.debug("Looking for cabal sandbox...")
-      sbc = Util.parseSandboxConfig("#{rootPath}#{sep}cabal.sandbox.config")
-      if sbc?['install-dirs']?['bindir']?
-        sandbox = sbc['install-dirs']['bindir']
-        Util.debug("Found cabal sandbox: ", sandbox)
-        if Util.isDirectory(sandbox)
-          sbd = true
-          apd.unshift sandbox
-        else
-          Util.warn("Cabal sandbox ", sandbox, " is not a directory")
+    cabalSandbox =
+      if atom.config.get('haskell-ghc-mod.cabalSandbox')
+        Util.getCabalSandbox(rootPath)
       else
-        Util.warn("No cabal sandbox found")
-    if atom.config.get('haskell-ghc-mod.stackSandbox')
-      Util.debug("Looking for stack sandbox...")
-      env.PATH = joinPath(apd)
-      Util.debug("Running stack with PATH ", env.PATH)
-      stackpath =
-        try
-          CP.execFileSync 'stack', ['path', '--bin-path'],
-            encoding: 'utf-8'
-            stdio: ['pipe', 'pipe', 'ignore']
-            cwd: rootPath
-            env: env
-            timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
-        catch error
-          Util.warn("Running stack failed with ", error)
-          null
-      if stackpath
-        Util.debug("Found stack sandbox ", stackpath)
-        apd = stackpath.split(delimiter).concat apd
+        Promise.resolve # undefined
+    stackSandbox =
+      if atom.config.get('haskell-ghc-mod.stackSandbox')
+        Util.getStackSandbox(rootPath, apd, objclone(env))
       else
-        Util.warn("No stack sandbox found")
-      if sbd
-        Util.debug("Reinstating cabal sandbox as first in PATH")
-        apd.unshift sandbox
-    env.PATH = joinPath(apd)
-    Util.debug "PATH = #{env.PATH}"
-    options =
-      cwd: rootPath
-      env: env
-      encoding: 'utf-8'
-    @processOptionsCache.set(rootPath, options)
-    return objclone(options)
+        Promise.resolve # undefined
+    res =
+      Promise.all([cabalSandbox, stackSandbox])
+      .then ([cabalSandboxDir, stackSandboxDirs]) ->
+        newp = []
+        if cabalSandboxDir?
+          newp.push cabalSandboxDir
+        if stackSandboxDirs?
+          newp.push stackSandboxDirs...
+        newp.push apd...
+        env.PATH = joinPath(newp)
+        Util.debug "PATH = #{env.PATH}"
+        options =
+          cwd: rootPath
+          env: env
+          encoding: 'utf-8'
+        return objclone(options)
+    @processOptionsCache.set(rootPath, res)
+    return res
 
   getSymbolAtPoint: (editor, point) ->
     inScope = (scope, point) ->
@@ -190,30 +214,32 @@ module.exports = Util =
     return err
 
   parseSandboxConfig: (file) ->
-    sbc = try FS.readFileSync file, encoding: 'utf-8'
-    return unless sbc?
-    vars = {}
-
-    scope = vars
-
-    rv = (v) ->
-      for k1, v1 of scope
-        v = v.split("$#{k1}").join(v1)
-      return v
-
-    sbc.split(/\r?\n|\r/).forEach (line) ->
-      unless line.match(/^\s*--/) or line.match(/^\s*$/)
-        [l] = line.split /--/
-        if m = line.match /^\s*([\w-]+):\s*(.*)\s*$/
-          [_, name, val] = m
-          scope[name] = rv(val)
+    new Promise (resolve, reject) ->
+      FS.readFile file, encoding: 'utf-8', (err, sbc) ->
+        if err?
+          reject err
         else
-          newscope = {}
-          scope[line] = newscope
-          scope = newscope
-
-
-    return vars
+          resolve sbc
+    .then (sbc) ->
+      vars = {}
+      scope = vars
+      rv = (v) ->
+        for k1, v1 of scope
+          v = v.split("$#{k1}").join(v1)
+        return v
+      sbc.split(/\r?\n|\r/).forEach (line) ->
+        unless line.match(/^\s*--/) or line.match(/^\s*$/)
+          [l] = line.split /--/
+          if m = line.match /^\s*([\w-]+):\s*(.*)\s*$/
+            [_, name, val] = m
+            scope[name] = rv(val)
+          else
+            newscope = {}
+            scope[line] = newscope
+            scope = newscope
+      return vars
+    .catch (err) ->
+      Util.warn "Reading cabal sandbox config failed with ", err
 
   # A dirty hack to work with tabs
   tabShiftForPoint: (buffer, point) ->
