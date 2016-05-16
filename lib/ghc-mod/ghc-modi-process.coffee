@@ -20,8 +20,11 @@ class GhcModiProcess
 
     @createQueues()
 
+    vers = @getVersion()
+    vers.then @checkComp
+
     @backendPromise =
-      @getVersion()
+      vers
       .then @getCaps
       .then (@caps) =>
         @backend = new GhcModiProcessReal @caps
@@ -65,12 +68,35 @@ class GhcModiProcess
             if error?
               error.stack = (new Error).stack
               return reject error
-            resolve (
-              /^ghc-mod version (\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/.exec(stdout)
-              .slice(1, 5).map (i) -> parseInt i
-              )
+            vers = /^ghc-mod version (\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/.exec(stdout).slice(1, 5).map (i) -> parseInt i
+            comp = /GHC (.+)$/.exec(stdout.trim())[1]
+            Util.debug "Ghc-mod #{vers} built with #{comp}"
+            resolve {vers, comp}
 
-  getCaps: (vers) ->
+  checkComp: ({comp}) ->
+    Util.getProcessOptions()
+    .then (opts) ->
+      opts1 = {}
+      for k, v of opts
+        opts1[k] = v
+      opts1.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
+      return opts1
+    .then (opts) ->
+      CP.execFile 'ghc', ['--version'], opts, (error, stdout, stderr) ->
+        if error?
+          error.stack = (new Error).stack
+          throw error
+        compv = /version (.+)$/.exec(stdout.trim())[1]
+        Util.debug "Ghc version #{compv}"
+        if compv isnt comp
+          warn = "
+            GHC version in your PATH '#{compv}' doesn't match with
+            GHC version used to build ghc-mod '#{comp}'. This will lead to
+            problems"
+          atom.notifications.addWarning warn
+          Util.warn warn
+
+  getCaps: ({vers}) ->
     caps =
       version: vers
       fileMap: false
