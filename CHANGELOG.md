@@ -1,3 +1,6 @@
+## 1.13.2
+* Use install-root for stack sandbox detection
+
 ## 1.13.1
 * Fixup for sporadic spaces in hlint parse error
 
