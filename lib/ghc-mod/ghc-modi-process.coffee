@@ -367,7 +367,7 @@ class GhcModiProcess
       args: args
     .then (lines) =>
       rootDir = @getRootDir buffer
-      rx = /^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/
+      rx = /^(.*?):([0-9\s]+):([0-9\s]+): *(?:(Warning|Error): *)?/
       lines
       .filter (line) ->
         switch
