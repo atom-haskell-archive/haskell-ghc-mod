@@ -5,7 +5,6 @@ Queue = require 'promise-queue'
 {unlitSync} = require 'atom-haskell-utils'
 
 GhcModiProcessReal = require './ghc-modi-process-real.coffee'
-CP = require 'child_process'
 
 module.exports =
 class GhcModiProcess
