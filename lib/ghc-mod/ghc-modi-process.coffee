@@ -100,7 +100,9 @@ class GhcModiProcess
       stackghc =
         new Promise (resolve, reject) ->
           CP.execFile 'stack', ['ghc', '--', '--version'], opts, (error, stdout, stderr) ->
+            Util.warn stderr if stderr
             if error?
+              Util.warn stdout if stdout
               error.stack = (new Error).stack
               return reject error
             resolve /version (.+)$/.exec(stdout.trim())[1]
@@ -110,7 +112,9 @@ class GhcModiProcess
       pathghc =
         new Promise (resolve, reject) ->
           CP.execFile 'ghc', ['--version'], opts, (error, stdout, stderr) ->
+            Util.warn stderr if stderr
             if error?
+              Util.warn stdout if stdout
               error.stack = (new Error).stack
               return reject error
             resolve /version (.+)$/.exec(stdout.trim())[1]
