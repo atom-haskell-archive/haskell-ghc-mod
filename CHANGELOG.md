@@ -1,3 +1,8 @@
+## 1.14.2
+* Use 'n' as EOL in Atom
+* Merge branch 'upi-refactor'
+* UPI refactor to sep. module
+
 ## 1.14.1
 * Don't throw when checking for compiler
 * Fix message on path
