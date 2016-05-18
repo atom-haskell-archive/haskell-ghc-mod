@@ -1,3 +1,8 @@
+## 1.14.0
+* Delayed process initialization; per-dir backend
+* AHS bump
+* Atom-haskell-utils bump
+
 ## 1.13.2
 * Use install-root for stack sandbox detection
 
