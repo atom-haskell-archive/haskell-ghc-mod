@@ -1,3 +1,7 @@
+## 1.14.1
+* Don't throw when checking for compiler
+* Fix message on path
+
 ## 1.14.0
 * Delayed process initialization; per-dir backend
 * AHS bump
