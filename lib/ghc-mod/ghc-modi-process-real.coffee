@@ -6,11 +6,11 @@ InteractiveProcess = require './interactive-process'
 
 module.exports =
 class GhcModiProcessReal
-  constructor: (@caps, @rootDir) ->
+  constructor: (@caps, @rootDir, @options) ->
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
 
-  run: ({interactive, options, command, text, uri, dashArgs, args}) =>
+  run: ({interactive, command, text, uri, dashArgs, args}) ->
     args ?= []
     dashArgs ?= []
     if typeof(dashArgs) is 'function'
@@ -23,10 +23,10 @@ class GhcModiProcessReal
     P =
       if text? and not @caps.fileMap
         withTempFile text, uri, (tempuri) ->
-          fun {options, command, uri: tempuri, args}
+          fun {command, uri: tempuri, args}
       else
-        fun {options, command, text, uri, args}
-    P.catch (err) =>
+        fun {command, text, uri, args}
+    P.catch (err) ->
       debug "#{err}"
       atom.notifications.addFatalError "
         Haskell-ghc-mod: ghc-mod
@@ -44,21 +44,21 @@ class GhcModiProcessReal
         dismissable: true
       return []
 
-  spawnProcess: (options) =>
+  spawnProcess: ->
     return unless atom.config.get('haskell-ghc-mod.enableGhcModi')
     debug "Checking for ghc-modi in #{@rootDir.getPath()}"
     if @proc?
       debug "Found running ghc-modi instance for #{@rootDir.getPath()}"
       return @proc
-    debug "Spawning new ghc-modi instance for #{@rootDir.getPath()} with", options
+    debug "Spawning new ghc-modi instance for #{@rootDir.getPath()} with", @options
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
-    @proc = new InteractiveProcess(modPath, ['legacy-interactive'], options, @caps)
+    @proc = new InteractiveProcess(modPath, ['legacy-interactive'], @options, @caps)
     @proc.onExit (code) =>
       debug "ghc-modi for #{@rootDir.getPath()} ended with #{code}"
       @proc = null
     return @proc
 
-  runModCmd: ({options, command, text, uri, args}) ->
+  runModCmd: ({command, text, uri, args}) =>
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     result = []
     err = []
@@ -69,14 +69,14 @@ class GhcModiProcessReal
     if text?
       cmd = ['--map-file', uri].concat cmd
     stdin = "#{text}#{EOT}" if text?
-    Util.execPromise modPath, cmd, options, stdin
+    Util.execPromise modPath, cmd, @options, stdin
     .then (stdout) ->
       stdout.split(EOL).slice(0, -1).map (line) -> line.replace /\0/g, '\n'
 
   runModiCmd: (o) =>
-    {options, command, text, uri, args} = o
+    {command, text, uri, args} = o
     debug "Trying to run ghc-modi in #{@rootDir.getPath()}"
-    proc = @spawnProcess(options)
+    proc = @spawnProcess()
     unless proc
       debug "Failed. Falling back to ghc-mod"
       return @runModCmd o
@@ -102,13 +102,13 @@ class GhcModiProcessReal
         try interact "unmap-file", [uri]
         throw err
 
-  killProcess: =>
+  killProcess: ->
     return unless @proc?
     debug "Killing ghc-modi process for #{@rootDir.getPath()}"
     @proc.kill()
     @proc = null
 
-  destroy: =>
+  destroy: ->
     return unless @emitter?
     debug "GhcModiProcessBase destroying"
     @killProcess()
@@ -116,6 +116,6 @@ class GhcModiProcessReal
     @emitter = null
     @disposables.dispose()
 
-  onDidDestroy: (callback) =>
+  onDidDestroy: (callback) ->
     return unless @emitter?
     @emitter.on 'did-destroy', callback

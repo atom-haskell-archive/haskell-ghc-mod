@@ -39,7 +39,8 @@ class GhcModiProcess
       vers
       .then @getCaps
       .then (@caps) =>
-        new GhcModiProcessReal @caps, new Directory(rootDir)
+        procopts.then (opts) =>
+          new GhcModiProcessReal @caps, new Directory(rootDir), opts
       .catch (err) ->
         atom.notifications.addFatalError "
           Haskell-ghc-mod: ghc-mod failed to launch.
@@ -211,27 +212,21 @@ class GhcModiProcess
       q.getQueueLength() + q.getPendingLength() is 0
     promise = @commandQueues[queueName].add =>
       @emitter.emit 'backend-active'
-      Util.getProcessOptions(runArgs.dir?.getPath?())
-      .then (procopts) ->
-        runArgs.options = procopts
-        return runArgs
-      .then (runArgs) ->
-        rd = runArgs.dir or Util.getRootDir(runArgs.options.cwd)
-        new Promise (resolve, reject) ->
-          rd.getEntries (error, files) ->
-            if error?
-              reject error
-            else
-              resolve files
-        .catch (error) ->
-          Util.warn error
-          return []
-        .then (files) ->
-          if files.some((e) -> e.isFile() and e.getBaseName() is '.disable-ghc-mod')
-            throw new Error("Disable-ghc-mod found")
-        .then -> return runArgs
-      .then (args) ->
-        backend.run args
+      rd = runArgs.dir or Util.getRootDir(runArgs.options.cwd)
+      new Promise (resolve, reject) ->
+        rd.getEntries (error, files) ->
+          if error?
+            reject error
+          else
+            resolve files
+      .catch (error) ->
+        Util.warn error
+        return []
+      .then (files) ->
+        if files.some((e) -> e.isFile() and e.getBaseName() is '.disable-ghc-mod')
+          throw new Error("Disable-ghc-mod found")
+      .then ->
+        backend.run runArgs
       .catch (err) ->
         Util.warn err
         return []
