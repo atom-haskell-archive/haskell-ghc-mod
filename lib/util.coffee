@@ -78,6 +78,7 @@ module.exports = Util =
         Util.warn stderr if stderr
         if error?
           Util.warn("Running stack failed with ", error)
+          Util.warn stdout if stdout
           reject error
         else
           resolve stdout
