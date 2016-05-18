@@ -49,6 +49,22 @@ module.exports = Util =
 
   isDirectory: HsUtil.isDirectory
 
+  execPromise: (cmd, args, opts, stdin) ->
+    new Promise (resolve, reject) ->
+      Util.debug "Running #{cmd} with #{args} opts = ", opts
+      child = CP.execFile cmd, args, opts, (error, stdout, stderr) ->
+        Util.warn stderr if stderr
+        if error?
+          Util.warn("Running #{cmd} #{args} failed with ", error)
+          Util.warn stdout if stdout
+          reject error
+        else
+          Util.debug "Got response from #{cmd} #{args}", stdout: stdout, stderr: stderr
+          resolve stdout
+      if stdin?
+        Util.debug "sending stdin text to #{cmd} #{args}"
+        child.stdin.write stdin
+
   getCabalSandbox: (rootPath) ->
     Util.debug("Looking for cabal sandbox...")
     Util.parseSandboxConfig("#{rootPath}#{sep}cabal.sandbox.config")
@@ -67,21 +83,12 @@ module.exports = Util =
     Util.debug("Looking for stack sandbox...")
     env.PATH = joinPath(apd)
     Util.debug("Running stack with PATH ", env.PATH)
-    new Promise (resolve, reject) ->
-      opts =
-        encoding: 'utf-8'
-        stdio: 'pipe'
-        cwd: rootPath
-        env: env
-        timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
-      CP.execFile 'stack', ['path', '--snapshot-install-root', '--local-install-root'], opts, (error, stdout, stderr) ->
-        Util.warn stderr if stderr
-        if error?
-          Util.warn("Running stack failed with ", error)
-          Util.warn stdout if stdout
-          reject error
-        else
-          resolve stdout
+    Util.execPromise 'stack', ['path', '--snapshot-install-root', '--local-install-root'],
+      encoding: 'utf-8'
+      stdio: 'pipe'
+      cwd: rootPath
+      env: env
+      timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
     .then (out) ->
       lines = out.split(EOL)
       sir = lines.filter((l) -> l.startsWith('snapshot-install-root: '))[0].slice(23) + "#{sep}bin"

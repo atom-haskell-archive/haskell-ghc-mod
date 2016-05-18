@@ -73,22 +73,10 @@ class GhcModiProcessReal
       cmd = [command].concat args
     if text?
       cmd = ['--map-file', uri].concat cmd
-    debug "running #{modPath} #{cmd} with
-          #{"options.#{k} = #{v}" for k, v of options}"
-    new Promise (resolve, reject) ->
-      child = CP.execFile modPath, cmd, options, (cperror, stdout, stderr) ->
-        warn stderr if stderr
-        if cperror?
-          warn stdout if stdout
-          reject cperror
-        else
-          resolve stdout.split(EOL).slice(0, -1).map (line) ->
-            line.replace /\0/g, '\n'
-      child.error = (error) ->
-        reject error
-      if text?
-        debug "sending stdin text to #{modPath}"
-        child.stdin.write "#{text}#{EOT}"
+    stdin = "#{text}#{EOT}" if text?
+    Util.execPromise modPath, cmd, options, stdin
+    .then (stdout) ->
+      stdout.split(EOL).slice(0, -1).map (line) -> line.replace /\0/g, '\n'
 
   runModiCmd: (o) =>
     {dir, options, command, text, uri, args} = o

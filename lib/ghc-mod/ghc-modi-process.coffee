@@ -76,17 +76,12 @@ class GhcModiProcess
       opts1.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
       return opts1
     .then (opts) ->
-      new Promise (resolve, reject) ->
-        CP.execFile atom.config.get('haskell-ghc-mod.ghcModPath'),
-          ['version'], opts,
-          (error, stdout, stderr) ->
-            if error?
-              error.stack = (new Error).stack
-              return reject error
-            vers = /^ghc-mod version (\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/.exec(stdout).slice(1, 5).map (i) -> parseInt i
-            comp = /GHC (.+)$/.exec(stdout.trim())[1]
-            Util.debug "Ghc-mod #{vers} built with #{comp}"
-            resolve {vers, comp}
+      Util.execPromise atom.config.get('haskell-ghc-mod.ghcModPath'), ['version'], opts
+      .then (stdout) ->
+        vers = /^ghc-mod version (\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/.exec(stdout).slice(1, 5).map (i) -> parseInt i
+        comp = /GHC (.+)$/.exec(stdout.trim())[1]
+        Util.debug "Ghc-mod #{vers} built with #{comp}"
+        return {vers, comp}
 
   checkComp: (procopts, {comp}) ->
     procopts
@@ -98,26 +93,16 @@ class GhcModiProcess
       return opts1
     .then (opts) ->
       stackghc =
-        new Promise (resolve, reject) ->
-          CP.execFile 'stack', ['ghc', '--', '--version'], opts, (error, stdout, stderr) ->
-            Util.warn stderr if stderr
-            if error?
-              Util.warn stdout if stdout
-              error.stack = (new Error).stack
-              return reject error
-            resolve /version (.+)$/.exec(stdout.trim())[1]
+        Util.execPromise 'stack', ['ghc', '--', '--version'], opts
+        .then (stdout) ->
+          /version (.+)$/.exec(stdout.trim())[1]
         .catch (error) ->
           Util.warn error
           return null
       pathghc =
-        new Promise (resolve, reject) ->
-          CP.execFile 'ghc', ['--version'], opts, (error, stdout, stderr) ->
-            Util.warn stderr if stderr
-            if error?
-              Util.warn stdout if stdout
-              error.stack = (new Error).stack
-              return reject error
-            resolve /version (.+)$/.exec(stdout.trim())[1]
+        Util.execPromise 'ghc', ['--version'], opts
+        .then (stdout) ->
+          /version (.+)$/.exec(stdout.trim())[1]
         .catch (error) ->
           Util.warn error
           return null
