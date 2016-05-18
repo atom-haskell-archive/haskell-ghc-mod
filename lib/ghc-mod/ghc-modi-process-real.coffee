@@ -92,7 +92,7 @@ class GhcModiProcessReal
             reject mkError "code #{code}", "#{err.join(EOL)}"
           else
             resolve result.slice(0, -1).map (line) ->
-              line.replace /\0/g, EOL
+              line.replace /\0/g, '\n'
       if text?
         debug "sending stdin text to #{modPath}"
         process.process.stdin.write "#{text}#{EOT}"
@@ -103,7 +103,7 @@ class GhcModiProcessReal
             reject cperror
           else
             resolve stdout.split(EOL).slice(0, -1).map (line) ->
-              line.replace /\0/g, EOL
+              line.replace /\0/g, '\n'
         child.error = (error) ->
           reject error
         if text?

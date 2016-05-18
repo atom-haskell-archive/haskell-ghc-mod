@@ -69,7 +69,7 @@ class InteractiveProcess
               cleanup()
               lines = savedLines.slice(0, -2)
               resolve lines.map (line) ->
-                line.replace /\0/g, EOL
+                line.replace /\0/g, '\n'
           exitCallback = ->
             cleanup()
             console.error "#{savedLines}"

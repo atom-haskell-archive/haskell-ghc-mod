@@ -7,8 +7,6 @@ Queue = require 'promise-queue'
 GhcModiProcessReal = require './ghc-modi-process-real.coffee'
 CP = require 'child_process'
 
-{EOL} = require('os')
-
 module.exports =
 class GhcModiProcess
   backend: null
@@ -365,7 +363,7 @@ class GhcModiProcess
       text: buffer.getText() if buffer.isModified()
       args: [symbol]
     .then (lines) ->
-      info = lines.join(EOL)
+      info = lines.join('\n')
       if info is 'Cannot show info' or not info
         throw new Error "No info"
       else
