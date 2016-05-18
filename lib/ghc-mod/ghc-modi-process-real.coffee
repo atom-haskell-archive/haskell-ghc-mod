@@ -1,4 +1,4 @@
-{BufferedProcess, Emitter, CompositeDisposable, Directory} = require('atom')
+{Emitter, CompositeDisposable, Directory} = require('atom')
 CP = require('child_process')
 InteractiveProcess = require './interactive-process'
 {debug, warn, mkError, withTempFile, EOT} = Util = require '../util'
@@ -76,40 +76,19 @@ class GhcModiProcessReal
     debug "running #{modPath} #{cmd} with
           #{"options.#{k} = #{v}" for k, v of options}"
     new Promise (resolve, reject) ->
-      process = new BufferedProcess
-        command: modPath
-        args: cmd
-        options: options
-        stdout: (data) ->
-          result = result.concat(data.split(EOL))
-        stderr: (data) ->
-          err = err.concat(data.split(EOL))
-          data.split(EOL).slice(0, -1).forEach (line) ->
-            warn "ghc-mod said: #{line}"
-        exit: (code) ->
-          debug "#{modPath} ended with code #{code}"
-          if code != 0
-            reject mkError "code #{code}", "#{err.join(EOL)}"
-          else
-            resolve result.slice(0, -1).map (line) ->
-              line.replace /\0/g, '\n'
+      child = CP.execFile modPath, cmd, options, (cperror, stdout, stderr) ->
+        warn stderr if stderr
+        if cperror?
+          warn stdout if stdout
+          reject cperror
+        else
+          resolve stdout.split(EOL).slice(0, -1).map (line) ->
+            line.replace /\0/g, '\n'
+      child.error = (error) ->
+        reject error
       if text?
         debug "sending stdin text to #{modPath}"
-        process.process.stdin.write "#{text}#{EOT}"
-      process.onWillThrowError ({error, handle}) ->
-        warn "Using fallback child_process because of #{error.message}"
-        child = CP.execFile modPath, cmd, options, (cperror, stdout, stderr) ->
-          if cperror?
-            reject cperror
-          else
-            resolve stdout.split(EOL).slice(0, -1).map (line) ->
-              line.replace /\0/g, '\n'
-        child.error = (error) ->
-          reject error
-        if text?
-          debug "sending stdin text to #{modPath}"
-          child.stdin.write "#{text}#{EOT}"
-        handle()
+        child.stdin.write "#{text}#{EOT}"
 
   runModiCmd: (o) =>
     {dir, options, command, text, uri, args} = o
