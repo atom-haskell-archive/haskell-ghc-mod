@@ -12,7 +12,7 @@ class InteractiveProcess
     @cwd = options.cwd
 
     debug "Spawning new ghc-modi instance for #{options.cwd} with
-          #{"options.#{k} = #{v}" for k, v of options}"
+          options = ", options
     @proc = CP.spawn(path, cmd, options)
     @proc.stdout.setEncoding 'utf-8'
     @proc.stderr.setEncoding 'utf-8'
