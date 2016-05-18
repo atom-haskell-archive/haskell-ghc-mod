@@ -51,7 +51,7 @@ module.exports = Util =
 
   execPromise: (cmd, args, opts, stdin) ->
     new Promise (resolve, reject) ->
-      Util.debug "Running #{cmd} with #{args} opts = ", opts
+      Util.debug "Running #{cmd} #{args} with opts = ", opts
       child = CP.execFile cmd, args, opts, (error, stdout, stderr) ->
         Util.warn stderr if stderr
         if error?
