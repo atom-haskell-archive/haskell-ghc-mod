@@ -75,11 +75,11 @@ module.exports = Util =
         env: env
         timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
       CP.execFile 'stack', ['path', '--snapshot-install-root', '--local-install-root'], opts, (error, stdout, stderr) ->
+        Util.warn stderr if stderr
         if error?
           Util.warn("Running stack failed with ", error)
           reject error
         else
-          Util.warn stderr if stderr
           resolve stdout
     .then (out) ->
       lines = out.split(EOL)
