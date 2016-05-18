@@ -53,8 +53,7 @@ class GhcModiProcessReal
     if proc?
       debug "Found running ghc-modi instance for #{rootDir.getPath()}"
       return proc
-    debug "Spawning new ghc-modi instance for #{rootDir.getPath()} with
-          #{"options.#{k} = #{v}" for k, v of options}"
+    debug "Spawning new ghc-modi instance for #{rootDir.getPath()} with", options
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     proc = new InteractiveProcess(modPath, ['legacy-interactive'], options, @caps)
     proc.onExit (code) =>
