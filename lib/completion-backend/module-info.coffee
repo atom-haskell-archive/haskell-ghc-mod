@@ -11,14 +11,14 @@ module.exports=
     timeout: null
     invalidateInterval: 30 * 60 * 1000 #if module unused for 30 minutes, remove it
 
-    constructor: (@name, @process, rootPath, done) ->
+    constructor: (@name, @process, rootDir, done) ->
       unless @name?
         throw new Error("No name set")
       Util.debug "#{@name} created"
       @symbols = []
       @disposables = new CompositeDisposable
       @disposables.add @emitter = new Emitter
-      @update rootPath, done
+      @update rootDir, done
       @timeout = setTimeout (=> @destroy()), @invalidateInterval
       @disposables.add @process.onDidDestroy => @destroy()
 
@@ -40,21 +40,18 @@ module.exports=
         return new Disposable ->
       @emitter.on 'did-destroy', callback
 
-    update: (rootPath, done) =>
+    update: (rootDir, done) =>
       return unless @process?
       Util.debug "#{@name} updating"
-      @process.runBrowse rootPath, [@name]
+      @process.runBrowse rootDir, [@name]
       .then (@symbols) =>
         Util.debug "#{@name} updated"
         done?()
 
-    setBuffer: (bufferInfo, rootPath) =>
+    setBuffer: (bufferInfo, rootDir) =>
       return unless @disposables?
-      rootDir = @process?.getRootDir?(bufferInfo.buffer) ? Util.getRootDir(bufferInfo.buffer)
-      unless rootDir.getPath() == rootPath
-        Util.debug "#{@name} rootPath mismatch:
-          #{rootDir.getPath()}
-          != #{rootPath}"
+      bufferRootDir = @process?.getRootDir?(bufferInfo.buffer) ? Util.getRootDir(bufferInfo.buffer)
+      unless rootDir.getPath() == bufferRootDir.getPath()
         return
       bufferInfo.getModuleName()
       .then (name) =>
@@ -65,7 +62,7 @@ module.exports=
         Util.debug "#{@name} buffer is set"
         @disposables.add bufferInfo.onDidSave =>
           Util.debug "#{@name} did-save triggered"
-          @update(rootPath)
+          @update(rootDir)
         @disposables.add bufferInfo.onDidDestroy =>
           @unsetBuffer()
 

@@ -1,4 +1,4 @@
-{Range, Point, Emitter, CompositeDisposable, Directory} = require 'atom'
+{Range, Point, Emitter, CompositeDisposable} = require 'atom'
 Util = require '../util'
 {extname} = require('path')
 Queue = require 'promise-queue'
@@ -29,8 +29,9 @@ class GhcModiProcess
     dir
 
   initBackend: (rootDir) ->
-    return @backend.get(rootDir) if @backend.has(rootDir)
-    procopts = Util.getProcessOptions(rootDir)
+    rootPath = rootDir.getPath()
+    return @backend.get(rootPath) if @backend.has(rootPath)
+    procopts = Util.getProcessOptions(rootPath)
     vers = procopts.then (opts) => @getVersion(opts)
     vers.then (v) => procopts.then (opts) => @checkComp(opts, v)
 
@@ -39,7 +40,7 @@ class GhcModiProcess
       .then @getCaps
       .then (@caps) =>
         procopts.then (opts) =>
-          new GhcModiProcessReal @caps, new Directory(rootDir), opts
+          new GhcModiProcessReal @caps, rootDir, opts
       .catch (err) ->
         atom.notifications.addFatalError "
           Haskell-ghc-mod: ghc-mod failed to launch.
@@ -53,7 +54,7 @@ class GhcModiProcess
           stack: err.stack
           dismissable: true
         null
-    @backend.set(rootDir, backend)
+    @backend.set(rootPath, backend)
     return backend
 
   createQueues: =>
@@ -186,9 +187,11 @@ class GhcModiProcess
     @emitter.on 'queue-idle', callback
 
   queueCmd: (queueName, runArgs, backend) =>
+    unless runArgs.buffer? or runArgs.dir?
+      throw new Error ("Neither dir nor buffer is set in queueCmd invocation")
     runArgs.dir ?= @getRootDir(runArgs.buffer) if runArgs.buffer?
     unless backend?
-      return @initBackend(runArgs.dir.getPath()).then (backend) =>
+      return @initBackend(runArgs.dir).then (backend) =>
         if backend?
           @queueCmd(queueName, runArgs, backend)
         else
@@ -238,9 +241,9 @@ class GhcModiProcess
       command: 'flag'
       dir: dir
 
-  runBrowse: (rootPath, modules) =>
+  runBrowse: (rootDir, modules) =>
     @queueCmd 'browse',
-      dir: new Directory(rootPath)
+      dir: rootDir
       command: 'browse'
       dashArgs: (caps) ->
         args = ['-d']

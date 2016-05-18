@@ -92,15 +92,15 @@ class CompletionBackend
       unless moduleInfo?.symbols? #hack to help with #20, #21
         new Promise (resolve) =>
           moduleMap.set moduleName,
-            moduleInfo = new ModuleInfo moduleName, @process, rootDir.getPath(), ->
+            moduleInfo = new ModuleInfo moduleName, @process, rootDir, ->
               resolve {bufferInfo, rootDir, moduleMap, moduleInfo}
 
           if bufferInfo?
-            moduleInfo.setBuffer bufferInfo, rootDir.getPath()
+            moduleInfo.setBuffer bufferInfo, rootDir
           else
             atom.workspace.getTextEditors().forEach (editor) =>
               {bufferInfo} = @getBufferInfo {buffer: editor.getBuffer()}
-              moduleInfo.setBuffer bufferInfo, rootDir.getPath()
+              moduleInfo.setBuffer bufferInfo, rootDir
 
           moduleInfo.onDidDestroy ->
             moduleMap.delete moduleName
