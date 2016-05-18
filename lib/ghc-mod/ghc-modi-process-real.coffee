@@ -6,12 +6,11 @@ InteractiveProcess = require './interactive-process'
 
 module.exports =
 class GhcModiProcessReal
-  constructor: (@caps) ->
-    @processMap = new Map #FilePath -> InteractiveProcess
+  constructor: (@caps, @rootDir) ->
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
 
-  run: ({interactive, dir, options, command, text, uri, dashArgs, args}) =>
+  run: ({interactive, options, command, text, uri, dashArgs, args}) =>
     args ?= []
     dashArgs ?= []
     if typeof(dashArgs) is 'function'
@@ -24,9 +23,9 @@ class GhcModiProcessReal
     P =
       if text? and not @caps.fileMap
         withTempFile text, uri, (tempuri) ->
-          fun {dir, options, command, uri: tempuri, args}
+          fun {options, command, uri: tempuri, args}
       else
-        fun {dir, options, command, text, uri, args}
+        fun {options, command, text, uri, args}
     P.catch (err) =>
       debug "#{err}"
       atom.notifications.addFatalError "
@@ -45,22 +44,19 @@ class GhcModiProcessReal
         dismissable: true
       return []
 
-  spawnProcess: (rootDir, options) =>
-    return unless @processMap?
+  spawnProcess: (options) =>
     return unless atom.config.get('haskell-ghc-mod.enableGhcModi')
-    proc = @processMap.get(rootDir.getPath())
-    debug "Checking for ghc-modi in #{rootDir.getPath()}"
-    if proc?
-      debug "Found running ghc-modi instance for #{rootDir.getPath()}"
-      return proc
-    debug "Spawning new ghc-modi instance for #{rootDir.getPath()} with", options
+    debug "Checking for ghc-modi in #{@rootDir.getPath()}"
+    if @proc?
+      debug "Found running ghc-modi instance for #{@rootDir.getPath()}"
+      return @proc
+    debug "Spawning new ghc-modi instance for #{@rootDir.getPath()} with", options
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
-    proc = new InteractiveProcess(modPath, ['legacy-interactive'], options, @caps)
-    proc.onExit (code) =>
-      debug "ghc-modi for #{rootDir.getPath()} ended with #{code}"
-      @processMap?.delete(rootDir.getPath())
-    @processMap.set rootDir.getPath(), proc
-    return proc
+    @proc = new InteractiveProcess(modPath, ['legacy-interactive'], options, @caps)
+    @proc.onExit (code) =>
+      debug "ghc-modi for #{@rootDir.getPath()} ended with #{code}"
+      @proc = null
+    return @proc
 
   runModCmd: ({options, command, text, uri, args}) ->
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
@@ -78,13 +74,13 @@ class GhcModiProcessReal
       stdout.split(EOL).slice(0, -1).map (line) -> line.replace /\0/g, '\n'
 
   runModiCmd: (o) =>
-    {dir, options, command, text, uri, args} = o
-    debug "Trying to run ghc-modi in #{dir.getPath()}"
-    proc = @spawnProcess(dir, options)
+    {options, command, text, uri, args} = o
+    debug "Trying to run ghc-modi in #{@rootDir.getPath()}"
+    proc = @spawnProcess(options)
     unless proc
       debug "Failed. Falling back to ghc-mod"
       return @runModCmd o
-    uri = dir.relativize(uri) if uri? and dir? and not @caps.quoteArgs
+    uri = @rootDir.relativize(uri) if uri? and not @caps.quoteArgs
     proc.do (interact) ->
       Promise.resolve()
       .then ->
@@ -107,26 +103,19 @@ class GhcModiProcessReal
         throw err
 
   killProcess: =>
-    return unless @processMap?
-    debug "Killing all ghc-modi processes"
-    @processMap.forEach (proc) ->
-      proc.kill()
-
-  killProcessForDir: (dir) =>
-    return unless @processMap?
-    debug "Killing ghc-modi process for #{dir.getPath()}"
-    @processMap.get(dir.getPath())?.kill?()
-    @processMap.delete(dir.getPath())
+    return unless @proc?
+    debug "Killing ghc-modi process for #{@rootDir.getPath()}"
+    @proc.kill()
+    @proc = null
 
   destroy: =>
-    return unless @processMap?
+    return unless @emitter?
     debug "GhcModiProcessBase destroying"
     @killProcess()
     @emitter.emit 'did-destroy'
     @emitter = null
     @disposables.dispose()
-    @processMap = null
 
   onDidDestroy: (callback) =>
-    return unless @processMap?
+    return unless @emitter?
     @emitter.on 'did-destroy', callback

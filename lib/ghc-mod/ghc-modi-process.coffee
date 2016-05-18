@@ -15,7 +15,7 @@ class GhcModiProcess
   constructor: ->
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
-    @bufferDirMap = new WeakMap #TextBuffer -> FilePath
+    @bufferDirMap = new WeakMap #TextBuffer -> Directory
     @backend = new Map # FilePath -> Backend
 
     @createQueues()
@@ -39,7 +39,7 @@ class GhcModiProcess
       vers
       .then @getCaps
       .then (@caps) =>
-        new GhcModiProcessReal @caps
+        new GhcModiProcessReal @caps, new Directory(rootDir)
       .catch (err) ->
         atom.notifications.addFatalError "
           Haskell-ghc-mod: ghc-mod failed to launch.
