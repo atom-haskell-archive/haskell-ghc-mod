@@ -131,7 +131,7 @@ class GhcModiProcess
           Util.warn warn
         if pathghc? and pathghc isnt comp
           warn = "
-            GHC version in your PATH '#{stackghc}' doesn't match with
+            GHC version in your PATH '#{pathghc}' doesn't match with
             GHC version used to build ghc-mod '#{comp}'. This can lead to
             problems when using Cabal or Plain projects"
           atom.notifications.addWarning warn
