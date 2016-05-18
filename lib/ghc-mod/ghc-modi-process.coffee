@@ -30,9 +30,10 @@ class GhcModiProcess
 
   initBackend: (rootDir) ->
     return @backend.get(rootDir) if @backend.has(rootDir)
-    vers = @getVersion(rootDir)
+    procopts = Util.getProcessOptions(rootDir)
+    vers = @getVersion(procopts)
     vers.then (v) =>
-      @checkComp(rootDir, v)
+      @checkComp(procopts, v)
 
     backend =
       vers
@@ -66,8 +67,8 @@ class GhcModiProcess
     @disposables.add atom.config.observe 'haskell-ghc-mod.maxBrowseProcesses', (value) =>
       @commandQueues.browse = new Queue(value)
 
-  getVersion: (rootDir) ->
-    Util.getProcessOptions(rootDir)
+  getVersion: (procopts) ->
+    procopts
     .then (opts) ->
       opts1 = {}
       for k, v of opts
@@ -87,8 +88,8 @@ class GhcModiProcess
             Util.debug "Ghc-mod #{vers} built with #{comp}"
             resolve {vers, comp}
 
-  checkComp: (rootDir, {comp}) ->
-    Util.getProcessOptions(rootDir)
+  checkComp: (procopts, {comp}) ->
+    procopts
     .then (opts) ->
       opts1 = {}
       for k, v of opts
