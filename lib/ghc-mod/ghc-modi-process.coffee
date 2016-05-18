@@ -17,17 +17,30 @@ class GhcModiProcess
   constructor: ->
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
+    @bufferDirMap = new WeakMap #TextBuffer -> FilePath
+    @backend = new Map # FilePath -> Backend
 
     @createQueues()
 
-    vers = @getVersion()
-    vers.then @checkComp
+  getRootDir: (buffer) ->
+    dir = @bufferDirMap.get buffer
+    if dir?
+      return dir
+    dir = Util.getRootDir buffer
+    @bufferDirMap.set buffer, dir
+    dir
 
-    @backendPromise =
+  initBackend: (rootDir) ->
+    return @backend.get(rootDir) if @backend.has(rootDir)?
+    vers = @getVersion(rootDir)
+    vers.then (v) =>
+      @checkComp(rootDir, v)
+
+    backend =
       vers
       .then @getCaps
       .then (@caps) =>
-        @backend = new GhcModiProcessReal @caps
+        new GhcModiProcessReal @caps
       .catch (err) ->
         atom.notifications.addFatalError "
           Haskell-ghc-mod: ghc-mod failed to launch.
@@ -40,6 +53,9 @@ class GhcModiProcess
             """
           stack: err.stack
           dismissable: true
+        null
+    @backend.set(rootDir, backend)
+    return backend
 
   createQueues: =>
     @commandQueues =
@@ -52,8 +68,8 @@ class GhcModiProcess
     @disposables.add atom.config.observe 'haskell-ghc-mod.maxBrowseProcesses', (value) =>
       @commandQueues.browse = new Queue(value)
 
-  getVersion: ->
-    Util.getProcessOptions()
+  getVersion: (rootDir) ->
+    Util.getProcessOptions(rootDir)
     .then (opts) ->
       opts1 = {}
       for k, v of opts
@@ -73,8 +89,8 @@ class GhcModiProcess
             Util.debug "Ghc-mod #{vers} built with #{comp}"
             resolve {vers, comp}
 
-  checkComp: ({comp}) ->
-    Util.getProcessOptions()
+  checkComp: (rootDir, {comp}) ->
+    Util.getProcessOptions(rootDir)
     .then (opts) ->
       opts1 = {}
       for k, v of opts
@@ -82,17 +98,42 @@ class GhcModiProcess
       opts1.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
       return opts1
     .then (opts) ->
-      CP.execFile 'ghc', ['--version'], opts, (error, stdout, stderr) ->
-        if error?
-          error.stack = (new Error).stack
-          throw error
-        compv = /version (.+)$/.exec(stdout.trim())[1]
-        Util.debug "Ghc version #{compv}"
-        if compv isnt comp
+      stackghc =
+        new Promise (resolve) ->
+          CP.execFile 'stack', ['ghc', '--', '--version'], opts, (error, stdout, stderr) ->
+            if error?
+              error.stack = (new Error).stack
+              throw error
+            resolve /version (.+)$/.exec(stdout.trim())[1]
+        .catch (error) ->
+          Util.warn error
+          return null
+      pathghc =
+        new Promise (resolve) ->
+          CP.execFile 'ghc', ['--version'], opts, (error, stdout, stderr) ->
+            if error?
+              error.stack = (new Error).stack
+              throw error
+            resolve /version (.+)$/.exec(stdout.trim())[1]
+        .catch (error) ->
+          Util.warn error
+          return null
+      Promise.all [stackghc, pathghc]
+      .then ([stackghc, pathghc]) ->
+        Util.debug "Stack GHC version #{stackghc}"
+        Util.debug "Path GHC version #{pathghc}"
+        if stackghc? and stackghc isnt comp
           warn = "
-            GHC version in your PATH '#{compv}' doesn't match with
-            GHC version used to build ghc-mod '#{comp}'. This will lead to
-            problems"
+            GHC version in your Stack '#{stackghc}' doesn't match with
+            GHC version used to build ghc-mod '#{comp}'. This can lead to
+            problems when using Stack projects"
+          atom.notifications.addWarning warn
+          Util.warn warn
+        if pathghc? and pathghc isnt comp
+          warn = "
+            GHC version in your PATH '#{stackghc}' doesn't match with
+            GHC version used to build ghc-mod '#{comp}'. This can lead to
+            problems when using Cabal or Plain projects"
           atom.notifications.addWarning warn
           Util.warn warn
 
@@ -143,14 +184,19 @@ class GhcModiProcess
     return caps
 
   killProcess: =>
-    @backend?.killProcess?()
+    @backend.forEach (v) ->
+      v.then (backend) -> backend?.killProcess?()
+    @backend.clear()
 
   # Tear down any state and detach
   destroy: =>
-    @backend?.destroy?()
+    @backend.forEach (v) ->
+      v.then (backend) -> backend?.destroy?()
+    @backend.clear()
     @emitter.emit 'did-destroy'
     @disposables.dispose()
     @commandQueues = null
+    @backend = null
 
   onDidDestroy: (callback) =>
     @emitter.on 'did-destroy', callback
@@ -164,11 +210,12 @@ class GhcModiProcess
   onQueueIdle: (callback) =>
     @emitter.on 'queue-idle', callback
 
-  queueCmd: (queueName, runArgs) =>
-    unless @backend?
-      return @backendPromise.then =>
-        if @backend?
-          @queueCmd(queueName, runArgs)
+  queueCmd: (queueName, runArgs, backend) =>
+    runArgs.dir ?= @getRootDir(runArgs.buffer) if runArgs.buffer?
+    unless backend?
+      return @initBackend(runArgs.dir.getPath()).then (backend) =>
+        if backend?
+          @queueCmd(queueName, runArgs, backend)
         else
           []
     qe = (qn) =>
@@ -176,7 +223,6 @@ class GhcModiProcess
       q.getQueueLength() + q.getPendingLength() is 0
     promise = @commandQueues[queueName].add =>
       @emitter.emit 'backend-active'
-      runArgs.dir ?= @getRootDir(runArgs.buffer) if runArgs.buffer?
       Util.getProcessOptions(runArgs.dir?.getPath?())
       .then (procopts) ->
         runArgs.options = procopts
@@ -196,7 +242,8 @@ class GhcModiProcess
           if files.some((e) -> e.isFile() and e.getBaseName() is '.disable-ghc-mod')
             throw new Error("Disable-ghc-mod found")
         .then -> return runArgs
-      .then @backend.run
+      .then (args) ->
+        backend.run args
       .catch (err) ->
         Util.warn err
         return []
@@ -212,13 +259,15 @@ class GhcModiProcess
       buffer: buffer
       command: 'list'
 
-  runLang: =>
+  runLang: (dir) =>
     @queueCmd 'init',
       command: 'lang'
+      dir: dir
 
-  runFlag: =>
+  runFlag: (dir) =>
     @queueCmd 'init',
       command: 'flag'
+      dir: dir
 
   runBrowse: (rootPath, modules) =>
     @queueCmd 'browse',
@@ -291,7 +340,7 @@ class GhcModiProcess
       lines
       .filter (line) ->
         unless line.match(rx)?
-          console.log "ghc-mod says: #{line}"
+          Util.warn "ghc-mod says: #{line}"
           return false
         return true
       .map (line) ->
@@ -378,7 +427,7 @@ class GhcModiProcess
           when line.match(rx)?
             return true
           when line.trim().length > 0
-            console.log("ghc-mod says: #{line}")
+            Util.warn "ghc-mod says: #{line}"
         return false
       .map (line) ->
         match = line.match(rx)
@@ -410,6 +459,3 @@ class GhcModiProcess
   doCheckAndLint: (buffer, fast) =>
     Promise.all [ @doCheckBuffer(buffer, fast), @doLintBuffer(buffer, fast) ]
     .then (resArr) -> [].concat resArr...
-
-  getRootDir: (buffer) ->
-    @backend?.getRootDir?(buffer) ? Util.getRootDir(buffer)

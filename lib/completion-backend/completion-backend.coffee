@@ -7,25 +7,24 @@ Util = require '../util'
 module.exports =
 class CompletionBackend
   process: null
-  languagePragmas: []
   bufferMap: null
   dirMap: null
   modListMap: null
-  compilerOptions: []
+  languagePragmas: null
+  compilerOptions: null
 
   constructor: (proc) ->
     @bufferMap = new WeakMap # buffer => BufferInfo
     @dirMap = new WeakMap # dir => Map ModuleName ModuleInfo
     @modListMap = new WeakMap # dir => [ModuleName]
+    @languagePragmas = new WeakMap # dir => pragmas
+    @compilerOptions = new WeakMap # dir => options
 
     @setProcess proc
 
   setProcess: (@process) ->
     @process?.onDidDestroy =>
       @process = null
-
-    @process?.runLang().then (@languagePragmas) =>
-    @process?.runFlag().then (@compilerOptions) =>
 
   isActive: =>
     unless @process?
@@ -291,7 +290,17 @@ class CompletionBackend
   getCompletionsForLanguagePragmas: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
-    Promise.resolve(FZ.filter @languagePragmas, prefix)
+    dir = @process?.getRootDir?(buffer) ? Util.getRootDir(buffer)
+
+    p =
+      if @languagePragmas.has(dir)
+        @languagePragmas.get(dir)
+      else
+        promise = @process.runLang(dir)
+        @languagePragmas.set(dir, promise)
+        promise
+    p.then (pragmas) ->
+      FZ.filter pragmas, prefix
 
   ###
   getCompletionsForCompilerOptions(buffer,prefix,position)
@@ -305,7 +314,17 @@ class CompletionBackend
   getCompletionsForCompilerOptions: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
-    Promise.resolve(FZ.filter @compilerOptions, prefix)
+    dir = @process?.getRootDir?(buffer) ? Util.getRootDir(buffer)
+
+    p =
+      if @compilerOptions.has(dir)
+        @compilerOptions.get(dir)
+      else
+        promise = @process.runFlag(dir)
+        @compilerOptions.set(dir, promise)
+        promise
+    p.then (options) ->
+      FZ.filter options, prefix
 
   ###
   getCompletionsForHole(buffer,prefix,position)

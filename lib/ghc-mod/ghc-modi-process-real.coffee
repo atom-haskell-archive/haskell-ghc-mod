@@ -8,17 +8,8 @@ module.exports =
 class GhcModiProcessReal
   constructor: (@caps) ->
     @processMap = new Map #FilePath -> InteractiveProcess
-    @bufferDirMap = new WeakMap #TextBuffer -> FilePath
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
-
-  getRootDir: (buffer) ->
-    dir = @bufferDirMap.get buffer
-    if dir?
-      return dir
-    dir = Util.getRootDir buffer
-    @bufferDirMap.set buffer, dir
-    dir
 
   run: ({interactive, dir, options, command, text, uri, dashArgs, args}) =>
     args ?= []
