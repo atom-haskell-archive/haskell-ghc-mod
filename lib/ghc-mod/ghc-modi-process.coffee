@@ -99,21 +99,21 @@ class GhcModiProcess
       return opts1
     .then (opts) ->
       stackghc =
-        new Promise (resolve) ->
+        new Promise (resolve, reject) ->
           CP.execFile 'stack', ['ghc', '--', '--version'], opts, (error, stdout, stderr) ->
             if error?
               error.stack = (new Error).stack
-              throw error
+              return reject error
             resolve /version (.+)$/.exec(stdout.trim())[1]
         .catch (error) ->
           Util.warn error
           return null
       pathghc =
-        new Promise (resolve) ->
+        new Promise (resolve, reject) ->
           CP.execFile 'ghc', ['--version'], opts, (error, stdout, stderr) ->
             if error?
               error.stack = (new Error).stack
-              throw error
+              return reject error
             resolve /version (.+)$/.exec(stdout.trim())[1]
         .catch (error) ->
           Util.warn error
