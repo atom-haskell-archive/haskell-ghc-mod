@@ -31,9 +31,8 @@ class GhcModiProcess
   initBackend: (rootDir) ->
     return @backend.get(rootDir) if @backend.has(rootDir)
     procopts = Util.getProcessOptions(rootDir)
-    vers = @getVersion(procopts)
-    vers.then (v) =>
-      @checkComp(procopts, v)
+    vers = procopts.then (opts) => @getVersion(opts)
+    vers.then (v) => procopts.then (opts) => @checkComp(opts, v)
 
     backend =
       vers
@@ -68,63 +67,55 @@ class GhcModiProcess
     @disposables.add atom.config.observe 'haskell-ghc-mod.maxBrowseProcesses', (value) =>
       @commandQueues.browse = new Queue(value)
 
-  getVersion: (procopts) ->
-    procopts
-    .then (opts) ->
-      opts1 = {}
-      for k, v of opts
-        opts1[k] = v
-      opts1.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
-      return opts1
-    .then (opts) ->
-      Util.execPromise atom.config.get('haskell-ghc-mod.ghcModPath'), ['version'], opts
-      .then (stdout) ->
-        vers = /^ghc-mod version (\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/.exec(stdout).slice(1, 5).map (i) -> parseInt i
-        comp = /GHC (.+)$/.exec(stdout.trim())[1]
-        Util.debug "Ghc-mod #{vers} built with #{comp}"
-        return {vers, comp}
+  getVersion: (opts) ->
+    opts1 = {}
+    for k, v of opts
+      opts1[k] = v
+    opts1.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
+    Util.execPromise atom.config.get('haskell-ghc-mod.ghcModPath'), ['version'], opts1
+    .then (stdout) ->
+      vers = /^ghc-mod version (\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/.exec(stdout).slice(1, 5).map (i) -> parseInt i
+      comp = /GHC (.+)$/.exec(stdout.trim())[1]
+      Util.debug "Ghc-mod #{vers} built with #{comp}"
+      return {vers, comp}
 
-  checkComp: (procopts, {comp}) ->
-    procopts
-    .then (opts) ->
-      opts1 = {}
-      for k, v of opts
-        opts1[k] = v
-      opts1.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
-      return opts1
-    .then (opts) ->
-      stackghc =
-        Util.execPromise 'stack', ['ghc', '--', '--version'], opts
-        .then (stdout) ->
-          /version (.+)$/.exec(stdout.trim())[1]
-        .catch (error) ->
-          Util.warn error
-          return null
-      pathghc =
-        Util.execPromise 'ghc', ['--version'], opts
-        .then (stdout) ->
-          /version (.+)$/.exec(stdout.trim())[1]
-        .catch (error) ->
-          Util.warn error
-          return null
-      Promise.all [stackghc, pathghc]
-      .then ([stackghc, pathghc]) ->
-        Util.debug "Stack GHC version #{stackghc}"
-        Util.debug "Path GHC version #{pathghc}"
-        if stackghc? and stackghc isnt comp
-          warn = "
-            GHC version in your Stack '#{stackghc}' doesn't match with
-            GHC version used to build ghc-mod '#{comp}'. This can lead to
-            problems when using Stack projects"
-          atom.notifications.addWarning warn
-          Util.warn warn
-        if pathghc? and pathghc isnt comp
-          warn = "
-            GHC version in your PATH '#{pathghc}' doesn't match with
-            GHC version used to build ghc-mod '#{comp}'. This can lead to
-            problems when using Cabal or Plain projects"
-          atom.notifications.addWarning warn
-          Util.warn warn
+  checkComp: (opts, {comp}) ->
+    opts1 = {}
+    for k, v of opts
+      opts1[k] = v
+    opts1.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
+    stackghc =
+      Util.execPromise 'stack', ['ghc', '--', '--version'], opts1
+      .then (stdout) ->
+        /version (.+)$/.exec(stdout.trim())[1]
+      .catch (error) ->
+        Util.warn error
+        return null
+    pathghc =
+      Util.execPromise 'ghc', ['--version'], opts1
+      .then (stdout) ->
+        /version (.+)$/.exec(stdout.trim())[1]
+      .catch (error) ->
+        Util.warn error
+        return null
+    Promise.all [stackghc, pathghc]
+    .then ([stackghc, pathghc]) ->
+      Util.debug "Stack GHC version #{stackghc}"
+      Util.debug "Path GHC version #{pathghc}"
+      if stackghc? and stackghc isnt comp
+        warn = "
+          GHC version in your Stack '#{stackghc}' doesn't match with
+          GHC version used to build ghc-mod '#{comp}'. This can lead to
+          problems when using Stack projects"
+        atom.notifications.addWarning warn
+        Util.warn warn
+      if pathghc? and pathghc isnt comp
+        warn = "
+          GHC version in your PATH '#{pathghc}' doesn't match with
+          GHC version used to build ghc-mod '#{comp}'. This can lead to
+          problems when using Cabal or Plain projects"
+        atom.notifications.addWarning warn
+        Util.warn warn
 
   getCaps: ({vers}) ->
     caps =
