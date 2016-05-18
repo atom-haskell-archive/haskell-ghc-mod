@@ -5,6 +5,7 @@ Queue = require 'promise-queue'
 {unlitSync} = require 'atom-haskell-utils'
 
 GhcModiProcessReal = require './ghc-modi-process-real.coffee'
+_ = require 'underscore-plus'
 
 module.exports =
 class GhcModiProcess
@@ -67,11 +68,9 @@ class GhcModiProcess
       @commandQueues.browse = new Queue(value)
 
   getVersion: (opts) ->
-    opts1 = {}
-    for k, v of opts
-      opts1[k] = v
-    opts1.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
-    Util.execPromise atom.config.get('haskell-ghc-mod.ghcModPath'), ['version'], opts1
+    timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
+    cmd = atom.config.get('haskell-ghc-mod.ghcModPath')
+    Util.execPromise cmd, ['version'], _.extend({timeout}, opts)
     .then (stdout) ->
       vers = /^ghc-mod version (\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/.exec(stdout).slice(1, 5).map (i) -> parseInt i
       comp = /GHC (.+)$/.exec(stdout.trim())[1]
@@ -79,19 +78,16 @@ class GhcModiProcess
       return {vers, comp}
 
   checkComp: (opts, {comp}) ->
-    opts1 = {}
-    for k, v of opts
-      opts1[k] = v
-    opts1.timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
+    timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
     stackghc =
-      Util.execPromise 'stack', ['ghc', '--', '--version'], opts1
+      Util.execPromise 'stack', ['ghc', '--', '--version'], _.extend({timeout}, opts)
       .then (stdout) ->
         /version (.+)$/.exec(stdout.trim())[1]
       .catch (error) ->
         Util.warn error
         return null
     pathghc =
-      Util.execPromise 'ghc', ['--version'], opts1
+      Util.execPromise 'ghc', ['--version'], _.extend({timeout}, opts)
       .then (stdout) ->
         /version (.+)$/.exec(stdout.trim())[1]
       .catch (error) ->
