@@ -24,7 +24,7 @@
     "fuzzaldrin": "^2.1.0",
     "promise-queue": "^2.2.0",
     "atom-space-pen-views": "^2.0.3",
-    "atom-haskell-utils": "^0.7.4",
+    "atom-haskell-utils": "^0.7.5",
     "clone": "^1.0.2"
   },
   "consumedServices": {
