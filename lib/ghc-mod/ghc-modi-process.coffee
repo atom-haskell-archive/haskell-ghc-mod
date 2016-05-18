@@ -31,7 +31,7 @@ class GhcModiProcess
     dir
 
   initBackend: (rootDir) ->
-    return @backend.get(rootDir) if @backend.has(rootDir)?
+    return @backend.get(rootDir) if @backend.has(rootDir)
     vers = @getVersion(rootDir)
     vers.then (v) =>
       @checkComp(rootDir, v)
