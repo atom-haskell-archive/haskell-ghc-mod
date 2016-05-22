@@ -1,3 +1,21 @@
+## 1.14.3
+* Dir/Path cleanup in initBackend
+* Use _.extend for extending process options
+* Log options as object
+* Remove unused child_process
+* Cleanup getVersion, checkComp
+* A bit more GhcModiProcessReal-related cleanup
+* Clean up GhcModiProcessReal
+* Log ghc-modi spawn options as object
+* Stringify log messages
+* Change debug text
+* Refactor execFile into execPromise
+* Don't use BufferedProcess because WEIRDNESS on Win
+* Print stderr/stdout when checking ghc version
+* Print stdout on stack path error
+* getProcessOptions once in initBackend
+* Always show stderr on stack path
+
 ## 1.14.2
 * Use 'n' as EOL in Atom
 * Merge branch 'upi-refactor'
