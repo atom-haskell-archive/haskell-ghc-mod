@@ -57,6 +57,7 @@ module.exports = Util =
         if error?
           Util.warn("Running #{cmd} #{args} failed with ", error)
           Util.warn stdout if stdout
+          error.stack = (new Error).stack
           reject error
         else
           Util.debug "Got response from #{cmd} #{args}", stdout: stdout, stderr: stderr
