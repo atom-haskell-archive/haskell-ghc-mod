@@ -1,3 +1,6 @@
+## 1.14.4
+* Avoid reporting Atom bugs
+
 ## 1.14.3
 * Dir/Path cleanup in initBackend
 * Use _.extend for extending process options
