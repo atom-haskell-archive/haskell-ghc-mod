@@ -1,3 +1,6 @@
+## 1.14.5
+* Add option for low-memory systems
+
 ## 1.14.4
 * Avoid reporting Atom bugs
 
