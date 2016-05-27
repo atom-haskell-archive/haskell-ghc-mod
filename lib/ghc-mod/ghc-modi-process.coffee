@@ -65,6 +65,7 @@ class GhcModiProcess
       find: new Queue(1)
       init: new Queue(4)
       list: new Queue(1)
+      lowmem: new Queue(1)
     @disposables.add atom.config.observe 'haskell-ghc-mod.maxBrowseProcesses', (value) =>
       @commandQueues.browse = new Queue(value)
 
@@ -189,6 +190,8 @@ class GhcModiProcess
   queueCmd: (queueName, runArgs, backend) =>
     unless runArgs.buffer? or runArgs.dir?
       throw new Error ("Neither dir nor buffer is set in queueCmd invocation")
+    if atom.config.get('haskell-ghc-mod.lowMemorySystem')
+      queueName = 'lowmem'
     runArgs.dir ?= @getRootDir(runArgs.buffer) if runArgs.buffer?
     unless backend?
       return @initBackend(runArgs.dir).then (backend) =>

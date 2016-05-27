@@ -13,6 +13,8 @@ class GhcModiProcessReal
   run: ({interactive, command, text, uri, dashArgs, args}) ->
     args ?= []
     dashArgs ?= []
+    if atom.config.get('haskell-ghc-mod.lowMemorySystem')
+      interactive = atom.config.get('haskell-ghc-mod.enableGhcModi')
     if typeof(dashArgs) is 'function'
       dashArgs = dashArgs(@caps)
     if @caps.optparse

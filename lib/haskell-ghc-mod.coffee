@@ -12,6 +12,12 @@ module.exports = HaskellGhcMod =
       description:
         'Using GHC Modi is suggested and noticeably faster,
          but if experiencing problems, disabling it can sometimes help.'
+    lowMemorySystem:
+      type: 'boolean'
+      default: false
+      description:
+        'Avoid spawning more than one ghc-mod process; also disables parallel
+        features, which can help with weird stack errors'
     debug:
       type: 'boolean'
       default: false
