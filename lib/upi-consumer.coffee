@@ -163,11 +163,12 @@ class UPIConsumer
     editor = target.getModel()
     @upi.withEventRange {editor, detail}, ({crange}) =>
       @process.getInfoInBuffer(editor, crange)
-      .then ({range, info}) ->
-        res = /.*-- Defined at (.+):(\d+):(\d+)$/.exec info
+      .then ({range, info}) =>
+        res = /.*-- Defined at (.+):(\d+):(\d+)/.exec info
         return unless res?
         [_, fn, line, col] = res
-        atom.workspace.open fn,
+        rootDir = @process.getRootDir(editor.getBuffer())
+        atom.workspace.open (try rootDir.getFile(fn).getPath() ? fn),
           initialLine: parseInt(line) - 1
           initialColumn: parseInt(col) - 1
 
