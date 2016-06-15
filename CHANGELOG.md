@@ -1,3 +1,6 @@
+## 1.14.6
+* Use absolute paths in go-to-declaration
+
 ## 1.14.5
 * Add option for low-memory systems
 
