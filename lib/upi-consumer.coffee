@@ -45,38 +45,39 @@ class UPIConsumer
   process: null
 
   constructor: (service, @process) ->
-    @upi = service.registerPlugin @disposables = new CompositeDisposable
-    @upi.setMessageTypes @messageTypes
+    service.registerPlugin(@disposables = new CompositeDisposable)
+    .then (@upi) =>
+      @upi.setMessageTypes @messageTypes
 
-    @disposables.add atom.commands.add @contextScope, @contextCommands()
+      @disposables.add atom.commands.add @contextScope, @contextCommands()
 
-    @upi.onShouldShowTooltip @shouldShowTooltip
+      @upi.onShouldShowTooltip @shouldShowTooltip
 
-    @disposables.add @process.onBackendActive =>
-      @upi.setStatus status: 'progress'
+      @disposables.add @process.onBackendActive =>
+        @upi.setStatus status: 'progress'
 
-    @disposables.add @process.onBackendIdle =>
-      @upi.setStatus status: 'ready'
+      @disposables.add @process.onBackendIdle =>
+        @upi.setStatus status: 'ready'
 
-    cm = {}
-    cm[@contextScope] = [@contextMenu]
-    @disposables.add atom.contextMenu.add cm
+      cm = {}
+      cm[@contextScope] = [@contextMenu]
+      @disposables.add atom.contextMenu.add cm
 
-    unless atom.config.get 'haskell-ghc-mod.useLinter'
-      @disposables.add atom.commands.add @contextScope, @globalCommands()
-      @upi.setMenu 'ghc-mod', @mainMenu
-      @disposables.add @upi.onDidSaveBuffer (buffer) =>
-        @checkLint buffer, 'Save'
-      @disposables.add @upi.onDidStopChanging (buffer) =>
-        @checkLint buffer, 'Change', true
-    else
+      unless atom.config.get 'haskell-ghc-mod.useLinter'
+        @disposables.add atom.commands.add @contextScope, @globalCommands()
+        @upi.setMenu 'ghc-mod', @mainMenu
+        @disposables.add @upi.onDidSaveBuffer (buffer) =>
+          @checkLint buffer, 'Save'
+        @disposables.add @upi.onDidStopChanging (buffer) =>
+          @checkLint buffer, 'Change', true
+      else
+        @upi.setMenu 'ghc-mod', [
+          {label: 'Check', command: 'linter:lint'}
+        ]
+
       @upi.setMenu 'ghc-mod', [
-        {label: 'Check', command: 'linter:lint'}
+        {label: 'Stop Backend', command: 'haskell-ghc-mod:shutdown-backend'}
       ]
-
-    @upi.setMenu 'ghc-mod', [
-      {label: 'Stop Backend', command: 'haskell-ghc-mod:shutdown-backend'}
-    ]
 
   destroy: ->
     @disposables.dispose()
