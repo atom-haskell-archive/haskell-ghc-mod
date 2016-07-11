@@ -10,7 +10,7 @@ class GhcModiProcessReal
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
 
-  run: ({interactive, command, text, uri, dashArgs, args}) ->
+  run: ({interactive, command, text, uri, dashArgs, args, suppressErrors}) ->
     args ?= []
     dashArgs ?= []
     if atom.config.get('haskell-ghc-mod.lowMemorySystem')
@@ -29,21 +29,24 @@ class GhcModiProcessReal
       else
         fun {command, text, uri, args}
     P.catch (err) ->
-      debug "#{err}"
-      atom.notifications.addFatalError "
-        Haskell-ghc-mod: ghc-mod
-        #{if interactive? then 'interactive ' else ''}command #{command}
-        failed with error #{err.name}",
-        detail: """
-          caps: #{JSON.stringify(@caps)}
-          URI: #{uri}
-          Args: #{args}
-          message: #{err.message}
-          log:
-          #{Util.getDebugLog()}
-          """
-        stack: err.stack
-        dismissable: true
+      debug err
+      unless suppressErrors
+        atom.notifications.addFatalError "
+          Haskell-ghc-mod: ghc-mod
+          #{if interactive? then 'interactive ' else ''}command #{command}
+          failed with error #{err.name}",
+          detail: """
+            caps: #{JSON.stringify(@caps)}
+            URI: #{uri}
+            Args: #{args}
+            message: #{err.message}
+            log:
+            #{Util.getDebugLog()}
+            """
+          stack: err.stack
+          dismissable: true
+      else
+        console.error err
       return []
 
   spawnProcess: ->

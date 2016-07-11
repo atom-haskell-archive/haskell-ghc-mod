@@ -206,17 +206,19 @@ class GhcModiProcess
       @emitter.emit 'backend-active'
       rd = runArgs.dir or Util.getRootDir(runArgs.options.cwd)
       new Promise (resolve, reject) ->
-        rd.getEntries (error, files) ->
-          if error?
-            reject error
+        file = rd.getFile('.haskell-ghc-mod.json')
+        file.exists()
+        .then (ex) ->
+          if ex
+            file.read().then (contents) -> resolve JSON.parse(contents)
           else
-            resolve files
+            reject new Error('.haskell-ghc-mod.json does not exist')
       .catch (error) ->
         Util.warn error
-        return []
-      .then (files) ->
-        if files.some((e) -> e.isFile() and e.getBaseName() is '.disable-ghc-mod')
-          throw new Error("Disable-ghc-mod found")
+        return {}
+      .then (settings) ->
+        if settings.disable then throw new Error("Disable-ghc-mod found")
+        if settings.suppressErrors then runArgs.suppressErrors = true
       .then ->
         backend.run runArgs
       .catch (err) ->
