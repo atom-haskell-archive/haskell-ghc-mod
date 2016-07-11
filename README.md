@@ -97,6 +97,26 @@ You can find description in [completion-backend.coffee][2]
 
 [2]:https://github.com/atom-haskell/haskell-ghc-mod/blob/master/lib/completion-backend/completion-backend.coffee
 
+# Advanced configuration
+
+In some cases, it could be useful to disable ghc-mod completely for a given project (e.g. GHCJS), or suppress error pop-ups (e.g. in case of known ghc-mod bugs where some features don't work, or don't always work).
+
+You can create `.haskell-ghc-mod.json` file in project root (i.e. directory containing a `*.cabal` file, or -- in case of plain projects -- Atom's project root directory).
+
+It's a JSON file with following fields:
+
+- `"disable"` -- `true`/`false`. Will disable all ghc-mod functions entirely. If omitted, defaults to `false`.
+- `"suppressErrors"` -- `true`/`false`. Will suppress error pop-ups. Those still will be displayed in Atom's console (View → Developer → Toggle Developer Tools), so if someting seems wierd, one could check there.
+
+Example:
+
+```json
+{
+  "disable": false,
+  "suppressErrors": true
+}
+```
+
 # License
 
 This software is licensed under MIT license. See LICENSE.md for details.
