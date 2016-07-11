@@ -153,6 +153,7 @@ module.exports = Util =
           cwd: rootPath
           env: env
           encoding: 'utf-8'
+          maxBuffer: Infinity
         }
     @processOptionsCache.set(rootPath, res)
     return res
