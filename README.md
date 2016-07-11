@@ -96,3 +96,18 @@ Since 1.0.0, haskell-ghc-mod provides `haskell-completion-backend` service.
 You can find description in [completion-backend.coffee][2]
 
 [2]:https://github.com/atom-haskell/haskell-ghc-mod/blob/master/lib/completion-backend/completion-backend.coffee
+
+# License
+
+This software is licensed under MIT license. See LICENSE.md for details.
+
+Contributors:
+
+* Nikolay Yakimov
+* Daniel Gröber
+* Petr Gladkikh
+* Mike MacDonald
+* Maiddog
+* Jason Jackson
+* Dennis J. McWherter Jr
+* Aaron Wolf
