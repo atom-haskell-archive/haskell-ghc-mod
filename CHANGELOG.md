@@ -1,3 +1,6 @@
+## 1.15.1
+* Fix Promise.resolve
+
 ## 1.15.0
 * Add .haskell-ghc-mod.json to readme
 * Add message on .haskell-ghc-mod.json parse error
