@@ -1,3 +1,9 @@
+## 1.15.0
+* Add .haskell-ghc-mod.json to readme
+* Add message on .haskell-ghc-mod.json parse error
+* Handle JSON.parse errors
+* .haskell-ghc-mod.json
+
 ## 1.14.7
 * Add contributors to README
 * Merge pull request #162 from DeathByTape/master
