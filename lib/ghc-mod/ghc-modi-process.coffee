@@ -210,7 +210,11 @@ class GhcModiProcess
         file.exists()
         .then (ex) ->
           if ex
-            file.read().then (contents) -> resolve JSON.parse(contents)
+            file.read().then (contents) ->
+              try
+                resolve JSON.parse(contents)
+              catch err
+                reject err
           else
             reject new Error('.haskell-ghc-mod.json does not exist')
       .catch (error) ->
