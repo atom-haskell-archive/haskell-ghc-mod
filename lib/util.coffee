@@ -132,12 +132,12 @@ module.exports = Util =
       if atom.config.get('haskell-ghc-mod.cabalSandbox')
         Util.getCabalSandbox(rootPath)
       else
-        Promise.resolve # undefined
+        Promise.resolve() # undefined
     stackSandbox =
       if atom.config.get('haskell-ghc-mod.stackSandbox')
         Util.getStackSandbox(rootPath, apd, objclone(env))
       else
-        Promise.resolve # undefined
+        Promise.resolve() # undefined
     res =
       Promise.all([cabalSandbox, stackSandbox])
       .then ([cabalSandboxDir, stackSandboxDirs]) ->
