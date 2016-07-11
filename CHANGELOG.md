@@ -1,3 +1,8 @@
+## 1.14.7
+* Add contributors to README
+* Merge pull request #162 from DeathByTape/master
+* Set maxBuffer to 'Infinity'.
+
 ## 1.14.6
 * Use absolute paths in go-to-declaration
 
