@@ -214,6 +214,9 @@ class GhcModiProcess
               try
                 resolve JSON.parse(contents)
               catch err
+                atom.notifications.addError 'Failed to parse .haskell-ghc-mod.json',
+                  detail: err
+                  dismissable: true
                 reject err
           else
             reject new Error('.haskell-ghc-mod.json does not exist')
