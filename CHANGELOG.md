@@ -1,3 +1,6 @@
+## 1.15.3
+* Make interactiveActionTimeout actually work
+
 ## 1.15.2
 * Configurable timeouts
 
