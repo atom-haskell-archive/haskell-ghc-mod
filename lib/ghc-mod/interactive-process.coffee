@@ -78,9 +78,10 @@ class InteractiveProcess
           @proc.stdout.on 'data', parseData
           @proc.on 'exit', exitCallback
           if tml = atom.config.get('haskell-ghc-mod.interactiveActionTimeout')
-            timer = setTimeout (->
+            timer = setTimeout (=>
               cleanup()
               console.error "#{savedLines}"
+              @kill()
               reject mkError "InteractiveActionTimeout", "#{savedLines}"
               ), tml * 1000
       args_ =
