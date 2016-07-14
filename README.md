@@ -81,6 +81,8 @@ You can edit Atom keybindings by opening 'Edit → Open Your Keymap'. Here is a 
   '': 'haskell-ghc-mod:case-split'
   '': 'haskell-ghc-mod:sig-fill'
   '': 'haskell-ghc-mod:show-info-fallback-to-type'
+  '': 'haskell-ghc-mod:show-type-fallback-to-info'
+  '': 'haskell-ghc-mod:show-type-and-info'
   '': 'haskell-ghc-mod:insert-import'
   '': 'haskell-ghc-mod:go-to-declaration'
 

@@ -21,12 +21,14 @@ class UPIConsumer
     ]
 
   contextCommands: ->
-    'haskell-ghc-mod:show-type': @typeCommand
-    'haskell-ghc-mod:show-info': @infoCommand
+    'haskell-ghc-mod:show-type': @tooltipCommand @typeTooltip
+    'haskell-ghc-mod:show-info': @tooltipCommand @infoTooltip
     'haskell-ghc-mod:case-split': @caseSplitCommand
     'haskell-ghc-mod:sig-fill': @sigFillCommand
     'haskell-ghc-mod:go-to-declaration': @goToDeclCommand
-    'haskell-ghc-mod:show-info-fallback-to-type': @infoTypeCommand
+    'haskell-ghc-mod:show-info-fallback-to-type': @tooltipCommand @infoTypeTooltip
+    'haskell-ghc-mod:show-type-fallback-to-info': @tooltipCommand @typeInfoTooltip
+    'haskell-ghc-mod:show-type-and-info': @tooltipCommand @typeAndInfoTooltip
     'haskell-ghc-mod:insert-type': @insertTypeCommand
     'haskell-ghc-mod:insert-import': @insertImportCommand
 
@@ -36,6 +38,7 @@ class UPIConsumer
       [
         {label: 'Show Type', command: 'haskell-ghc-mod:show-type'}
         {label: 'Show Info', command: 'haskell-ghc-mod:show-info'}
+        {label: 'Show Type And Info', command: 'haskell-ghc-mod:show-type-and-info'}
         {label: 'Case Split', command: 'haskell-ghc-mod:case-split'}
         {label: 'Sig Fill', command: 'haskell-ghc-mod:sig-fill'}
         {label: 'Insert Type', command: 'haskell-ghc-mod:insert-type'}
@@ -90,14 +93,18 @@ class UPIConsumer
       when 'mouse', undefined
         switch atom.config.get('haskell-ghc-mod.onMouseHoverShow')
           when 'Type'
-            @typeTooltip editor.getBuffer(), crange
+            @typeTooltip editor, crange
           when 'Info'
             @infoTooltip editor, crange
           when 'Info, fallback to Type'
             @infoTypeTooltip editor, crange
+          when 'Type, fallback to Info'
+            @typeInfoTooltip editor, crange
+          when 'Type and Info'
+            @typeAndInfoTooltip editor, crange
       when 'selection'
         if atom.config.get('haskell-ghc-mod.showTypeOnSelection')
-          @typeTooltip editor.getBuffer(), crange
+          @typeTooltip editor, crange
 
   checkCommand: ({target}) =>
     editor = target.getModel()
@@ -109,26 +116,13 @@ class UPIConsumer
     @process.doLintBuffer(editor.getBuffer()).then (res) =>
       @setMessages res, ['lint']
 
-  typeCommand: ({target, detail}) =>
-    @upi.showTooltip
-      editor: target.getModel()
-      detail: detail
-      tooltip: (crange) =>
-        @typeTooltip target.getModel().getBuffer(), crange
-
-  infoCommand: ({target, detail}) =>
-    @upi.showTooltip
-      editor: target.getModel()
-      detail: detail
-      tooltip: (crange) =>
-        @infoTooltip target.getModel(), crange
-
-  infoTypeCommand: ({target, detail}) =>
-    @upi.showTooltip
-      editor: target.getModel()
-      detail: detail
-      tooltip: (crange) =>
-        @infoTypeTooltip target.getModel(), crange
+  tooltipCommand: (tooltipfun) =>
+    ({target, detail}) =>
+      @upi.showTooltip
+        editor: target.getModel()
+        detail: detail
+        tooltip: (crange) ->
+          tooltipfun target.getModel(), crange
 
   insertTypeCommand: ({target, detail}) =>
     Util = require './util'
@@ -219,8 +213,8 @@ class UPIConsumer
             piP.then (pi) ->
               editor.setTextInBufferRange [pi.pos, pi.pos], "#{pi.indent}import #{mod}#{pi.end ? ''}"
 
-  typeTooltip: (b, p) ->
-    @process.getTypeInBuffer(b, p)
+  typeTooltip: (e, p) =>
+    @process.getTypeInBuffer(e.getBuffer(), p)
     .then ({range, type}) ->
       range: range
       text:
@@ -229,7 +223,7 @@ class UPIConsumer
           if atom.config.get('haskell-ghc-mod.highlightTooltips')
             'hint.type.haskell'
 
-  infoTooltip: (e, p) ->
+  infoTooltip: (e, p) =>
     @process.getInfoInBuffer(e, p)
     .then ({range, info}) ->
       range: range
@@ -239,11 +233,40 @@ class UPIConsumer
           if atom.config.get('haskell-ghc-mod.highlightTooltips')
             'source.haskell'
 
-  infoTypeTooltip: (e, p) ->
+  infoTypeTooltip: (e, p) =>
     args = arguments
     @infoTooltip(e, p)
     .catch =>
-      @typeTooltip(e.getBuffer(), p)
+      @typeTooltip(e, p)
+
+  typeInfoTooltip: (e, p) =>
+    args = arguments
+    @typeTooltip(e, p)
+    .catch =>
+      @infoTooltip(e, p)
+
+  typeAndInfoTooltip: (e, p) =>
+    args = arguments
+    typeP =
+      @typeTooltip(e, p).catch -> return null
+    infoP =
+      @infoTooltip(e, p).catch -> return null
+    Promise.all [typeP, infoP]
+    .then ([type, info]) ->
+      range:
+        if type? and info?
+          type.range.union(info.range)
+        else if type?
+          type.range
+        else if info?
+          info.range
+        else
+          throw new Error('Got neither type nor info')
+      text:
+        text: "#{if type?.text?.text then ':: '+type.text.text+'\n' else ''}#{info?.text?.text ? ''}"
+        highlighter:
+          if atom.config.get('haskell-ghc-mod.highlightTooltips')
+            'source.haskell'
 
   setHighlighter: ->
     if atom.config.get('haskell-ghc-mod.highlightMessages')

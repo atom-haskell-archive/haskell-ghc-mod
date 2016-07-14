@@ -82,7 +82,14 @@ module.exports = HaskellGhcMod =
     onMouseHoverShow:
       type: 'string'
       default: 'Info, fallback to Type'
-      enum: ['Nothing', 'Type', 'Info', 'Info, fallback to Type']
+      enum:
+        [ 'Nothing'
+        , 'Type'
+        , 'Info'
+        , 'Info, fallback to Type'
+        , 'Type, fallback to Info'
+        , 'Type and Info'
+        ]
 
     showTypeOnSelection:
       type: 'boolean'
