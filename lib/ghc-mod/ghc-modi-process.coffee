@@ -336,6 +336,31 @@ class GhcModiProcess
           ]
         replacement: text
 
+  doSigFill: (buffer, crange) =>
+    return Promise.resolve [] unless buffer.getUri()?
+    crange = Util.tabShiftForRange(buffer, crange)
+    @queueCmd 'typeinfo',
+      interactive: @caps?.interactiveCaseSplit ? false
+      buffer: buffer
+      command: 'sig',
+      uri: buffer.getUri()
+      text: buffer.getText() if buffer.isModified()
+      args: [crange.start.row + 1, crange.start.column + 1]
+    .then (lines) ->
+      return [] unless lines[0]?
+      rx = /^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/ # position rx
+      [line_, rowstart, colstart, rowend, colend] = lines[1].match(rx)
+      range =
+        Range.fromObject [
+          [parseInt(rowstart) - 1, parseInt(colstart) - 1],
+          [parseInt(rowend) - 1, parseInt(colend) - 1]
+        ]
+      return [
+        type: lines[0]
+        range: range
+        body: lines.slice(2).join('\n')
+      ]
+
   getInfoInBuffer: (editor, crange) =>
     buffer = editor.getBuffer()
     return Promise.resolve null unless buffer.getUri()?

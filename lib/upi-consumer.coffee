@@ -24,6 +24,7 @@ class UPIConsumer
     'haskell-ghc-mod:show-type': @typeCommand
     'haskell-ghc-mod:show-info': @infoCommand
     'haskell-ghc-mod:case-split': @caseSplitCommand
+    'haskell-ghc-mod:sig-fill': @sigFillCommand
     'haskell-ghc-mod:go-to-declaration': @goToDeclCommand
     'haskell-ghc-mod:show-info-fallback-to-type': @infoTypeCommand
     'haskell-ghc-mod:insert-type': @insertTypeCommand
@@ -36,6 +37,7 @@ class UPIConsumer
         {label: 'Show Type', command: 'haskell-ghc-mod:show-type'}
         {label: 'Show Info', command: 'haskell-ghc-mod:show-info'}
         {label: 'Case Split', command: 'haskell-ghc-mod:case-split'}
+        {label: 'Sig Fill', command: 'haskell-ghc-mod:sig-fill'}
         {label: 'Insert Type', command: 'haskell-ghc-mod:insert-type'}
         {label: 'Insert Import', command: 'haskell-ghc-mod:insert-import'}
         {label: 'Go To Declaration', command: 'haskell-ghc-mod:go-to-declaration'}
@@ -158,6 +160,25 @@ class UPIConsumer
       .then (res) ->
         res.forEach ({range, replacement}) ->
           editor.setTextInBufferRange(range, replacement)
+
+  sigFillCommand: ({target, detail}) =>
+    editor = target.getModel()
+    @upi.withEventRange {editor, detail}, ({crange}) =>
+      @process.doSigFill(editor.getBuffer(), crange)
+      .then (res) ->
+        res.forEach ({type, range, body}) ->
+          sig = editor.getTextInBufferRange(range)
+          indent = editor.indentLevelForLine(sig)
+          pos = range.end
+          text = "\n#{body}"
+          editor.transact ->
+            if type is 'instance'
+              indent += 1
+              unless sig.endsWith ' where'
+                editor.setTextInBufferRange([range.end, range.end], ' where')
+            newrange = editor.setTextInBufferRange([pos, pos], text)
+            for row in newrange.getRows().slice(1)
+              editor.setIndentationForBufferRow row, indent
 
   goToDeclCommand: ({target, detail}) =>
     editor = target.getModel()
