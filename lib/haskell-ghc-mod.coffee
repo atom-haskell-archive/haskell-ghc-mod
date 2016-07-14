@@ -81,7 +81,7 @@ module.exports = HaskellGhcMod =
 
     onMouseHoverShow:
       type: 'string'
-      default: 'Info, fallback to Type'
+      default: 'Type and Info'
       enum:
         [ 'Nothing'
         , 'Type'
