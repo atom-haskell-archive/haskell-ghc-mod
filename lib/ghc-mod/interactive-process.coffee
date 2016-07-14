@@ -60,7 +60,7 @@ class InteractiveProcess
           cleanup = =>
             @proc.stdout.removeListener 'data', parseData
             @proc.removeListener 'exit', exitCallback
-            clearTimeout timer
+            clearTimeout timer if timer?
           parseData = (data) ->
             debug "Got response from ghc-modi:#{EOL}#{data}"
             lines = data.split(EOL)
@@ -77,11 +77,12 @@ class InteractiveProcess
             reject mkError "ghc-modi crashed", "#{savedLines}"
           @proc.stdout.on 'data', parseData
           @proc.on 'exit', exitCallback
-          timer = setTimeout (->
-            cleanup()
-            console.error "#{savedLines}"
-            reject mkError "Timeout", "#{savedLines}"
-            ), 60000
+          if tml = atom.config.get('haskell-ghc-mod.interactiveActionTimeout')
+            timer = setTimeout (->
+              cleanup()
+              console.error "#{savedLines}"
+              reject mkError "Timeout", "#{savedLines}"
+              ), tml * 1000
       args_ =
         if @caps.quoteArgs
           ['ascii-escape', command].concat args.map (x) -> "\x02#{x}\x03"
