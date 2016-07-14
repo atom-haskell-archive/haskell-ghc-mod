@@ -1,3 +1,11 @@
+## 1.16.0
+* Change onMouseHoverShow default to 'Type and Info'
+* More type/info tooltip options
+* Add sig-fill command
+* Fix caps display in error messages
+* Kill ghc-modi on InteractiveActionTimeout
+* Add special handler for interactive action timeout
+
 ## 1.15.3
 * Make interactiveActionTimeout actually work
 
