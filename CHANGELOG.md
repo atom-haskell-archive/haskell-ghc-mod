@@ -1,3 +1,6 @@
+## 1.15.2
+* Configurable timeouts
+
 ## 1.15.1
 * Fix Promise.resolve
 
