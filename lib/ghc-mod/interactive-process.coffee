@@ -39,7 +39,8 @@ class InteractiveProcess
   resetTimer: ->
     if @timer?
       clearTimeout @timer
-    @timer = setTimeout (=> @kill()), 60 * 60 * 1000
+    if tml = atom.config.get('haskell-ghc-mod.interactiveInactivityTimeout')
+      @timer = setTimeout (=> @kill()), tml * 60 * 1000
 
   kill: ->
     if @timer?

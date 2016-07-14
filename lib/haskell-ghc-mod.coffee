@@ -38,13 +38,26 @@ module.exports = HaskellGhcMod =
       type: 'boolean'
       default: true
       description: 'Add stack bin-path to PATH'
-    syncTimeout:
+    initTimeout:
       type: 'integer'
-      description: 'Some ghc-mod operations need to be run in sync. This option
-                    sets timeout for such operations. Increase if getting
-                    ETIMEDOUT errors.'
-      default: 5000
-      minimum: 100
+      description: 'How long to wait for initialization commands (checking
+                    GHC and ghc-mod versions, getting stack sandbox) until
+                    assuming those hanged and bailing. In seconds.'
+      default: 60
+      minimum: 1
+    interactiveInactivityTimeout:
+      type: 'integer'
+      description: 'Kill ghc-mod interactive process (ghc-modi) after this
+                    number of minutes of inactivity to conserve memory. 0
+                    means never.'
+      default: 60
+      minimum: 0
+    interactiveActionTimeout:
+      type: 'integer'
+      description: 'Timeout for interactive ghc-mod commands (in seconds). 0
+                    means wait forever.'
+      default: 300
+      minimum: 0
 
     onSaveCheck:
       type: "boolean"

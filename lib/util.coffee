@@ -89,7 +89,7 @@ module.exports = Util =
       stdio: 'pipe'
       cwd: rootPath
       env: env
-      timeout: atom.config.get('haskell-ghc-mod.syncTimeout')
+      timeout: atom.config.get('haskell-ghc-mod.initTimeout') * 1000
     .then (out) ->
       lines = out.split(EOL)
       sir = lines.filter((l) -> l.startsWith('snapshot-install-root: '))[0].slice(23) + "#{sep}bin"

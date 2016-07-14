@@ -70,7 +70,7 @@ class GhcModiProcess
       @commandQueues.browse = new Queue(value)
 
   getVersion: (opts) ->
-    timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
+    timeout = atom.config.get('haskell-ghc-mod.initTimeout') * 1000
     cmd = atom.config.get('haskell-ghc-mod.ghcModPath')
     Util.execPromise cmd, ['version'], _.extend({timeout}, opts)
     .then (stdout) ->
@@ -80,7 +80,7 @@ class GhcModiProcess
       return {vers, comp}
 
   checkComp: (opts, {comp}) ->
-    timeout = atom.config.get('haskell-ghc-mod.syncTimeout')
+    timeout = atom.config.get('haskell-ghc-mod.initTimeout') * 1000
     stackghc =
       Util.execPromise 'stack', ['ghc', '--', '--version'], _.extend({timeout}, opts)
       .then (stdout) ->
