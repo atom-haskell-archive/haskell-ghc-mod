@@ -28,7 +28,7 @@ class GhcModiProcessReal
           fun {command, uri: tempuri, args}
       else
         fun {command, text, uri, args}
-    P.catch (err) ->
+    P.catch (err) =>
       debug err
       if err.name is 'InteractiveActionTimeout'
         atom.notifications.addError "
