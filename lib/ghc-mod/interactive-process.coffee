@@ -81,7 +81,7 @@ class InteractiveProcess
             timer = setTimeout (->
               cleanup()
               console.error "#{savedLines}"
-              reject mkError "Timeout", "#{savedLines}"
+              reject mkError "InteractiveActionTimeout", "#{savedLines}"
               ), tml * 1000
       args_ =
         if @caps.quoteArgs

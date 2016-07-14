@@ -30,7 +30,21 @@ class GhcModiProcessReal
         fun {command, text, uri, args}
     P.catch (err) ->
       debug err
-      unless suppressErrors
+      if err.name is 'InteractiveActionTimeout'
+        atom.notifications.addError "
+          Haskell-ghc-mod: ghc-mod
+          #{if interactive? then 'interactive ' else ''}command #{command}
+          timed out. You can try to fix it by raising 'Interactive Action
+          Timeout' setting in haskell-ghc-mod settings.",
+          detail: """
+            caps: #{JSON.stringify(@caps)}
+            URI: #{uri}
+            Args: #{args}
+            message: #{err.message}
+            """
+          stack: err.stack
+          dismissable: true
+      else if not suppressErrors
         atom.notifications.addFatalError "
           Haskell-ghc-mod: ghc-mod
           #{if interactive? then 'interactive ' else ''}command #{command}
