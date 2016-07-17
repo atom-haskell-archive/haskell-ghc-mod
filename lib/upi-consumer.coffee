@@ -179,6 +179,9 @@ class UPIConsumer
     @upi.withEventRange {editor, detail}, ({crange}) =>
       @process.getInfoInBuffer(editor, crange)
       .then ({range, info}) =>
+
+        console.log "KARL - GHC-MOD: range: " + range
+
         res = /.*-- Defined at (.+):(\d+):(\d+)/.exec info
         return unless res?
         [_, fn, line, col] = res
@@ -233,6 +236,17 @@ class UPIConsumer
           if atom.config.get('haskell-ghc-mod.highlightTooltips')
             'source.haskell'
 
+  docTooltip: (e, p) =>
+    @process.getDocInBuffer(e, p)
+    .then ({range, dox}) ->
+      range: range
+      text:
+        text: dox
+        highlighter:
+          if atom.config.get('haskell-ghc-mod.highlightTooltips')
+            'source.haskell'
+
+
   infoTypeTooltip: (e, p) =>
     args = arguments
     @infoTooltip(e, p)
@@ -251,8 +265,10 @@ class UPIConsumer
       @typeTooltip(e, p).catch -> return null
     infoP =
       @infoTooltip(e, p).catch -> return null
-    Promise.all [typeP, infoP]
-    .then ([type, info]) ->
+    docP =
+      @docTooltip(e, p).catch -> return null
+    Promise.all [typeP, infoP, docP]
+    .then ([type, info, doc]) ->
       range:
         if type? and info?
           type.range.union(info.range)
@@ -263,7 +279,7 @@ class UPIConsumer
         else
           throw new Error('Got neither type nor info')
       text:
-        text: "#{if type?.text?.text then ':: '+type.text.text+'\n' else ''}#{info?.text?.text ? ''}"
+        text: (Object.keys(doc).join(", ") + "\nBLERG 0: " + doc[Object.keys(doc)[0]] + "\nBLERG 1: " + doc[Object.keys(doc)[1]] + "\nBLERG 1 keys: " + Object.keys(doc[Object.keys(doc)[1]]) + "\nBLERG 1[0]: " + doc[Object.keys(doc)[1]]["text"] + "--(Karl was here)\n") + "#{if type?.text?.text then ':: '+type.text.text+'\n' else ''}#{info?.text?.text ? ''}"
         highlighter:
           if atom.config.get('haskell-ghc-mod.highlightTooltips')
             'source.haskell'
