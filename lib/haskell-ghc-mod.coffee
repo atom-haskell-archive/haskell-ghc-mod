@@ -196,12 +196,8 @@ module.exports = HaskellGhcMod =
                 text: text.replace(/\n+$/, '')
             }
 
-      # NOTE: some pretty gnarly hacks here...
-      disp = atom.config.observe "haskell-ghc-mod.#{lintOnFly}", (value) ->
+      # TODO: Rewrite this horribleness
+      atom.config.observe "haskell-ghc-mod.#{lintOnFly}", (value) ->
         linter.lintOnFly = value
-
-      Object.observe linter, ->
-        if linter.deactivated
-          disp.dispose()
 
       return linter
