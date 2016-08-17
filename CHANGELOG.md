@@ -1,3 +1,6 @@
+## 1.16.1
+* Object.observe is no longer supported
+
 ## 1.16.0
 * Change onMouseHoverShow default to 'Type and Info'
 * More type/info tooltip options
