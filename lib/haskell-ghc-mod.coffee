@@ -1,3 +1,13 @@
+tooltipActions =
+  [
+    {value: '', description: 'Nothing'}
+    {value: 'type', description: 'Type'}
+    {value: 'info', description: 'Info'}
+    {value: 'infoType', description: 'Info, fallback to Type'}
+    {value: 'typeInfo', description: 'Type, fallback to Info'}
+    {value: 'typeAndInfo', description: 'Type and Info'}
+  ]
+
 module.exports = HaskellGhcMod =
   process: null
 
@@ -81,21 +91,15 @@ module.exports = HaskellGhcMod =
 
     onMouseHoverShow:
       type: 'string'
-      default: 'Type and Info'
-      enum:
-        [ 'Nothing'
-        , 'Type'
-        , 'Info'
-        , 'Info, fallback to Type'
-        , 'Type, fallback to Info'
-        , 'Type and Info'
-        ]
+      description: 'Contents of tooltip on mouse hover'
+      default: 'typeAndInfo'
+      enum: tooltipActions
 
-    showTypeOnSelection:
-      type: 'boolean'
-      default: false
-      description:
-        'Show type of selected expression if editor selection changed'
+    onSelectionShow:
+      type: 'string'
+      description: 'Contents of tooltip on selection'
+      default: ''
+      enum: tooltipActions
 
     useLinter:
       type: 'boolean'

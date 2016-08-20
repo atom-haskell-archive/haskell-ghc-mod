@@ -91,20 +91,11 @@ class UPIConsumer
   shouldShowTooltip: (editor, crange, type) =>
     switch type
       when 'mouse', undefined
-        switch atom.config.get('haskell-ghc-mod.onMouseHoverShow')
-          when 'Type'
-            @typeTooltip editor, crange
-          when 'Info'
-            @infoTooltip editor, crange
-          when 'Info, fallback to Type'
-            @infoTypeTooltip editor, crange
-          when 'Type, fallback to Info'
-            @typeInfoTooltip editor, crange
-          when 'Type and Info'
-            @typeAndInfoTooltip editor, crange
+        if t = atom.config.get('haskell-ghc-mod.onMouseHoverShow')
+          @["#{t}Tooltip"] editor, crange
       when 'selection'
-        if atom.config.get('haskell-ghc-mod.showTypeOnSelection')
-          @typeTooltip editor, crange
+        if t = atom.config.get('haskell-ghc-mod.onSelectionShow')
+          @["#{t}Tooltip"] editor, crange
 
   checkCommand: ({target}) =>
     editor = target.getModel()
