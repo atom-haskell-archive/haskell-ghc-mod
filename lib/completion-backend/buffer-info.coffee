@@ -41,7 +41,7 @@ module.exports=
           parseHsModuleImports @buffer.getText(), (imports) =>
             @oldText = newText
             if imports.error?
-              console.error "#{imports.error} in #{imports.file} on #{imports.line},#{imports.col}"
+              console.error "Parse error: #{imports.error}"
               resolve @oldImports =
                 name: undefined
                 imports: []
@@ -51,45 +51,13 @@ module.exports=
     getImports: =>
       return Promise.resolve([]) unless @buffer?
       @parse()
-      .then (res) ->
-        res.imports.map (imp) ->
-          getName = (thing) ->
-            switch
-              when thing.Ident?
-                thing.Ident
-              when thing.Symbol?
-                thing.Symbol
-          getCName = (thing) ->
-            switch
-              when thing.VarName?
-                getName(thing.VarName)
-              when thing.ConName?
-                getName(thing.ConName)
-          qualified: imp.importQualified
-          name: imp.importModule
-          alias: imp.importAs
-          hiding: imp.importSpecs?[0] ? false
-          importList:
-            if imp.importSpecs?
-              Array.prototype.concat.apply [], imp.importSpecs[1].map (spec) ->
-                switch
-                  when spec.IVar
-                    [getName(spec.IVar)]
-                  when spec.IAbs
-                    [getName(spec.IAbs[1])]
-                  when spec.IThingAll
-                    #TODO: This is rather ugly
-                    [getName(spec.IThingAll), parent: getName(spec.IThingAll)]
-                  when spec.IThingWith
-                    Array.prototype.concat.apply [getName(spec.IThingWith[0])],
-                      spec.IThingWith[1].map (v) -> getCName(v)
-      .then (modules) ->
-        unless (modules.some ({name}) -> name == 'Prelude')
-          modules.push
+      .then ({imports}) ->
+        unless (imports.some ({name}) -> name == 'Prelude')
+          imports.push
             qualified: false
             hiding: false
             name: 'Prelude'
-        return modules
+        return imports
 
     getModuleName: =>
       return Promise.resolve() unless @buffer?
