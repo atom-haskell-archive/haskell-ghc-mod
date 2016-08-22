@@ -52,7 +52,8 @@ class GhcModiProcess
     vers.then (v) => procopts.then (opts) => @checkComp(opts, v)
 
     backend =
-      vers
+      procopts.then (opts) => @runBoot(opts)
+      .then -> vers
       .then @getCaps
       .then (@caps) =>
         procopts.then (opts) =>
@@ -176,6 +177,50 @@ class GhcModiProcess
       caps.importedFrom = true
     Util.debug JSON.stringify(caps)
     return caps
+
+  runBoot: (opts) ->
+    timeout = atom.config.get('haskell-ghc-mod.bootTimeout') * 1000
+    cmd = atom.config.get('haskell-ghc-mod.ghcModPath')
+    Util.execPromise cmd, [ 'boot' ], _.extend({timeout}, opts)
+    .catch (error) ->
+      if error.code is 'ENOENT'
+        atom.notifications.addWarning 'ghc-mod is missing',
+          detail: "Could not find ghc-mod executable at '#{cmd}'"
+          dismissable: true
+      else if error.code is 'EACCESS'
+        atom.notifications.addWarning 'ghc-mod path is wrong',
+          detail: "It appears that this path is a directory,
+                  \nor at least is not an executable:
+                  \n'#{cmd}'
+                  \nYou should set ghcModPath to point to
+                  \nghc-mod executable instead.
+                  \nAlternatively, you can leave ghcModPath at default
+                  \n'ghc-mod', and add '#{cmd}' to
+                  \nadditionalPathDirectories."
+          dismissable: true
+      else if error.killed and not error.code \# Timed out
+          or typeof error.code is 'number'
+        notification = atom.notifications.addWarning 'ghc-mod does not boot',
+          detail: 'It appears ghc-mod failed to boot.
+                  \nMost common reason for this is project dependencies
+                  \nnot being installed.
+                  \nIf you have ide-haskell-cabal, you may try to
+                  \nresolve this via "Build Dependencies" command.
+                  \nMake sure to select appropriate builder backend first.'
+          dismissable: true
+        try
+          notificationView = atom.views.getView(notification)
+          notificationContent = notificationView.querySelector('.detail-content')
+          install = document.createElement('button')
+          install.style['margin-top'] = '1em'
+          install.innerText = 'Click here to try to build dependencies'
+          install.classList.add 'btn', 'btn-warning', 'icon', 'icon-rocket'
+          install.addEventListener 'click', ->
+            atom.commands.dispatch atom.views.getView(atom.workspace),
+              'ide-haskell-cabal:build-dependencies'
+          if notificationContent?
+            notificationContent.appendChild install
+      throw error
 
   killProcess: =>
     @backend.forEach (v) ->

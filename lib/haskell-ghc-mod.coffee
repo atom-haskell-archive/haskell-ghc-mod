@@ -63,6 +63,16 @@ module.exports = HaskellGhcMod =
       default: 60
       minimum: 1
       order: 50
+    bootTimeout:
+      type: 'integer'
+      description: 'How long to wait for initial ghc-mod boot test.
+                    This happens when a project is first opened. May take a
+                    very long time on freshly-cloned projects, so it is better
+                    to timeout relatively quickly.
+                    In seconds.'
+      default: 10
+      minimum: 1
+      order: 50
     interactiveInactivityTimeout:
       type: 'integer'
       description: 'Kill ghc-mod interactive process (ghc-modi) after this
@@ -143,7 +153,7 @@ module.exports = HaskellGhcMod =
     experimental:
       type: 'boolean'
       default: false
-      description: 'Enable experimentai features, which are expected to land in
+      description: 'Enable experimental features, which are expected to land in
                     next release of ghc-mod. ENABLE ONLY IF YOU KNOW WHAT YOU
                     ARE DOING'
       order: 999
