@@ -294,10 +294,14 @@ class GhcModiProcess
     .then (lines) ->
       [range, type] = lines.reduce ((acc, line) ->
         return acc if acc != ''
-        tokens = line.split '"'
-        pos = tokens[0].trim().split(' ').map (i) -> i - 1
-        type = tokens[1]
-        myrange = new Range [pos[0], pos[1]], [pos[2], pos[3]]
+        rx = /^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+"([^]*)"$/ # [^] basically means "anything", incl. newlines
+        [line_, rowstart, colstart, rowend, colend, text] = line.match(rx)
+        type = text.replace(/\\"/g, '"')
+        myrange =
+          Range.fromObject [
+            [parseInt(rowstart) - 1, parseInt(colstart) - 1],
+            [parseInt(rowend) - 1, parseInt(colend) - 1]
+          ]
         return acc if myrange.isEmpty()
         return acc unless myrange.containsRange(crange)
         myrange = Util.tabUnshiftForRange(buffer, myrange)
