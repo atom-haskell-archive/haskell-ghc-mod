@@ -1,3 +1,6 @@
+## 1.17.2
+* Fix types containing "
+
 ## 1.17.1
 * Update atom-haskell-utils
 
