@@ -82,16 +82,14 @@ class GhcModiProcess
   checkComp: (opts, {comp}) ->
     timeout = atom.config.get('haskell-ghc-mod.initTimeout') * 1000
     stackghc =
-      Util.execPromise 'stack', ['ghc', '--', '--version'], _.extend({timeout}, opts)
-      .then (stdout) ->
-        /version (.+)$/.exec(stdout.trim())[1]
+      Util.execPromise 'stack', ['ghc', '--', '--numeric-version'], _.extend({timeout}, opts)
+      .then (stdout) -> stdout.trim()
       .catch (error) ->
         Util.warn error
         return null
     pathghc =
-      Util.execPromise 'ghc', ['--version'], _.extend({timeout}, opts)
-      .then (stdout) ->
-        /version (.+)$/.exec(stdout.trim())[1]
+      Util.execPromise 'ghc', ['--numeric-version'], _.extend({timeout}, opts)
+      .then (stdout) -> stdout.trim()
       .catch (error) ->
         Util.warn error
         return null
