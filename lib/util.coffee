@@ -58,6 +58,8 @@ module.exports = Util =
           Util.warn("Running #{cmd} #{args} failed with ", error)
           Util.warn stdout if stdout
           error.stack = (new Error).stack
+          if child.killed and opts.timeout?
+            error.name = 'NonInteractiveActionTimeout'
           reject error
         else
           Util.debug "Got response from #{cmd} #{args}", stdout: stdout, stderr: stderr
