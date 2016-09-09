@@ -1,6 +1,5 @@
 {CompositeDisposable} = require 'atom'
 ImportListView = require './views/import-list-view'
-SuggestionListView = require './views/suggestion-list-view'
 
 module.exports =
 class UPIConsumer
@@ -25,7 +24,6 @@ class UPIConsumer
     'haskell-ghc-mod:show-type': @tooltipCommand @typeTooltip
     'haskell-ghc-mod:show-info': @tooltipCommand @infoTooltip
     'haskell-ghc-mod:case-split': @caseSplitCommand
-    'haskell-ghc-mod:hole-fill': @holeFillCommand
     'haskell-ghc-mod:sig-fill': @sigFillCommand
     'haskell-ghc-mod:go-to-declaration': @goToDeclCommand
     'haskell-ghc-mod:show-info-fallback-to-type': @tooltipCommand @infoTypeTooltip
@@ -42,7 +40,6 @@ class UPIConsumer
         {label: 'Show Info', command: 'haskell-ghc-mod:show-info'}
         {label: 'Show Type And Info', command: 'haskell-ghc-mod:show-type-and-info'}
         {label: 'Case Split', command: 'haskell-ghc-mod:case-split'}
-        {label: 'Hole Fill', command: 'haskell-ghc-mod:hole-fill'}
         {label: 'Sig Fill', command: 'haskell-ghc-mod:sig-fill'}
         {label: 'Insert Type', command: 'haskell-ghc-mod:insert-type'}
         {label: 'Insert Import', command: 'haskell-ghc-mod:insert-import'}
@@ -148,23 +145,6 @@ class UPIConsumer
       .then (res) ->
         res.forEach ({range, replacement}) ->
           editor.setTextInBufferRange(range, replacement)
-
-  holeFillCommand: ({target, detail}) =>
-    editor = target.getModel()
-    @upi.withEventRange {editor, detail}, ({crange}) =>
-      @process.doHoleFill(editor.getBuffer(), crange)
-      .then (res) ->
-        return null unless res?
-
-        {range, suggestions} = res
-
-        if suggestions.length == 1
-          editor.setTextInBufferRange(range, suggestions[0])
-        else
-          new SuggestionListView
-            items: suggestions
-            onConfirmed: (suggestion) ->
-              editor.setTextInBufferRange(range, suggestion)
 
   sigFillCommand: ({target, detail}) =>
     editor = target.getModel()
