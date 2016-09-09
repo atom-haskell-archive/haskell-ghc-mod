@@ -343,7 +343,7 @@ class CompletionBackend
     position = Range.fromPointWithDelta(position, 0, 0) if position?
     prefix = prefix.slice 1 if prefix.startsWith '_'
     @process.getTypeInBuffer(buffer, position).then ({type}) =>
-      @getSymbolsForBuffer(buffer).then (symbols) ->
+      @getSymbolsForBuffer(buffer).then (symbols) =>
         ts = symbols.filter (s) ->
           return false unless s.typeSignature?
           tl = s.typeSignature.split(' -> ').slice(-1)[0]
@@ -351,8 +351,18 @@ class CompletionBackend
           ts = tl.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&")
           rx = RegExp ts.replace(/\b[a-z]\b/g, '.+'), ''
           rx.test(type)
-        if prefix.length is 0
-          ts.sort (a, b) ->
-            FZ.score(b.typeSignature, type) - FZ.score(a.typeSignature, type)
-        else
-          FZ.filter ts, prefix, key: 'qname'
+        ts2 =
+          if prefix.length is 0
+            ts.sort (a, b) ->
+              FZ.score(b.typeSignature, type) - FZ.score(a.typeSignature, type)
+          else
+            FZ.filter ts, prefix, key: 'qname'
+        @process.doHoleFill(buffer, position).then ({suggestions}) ->
+          return ts2 unless suggestions?
+          ts2.unshift (suggestions.map (text) ->
+            name: text
+            qname: text
+            typeSignature: type
+            symbolType: 'snippet'
+            )...
+          return ts2
