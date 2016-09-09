@@ -342,14 +342,15 @@ class GhcModiProcess
     return Promise.resolve [] unless buffer.getUri()?
     crange = Util.tabShiftForRange(buffer, crange)
     @queueCmd 'typeinfo',
-      interactive: @caps?.interactiveCaseSplit ? false
+      interactive: false
       buffer: buffer
-      command: 'auto',
+      command: 'auto'
       uri: buffer.getUri()
       text: buffer.getText() if buffer.isModified()
       args: [crange.start.row + 1, crange.start.column + 1]
+      timeout: 5000 # TODO: Make configurable
     .then (lines) ->
-      return null if lines.length == 0 or lines[1] == ""
+      return {} if lines.length == 0 or lines[1] == ""
 
       [line_, rowstart, colstart, rowend, colend, text] = lines[0].match(/^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/)
 
