@@ -84,16 +84,30 @@ module.exports=
               )
         else
           @symbols
-      si = symbols.map (s) ->
-        name: s.name
-        typeSignature: s.typeSignature
-        symbolType: s.symbolType
-        module: importDesc
-        qname:
-          if importDesc.qualified
-            (importDesc.alias ? importDesc.name) + '.' + s.name
-          else
-            s.name
+      si = Array.prototype.concat.apply [], symbols.map (s) ->
+        qns =
+          [
+            (n) ->
+              if importDesc.qualified
+                (importDesc.alias ? importDesc.name) + '.' + n
+              else
+                n
+          ]
+        unless importDesc.skipQualified
+          qns.push((n) -> importDesc.name + '.' + n)
+          if importDesc.alias
+            qns.push((n) -> importDesc.alias + '.' + n)
+        qns.map (qn) ->
+          name: s.name
+          typeSignature: s.typeSignature
+          symbolType:
+            if s.symbolType == 'function' and s.name[0].toUpperCase() == s.name[0]
+              'tag'
+            else
+              s.symbolType
+          qparent: qn s.parent if s.parent
+          module: importDesc
+          qname: qn s.name
       if symbolTypes?
         si = si.filter ({symbolType}) -> symbolType in symbolTypes
       si

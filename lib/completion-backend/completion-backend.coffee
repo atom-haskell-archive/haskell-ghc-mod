@@ -3,6 +3,7 @@ FZ = require 'fuzzaldrin'
 BufferInfo = require './buffer-info'
 ModuleInfo = require './module-info'
 Util = require '../util'
+_ = require 'underscore-plus'
 
 module.exports =
 class CompletionBackend
@@ -108,6 +109,21 @@ class CompletionBackend
       else
         Promise.resolve {bufferInfo, rootDir, moduleMap, moduleInfo}
 
+  filter: (candidates, prefix, keys) ->
+    candidates
+    .map (c) ->
+      c1 = _.clone(c)
+      scores = keys.map (key) -> FZ.score(c1[key], prefix)
+      c1.score = Math.max(scores...)
+      c1.scoreN = scores.indexOf(c1.score)
+      return c1
+    .filter (c) -> c.score > 0
+    .sort (a, b) ->
+      s = b.score - a.score
+      if s == 0
+        s = a.scoreN - b.scoreN
+      return s
+
   ### Public interface below ###
 
   ###
@@ -185,8 +201,9 @@ class CompletionBackend
   getCompletionsForSymbol: (buffer, prefix, position) =>
     return Promise.reject("Backend inactive") unless @isActive()
 
-    @getSymbolsForBuffer(buffer).then (symbols) ->
-      FZ.filter symbols, prefix, key: 'qname'
+    @getSymbolsForBuffer(buffer).then (symbols) =>
+      @filter symbols, prefix, ['qname', 'qparent']
+      # .concat FZ.filter symbols, prefix, key: 'parent'
 
   ###
   getCompletionsForType(buffer,prefix,position)
@@ -274,6 +291,7 @@ class CompletionBackend
     .then ({moduleInfo}) ->
       symbols = moduleInfo.select
         qualified: false
+        skipQualified: true
         hiding: false
         name: moduleName
       FZ.filter symbols, prefix, key: 'name'
