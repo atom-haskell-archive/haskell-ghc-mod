@@ -1,3 +1,10 @@
+## 1.18.0
+* Include all qualifications in suggestions, i.e. fully qualified,
+    alias-qualified and unqualified (if applicable)
+* Include type constructors into suggestions (if applicable)
+* Show type constructors as types instead of functions
+* Use --numeric-version for ghc version
+
 ## 1.17.2
 * Fix types containing "
 
