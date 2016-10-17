@@ -1,4 +1,5 @@
 {Range, Point, Emitter, CompositeDisposable} = require 'atom'
+Haddock = require '../haddock'
 Util = require '../util'
 {extname} = require('path')
 Queue = require 'promise-queue'
@@ -184,6 +185,45 @@ class GhcModiProcess
 
   onQueueIdle: (callback) =>
     @emitter.on 'queue-idle', callback
+
+  docsCmd: (symbol_to_lookup, runArgs) =>
+
+    unless runArgs.buffer? or runArgs.dir?
+      throw new Error ("Neither dir nor buffer is set in docsCmd invocation")
+    runArgs.dir ?= @getRootDir(runArgs.buffer) if runArgs.buffer?
+
+    rd = runArgs.dir or Util.getRootDir(runArgs.options.cwd)
+    package_name = rd.getBaseName()
+    console.log "Package name: " + package_name
+
+    # TODO Use the "stack path --local-doc-root" command to obtain this string
+    filepath = '../.stack-work/install/x86_64-linux/lts-5.9/7.10.3/doc/' + package_name + '-0.1.0.0/' + package_name + '.txt'
+
+    console.log "Haddock file path: " + filepath
+
+    my_promise = new Promise (resolve, reject) ->
+      file = rd.getFile(filepath)
+      file.exists()
+      .then (ex) ->
+        if ex
+          file.read().then (contents) ->
+            try
+              docs_by_module = Haddock.parseHoogleTextDoc(contents)
+              found_doc = Haddock.findDocsForSymbol(docs_by_module, symbol_to_lookup)
+              # TODO Get current module name!
+              resolve found_doc
+            catch err
+              atom.notifications.addError 'Failed to parse haddock-hoogle text file',
+                detail: err
+                dismissable: true
+              reject err
+        else
+          reject new Error('haddock-hoogle text file does not exist')
+    .catch (error) ->
+      Util.warn error
+      return {}
+
+    return my_promise
 
   queueCmd: (queueName, runArgs, backend) =>
     unless runArgs.buffer? or runArgs.dir?
@@ -381,6 +421,21 @@ class GhcModiProcess
         throw new Error "No info"
       else
         return {range, info}
+
+
+  getDocInBuffer: (editor, crange) =>
+    buffer = editor.getBuffer()
+    return Promise.resolve null unless buffer.getUri()?
+    {symbol, range} = Util.getSymbolInRange(editor, crange)
+
+    @docsCmd symbol,
+      buffer: buffer
+    .then (found_doc) ->
+      if found_doc == null
+        throw new Error "No docs"
+      else
+        console.log "Symbol documentation: " + found_doc
+        return {range, found_doc}
 
   findSymbolProvidersInBuffer: (editor, crange) =>
     buffer = editor.getBuffer()
