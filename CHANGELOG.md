@@ -1,3 +1,6 @@
+## 1.18.1
+* Show all candidates on empty prefix
+
 ## 1.18.0
 * Include all qualifications in suggestions, i.e. fully qualified,
     alias-qualified and unqualified (if applicable)
