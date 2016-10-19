@@ -110,6 +110,8 @@ class CompletionBackend
         Promise.resolve {bufferInfo, rootDir, moduleMap, moduleInfo}
 
   filter: (candidates, prefix, keys) ->
+    unless prefix
+      return candidates
     candidates
     .map (c) ->
       c1 = _.clone(c)
