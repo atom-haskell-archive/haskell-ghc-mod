@@ -3,6 +3,7 @@ CP = require('child_process')
 InteractiveProcess = require './interactive-process'
 {debug, warn, mkError, withTempFile, EOT} = Util = require '../util'
 {EOL} = require('os')
+_ = require 'underscore-plus'
 
 module.exports =
 class GhcModiProcessReal
@@ -10,7 +11,10 @@ class GhcModiProcessReal
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
 
-  run: ({interactive, command, text, uri, dashArgs, args, suppressErrors}) ->
+  run: ({interactive, command, text, uri, dashArgs, args, suppressErrors, timeout}) ->
+    if timeout? and interactive
+      throw new Error('Can not have interactive action with set timeout! This
+                       is an error in haskell-ghc-mod. Please report it.')
     args ?= []
     dashArgs ?= []
     if atom.config.get('haskell-ghc-mod.lowMemorySystem')
@@ -25,9 +29,9 @@ class GhcModiProcessReal
     P =
       if text? and not @caps.fileMap
         withTempFile text, uri, (tempuri) ->
-          fun {command, uri: tempuri, args}
+          fun {command, uri: tempuri, args, timeout}
       else
-        fun {command, text, uri, args}
+        fun {command, text, uri, args, timeout}
     P.catch (err) =>
       debug err
       if err.name is 'InteractiveActionTimeout'
@@ -44,6 +48,10 @@ class GhcModiProcessReal
             """
           stack: err.stack
           dismissable: true
+        return []
+      else if err.name is 'NonInteractiveActionTimeout'
+        warn err
+        return []
       else if not suppressErrors
         atom.notifications.addFatalError "
           Haskell-ghc-mod: ghc-mod
@@ -77,7 +85,7 @@ class GhcModiProcessReal
       @proc = null
     return @proc
 
-  runModCmd: ({command, text, uri, args}) =>
+  runModCmd: ({command, text, uri, args, timeout}) =>
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     result = []
     err = []
@@ -88,7 +96,7 @@ class GhcModiProcessReal
     if text?
       cmd = ['--map-file', uri].concat cmd
     stdin = "#{text}#{EOT}" if text?
-    Util.execPromise modPath, cmd, @options, stdin
+    Util.execPromise modPath, cmd, _.extend({timeout}, @options), stdin
     .then (stdout) ->
       stdout.split(EOL).slice(0, -1).map (line) -> line.replace /\0/g, '\n'
 
