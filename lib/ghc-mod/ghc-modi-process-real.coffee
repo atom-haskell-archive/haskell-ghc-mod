@@ -3,6 +3,7 @@ CP = require('child_process')
 InteractiveProcess = require './interactive-process'
 {debug, warn, mkError, withTempFile, EOT} = Util = require '../util'
 {EOL} = require('os')
+_ = require 'underscore-plus'
 
 module.exports =
 class GhcModiProcessReal
@@ -10,9 +11,11 @@ class GhcModiProcessReal
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
 
-  run: ({interactive, command, text, uri, dashArgs, args, suppressErrors}) ->
+  run: ({interactive, command, text, uri, dashArgs, args, suppressErrors, ghcOptions}) ->
     args ?= []
     dashArgs ?= []
+    ghcOptions ?= []
+    ghcOptions = [].concat (ghcOptions.map (opt) -> ['--ghc-option', opt])...
     if atom.config.get('haskell-ghc-mod.lowMemorySystem')
       interactive = atom.config.get('haskell-ghc-mod.enableGhcModi')
     if typeof(dashArgs) is 'function'
@@ -25,9 +28,9 @@ class GhcModiProcessReal
     P =
       if text? and not @caps.fileMap
         withTempFile text, uri, (tempuri) ->
-          fun {command, uri: tempuri, args}
+          fun {ghcOptions, command, uri: tempuri, args}
       else
-        fun {command, text, uri, args}
+        fun {ghcOptions, command, text, uri, args}
     P.catch (err) =>
       debug err
       if err.name is 'InteractiveActionTimeout'
@@ -63,28 +66,36 @@ class GhcModiProcessReal
         console.error err
       return []
 
-  spawnProcess: ->
-    return unless atom.config.get('haskell-ghc-mod.enableGhcModi')
+  spawnProcess: (ghcOptions) ->
+    return Promise.resolve(null) unless atom.config.get('haskell-ghc-mod.enableGhcModi')
     debug "Checking for ghc-modi in #{@rootDir.getPath()}"
     if @proc?
+      unless _.isEqual(@ghcOptions, ghcOptions)
+        debug "Found running ghc-modi instance for #{@rootDir.getPath()}, but ghcOptions don't match. Old: ",
+          @ghcOptions, ' new: ', ghcOptions
+        @proc.kill()
+        return new Promise (resolve) =>
+          @proc.onExit =>
+            resolve @spawnProcess(ghcOptions)
       debug "Found running ghc-modi instance for #{@rootDir.getPath()}"
-      return @proc
+      return Promise.resolve(@proc)
     debug "Spawning new ghc-modi instance for #{@rootDir.getPath()} with", @options
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
-    @proc = new InteractiveProcess(modPath, ['legacy-interactive'], @options, @caps)
-    @proc.onExit (code) =>
+    @ghcOptions = ghcOptions
+    @proc = new InteractiveProcess(modPath, ghcOptions.concat(['legacy-interactive']), @options, @caps)
+    @proc.disposables.add @proc.onExit (code) =>
       debug "ghc-modi for #{@rootDir.getPath()} ended with #{code}"
       @proc = null
-    return @proc
+    return Promise.resolve(@proc)
 
-  runModCmd: ({command, text, uri, args}) =>
+  runModCmd: ({ghcOptions, command, text, uri, args}) =>
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     result = []
     err = []
     if uri?
-      cmd = [command, uri].concat args
+      cmd = ghcOptions.concat([command, uri], args)
     else
-      cmd = [command].concat args
+      cmd = ghcOptions.concat([command], args)
     if text?
       cmd = ['--map-file', uri].concat cmd
     stdin = "#{text}#{EOT}" if text?
@@ -93,33 +104,34 @@ class GhcModiProcessReal
       stdout.split(EOL).slice(0, -1).map (line) -> line.replace /\0/g, '\n'
 
   runModiCmd: (o) =>
-    {command, text, uri, args} = o
+    {ghcOptions, command, text, uri, args} = o
     debug "Trying to run ghc-modi in #{@rootDir.getPath()}"
-    proc = @spawnProcess()
-    unless proc
-      debug "Failed. Falling back to ghc-mod"
-      return @runModCmd o
-    uri = @rootDir.relativize(uri) if uri? and not @caps.quoteArgs
-    proc.do (interact) ->
-      Promise.resolve()
-      .then ->
-        if text?
-          interact "map-file", [uri], text
-      .then ->
-        interact command,
-          if uri?
-            [uri].concat(args)
+    @spawnProcess(ghcOptions)
+    .then (proc) =>
+      unless proc
+        debug "Failed. Falling back to ghc-mod"
+        return @runModCmd o
+      uri = @rootDir.relativize(uri) if uri? and not @caps.quoteArgs
+      proc.do (interact) ->
+        Promise.resolve()
+        .then ->
+          if text?
+            interact "map-file", [uri], text
+        .then ->
+          interact command,
+            if uri?
+              [uri].concat(args)
+            else
+              args
+        .then (res) ->
+          if text?
+            interact "unmap-file", [uri]
+            .then -> res
           else
-            args
-      .then (res) ->
-        if text?
-          interact "unmap-file", [uri]
-          .then -> res
-        else
-          res
-      .catch (err) ->
-        try interact "unmap-file", [uri]
-        throw err
+            res
+        .catch (err) ->
+          try interact "unmap-file", [uri]
+          throw err
 
   killProcess: ->
     return unless @proc?

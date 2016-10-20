@@ -1,8 +1,9 @@
-{Range, Point, Emitter, CompositeDisposable} = require 'atom'
+{Range, Point, Emitter, CompositeDisposable, Directory} = require 'atom'
 Util = require '../util'
 {extname} = require('path')
 Queue = require 'promise-queue'
 {unlitSync} = require 'atom-haskell-utils'
+_ = require 'underscore-plus'
 
 GhcModiProcessReal = require './ghc-modi-process-real.coffee'
 _ = require 'underscore-plus'
@@ -203,7 +204,7 @@ class GhcModiProcess
     promise = @commandQueues[queueName].add =>
       @emitter.emit 'backend-active'
       rd = runArgs.dir or Util.getRootDir(runArgs.options.cwd)
-      new Promise (resolve, reject) ->
+      localSettings = new Promise (resolve, reject) ->
         file = rd.getFile('.haskell-ghc-mod.json')
         file.exists()
         .then (ex) ->
@@ -221,9 +222,32 @@ class GhcModiProcess
       .catch (error) ->
         Util.warn error if error?
         return {}
+      globalSettings = new Promise (resolve, reject) ->
+        configDir = new Directory(atom.getConfigDirPath())
+        file = configDir.getFile('haskell-ghc-mod.json')
+        file.exists()
+        .then (ex) ->
+          if ex
+            file.read().then (contents) ->
+              try
+                resolve JSON.parse(contents)
+              catch err
+                atom.notifications.addError 'Failed to parse haskell-ghc-mod.json',
+                  detail: err
+                  dismissable: true
+                reject err
+          else
+            reject()
+      .catch (error) ->
+        Util.warn error if error?
+        return {}
+      Promise.all [globalSettings, localSettings]
+      .then ([glob, loc]) ->
+        _.extend(glob, loc)
       .then (settings) ->
-        if settings.disable then throw new Error("Disable-ghc-mod found")
-        if settings.suppressErrors then runArgs.suppressErrors = true
+        throw new Error("Ghc-mod disabled in settings") if settings.disable
+        runArgs.suppressErrors = true if settings.suppressErrors
+        runArgs.ghcOptions = settings.ghcOptions if settings.ghcOptions?
       .then ->
         backend.run runArgs
       .catch (err) ->

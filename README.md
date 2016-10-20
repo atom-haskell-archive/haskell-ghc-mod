@@ -106,17 +106,21 @@ In some cases, it could be useful to disable ghc-mod completely for a given proj
 
 You can create `.haskell-ghc-mod.json` file in project root (i.e. directory containing a `*.cabal` file, or -- in case of plain projects -- Atom's project root directory).
 
-It's a JSON file with following fields:
+You can also create a global config file in `${ATOM_CONFIG_DIR}/haskell-ghc-mod.json`. `${ATOM_CONFIG_DIR}` is usually `${HOME}/.atom`, but you can check it's path by running `atom.getConfigDirPath()` in Atom's developer console (View → Developer → Toggle Developer Tools → Console).
+
+Config file is a JSON file with the following fields:
 
 - `"disable"` -- `true`/`false`. Will disable all ghc-mod functions entirely. If omitted, defaults to `false`.
 - `"suppressErrors"` -- `true`/`false`. Will suppress error pop-ups. Those still will be displayed in Atom's console (View → Developer → Toggle Developer Tools), so if someting seems wierd, one could check there.
+- `"ghcOptions"` -- Array of Strings. Options to pass to GHC. Can be useful to explicitly suppress warnings, e.g. `-fno-warn-unused-do-bind` or anything else.
 
 Example:
 
 ```json
 {
   "disable": false,
-  "suppressErrors": true
+  "suppressErrors": true,
+  "ghcOptions": ["-fno-warn-unused-do-bind", "-fno-warn-name-shadowing"]
 }
 ```
 
