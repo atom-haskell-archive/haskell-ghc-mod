@@ -11,11 +11,13 @@ class GhcModiProcessReal
     @disposables = new CompositeDisposable
     @disposables.add @emitter = new Emitter
 
-  run: ({interactive, command, text, uri, dashArgs, args, suppressErrors, ghcOptions}) ->
+  run: ({interactive, command, text, uri, dashArgs, args, suppressErrors, ghcOptions, ghcModOptions}) ->
     args ?= []
     dashArgs ?= []
+    suppressErrors ?= false
     ghcOptions ?= []
-    ghcOptions = [].concat (ghcOptions.map (opt) -> ['--ghc-option', opt])...
+    ghcModOptions ?= []
+    ghcModOptions = ghcModOptions.concat (ghcOptions.map (opt) -> ['--ghc-option', opt])...
     if atom.config.get('haskell-ghc-mod.lowMemorySystem')
       interactive = atom.config.get('haskell-ghc-mod.enableGhcModi')
     if typeof(dashArgs) is 'function'
@@ -28,9 +30,9 @@ class GhcModiProcessReal
     P =
       if text? and not @caps.fileMap
         withTempFile text, uri, (tempuri) ->
-          fun {ghcOptions, command, uri: tempuri, args}
+          fun {ghcModOptions, command, uri: tempuri, args}
       else
-        fun {ghcOptions, command, text, uri, args}
+        fun {ghcModOptions, command, text, uri, args}
     P.catch (err) =>
       debug err
       if err.name is 'InteractiveActionTimeout'
@@ -66,36 +68,36 @@ class GhcModiProcessReal
         console.error err
       return []
 
-  spawnProcess: (ghcOptions) ->
+  spawnProcess: (ghcModOptions) ->
     return Promise.resolve(null) unless atom.config.get('haskell-ghc-mod.enableGhcModi')
     debug "Checking for ghc-modi in #{@rootDir.getPath()}"
     if @proc?
-      unless _.isEqual(@ghcOptions, ghcOptions)
-        debug "Found running ghc-modi instance for #{@rootDir.getPath()}, but ghcOptions don't match. Old: ",
-          @ghcOptions, ' new: ', ghcOptions
+      unless _.isEqual(@ghcModOptions, ghcModOptions)
+        debug "Found running ghc-modi instance for #{@rootDir.getPath()}, but ghcModOptions don't match. Old: ",
+          @ghcModOptions, ' new: ', ghcModOptions
         @proc.kill()
         return new Promise (resolve) =>
           @proc.onExit =>
-            resolve @spawnProcess(ghcOptions)
+            resolve @spawnProcess(ghcModOptions)
       debug "Found running ghc-modi instance for #{@rootDir.getPath()}"
       return Promise.resolve(@proc)
     debug "Spawning new ghc-modi instance for #{@rootDir.getPath()} with", @options
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
-    @ghcOptions = ghcOptions
-    @proc = new InteractiveProcess(modPath, ghcOptions.concat(['legacy-interactive']), @options, @caps)
+    @ghcModOptions = ghcModOptions
+    @proc = new InteractiveProcess(modPath, ghcModOptions.concat(['legacy-interactive']), @options, @caps)
     @proc.disposables.add @proc.onExit (code) =>
       debug "ghc-modi for #{@rootDir.getPath()} ended with #{code}"
       @proc = null
     return Promise.resolve(@proc)
 
-  runModCmd: ({ghcOptions, command, text, uri, args}) =>
+  runModCmd: ({ghcModOptions, command, text, uri, args}) =>
     modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     result = []
     err = []
     if uri?
-      cmd = ghcOptions.concat([command, uri], args)
+      cmd = ghcModOptions.concat([command, uri], args)
     else
-      cmd = ghcOptions.concat([command], args)
+      cmd = ghcModOptions.concat([command], args)
     if text?
       cmd = ['--map-file', uri].concat cmd
     stdin = "#{text}#{EOT}" if text?
@@ -104,9 +106,9 @@ class GhcModiProcessReal
       stdout.split(EOL).slice(0, -1).map (line) -> line.replace /\0/g, '\n'
 
   runModiCmd: (o) =>
-    {ghcOptions, command, text, uri, args} = o
+    {ghcModOptions, command, text, uri, args} = o
     debug "Trying to run ghc-modi in #{@rootDir.getPath()}"
-    @spawnProcess(ghcOptions)
+    @spawnProcess(ghcModOptions)
     .then (proc) =>
       unless proc
         debug "Failed. Falling back to ghc-mod"

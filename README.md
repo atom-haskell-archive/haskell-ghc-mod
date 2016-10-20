@@ -113,6 +113,7 @@ Config file is a JSON file with the following fields:
 - `"disable"` -- `true`/`false`. Will disable all ghc-mod functions entirely. If omitted, defaults to `false`.
 - `"suppressErrors"` -- `true`/`false`. Will suppress error pop-ups. Those still will be displayed in Atom's console (View → Developer → Toggle Developer Tools), so if someting seems wierd, one could check there.
 - `"ghcOptions"` -- Array of Strings. Options to pass to GHC. Can be useful to explicitly suppress warnings, e.g. `-fno-warn-unused-do-bind` or anything else.
+- `"ghcModOptions"` -- Array of Strings. Arbitrary options to pass to ghc-mod. Bear in mind that you shouldn't *really* change most ghc-mod options, since the package makes some assumptions on that part. Also only global ghc-mod options will work (i.e. no command-specific ones)
 
 Example:
 
@@ -120,7 +121,8 @@ Example:
 {
   "disable": false,
   "suppressErrors": true,
-  "ghcOptions": ["-fno-warn-unused-do-bind", "-fno-warn-name-shadowing"]
+  "ghcOptions": ["-fno-warn-unused-do-bind", "-fno-warn-name-shadowing"],
+  "ghcModOptions": ["--with-ghc", "/path/to/custom/ghc"]
 }
 ```
 

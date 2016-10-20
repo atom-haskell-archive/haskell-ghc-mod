@@ -246,8 +246,9 @@ class GhcModiProcess
         _.extend(glob, loc)
       .then (settings) ->
         throw new Error("Ghc-mod disabled in settings") if settings.disable
-        runArgs.suppressErrors = true if settings.suppressErrors
-        runArgs.ghcOptions = settings.ghcOptions if settings.ghcOptions?
+        runArgs.suppressErrors = settings.suppressErrors
+        runArgs.ghcOptions = settings.ghcOptions
+        runArgs.ghcModOptions = settings.ghcModOptions
       .then ->
         backend.run runArgs
       .catch (err) ->
