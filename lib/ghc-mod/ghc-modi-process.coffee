@@ -217,9 +217,9 @@ class GhcModiProcess
                   dismissable: true
                 reject err
           else
-            reject new Error('.haskell-ghc-mod.json does not exist')
+            reject()
       .catch (error) ->
-        Util.warn error
+        Util.warn error if error?
         return {}
       .then (settings) ->
         if settings.disable then throw new Error("Disable-ghc-mod found")
