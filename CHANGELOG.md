@@ -1,3 +1,8 @@
+## 1.19.0
+* Support for arbitrary ghc-mod options
+* Global configuration; ghcOptions config option
+* Don't spew warnings about missing .haskell-ghc-mod.json
+
 ## 1.18.1
 * Show all candidates on empty prefix
 
