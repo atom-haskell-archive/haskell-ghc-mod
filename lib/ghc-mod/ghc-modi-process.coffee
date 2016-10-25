@@ -19,6 +19,21 @@ class GhcModiProcess
     @bufferDirMap = new WeakMap #TextBuffer -> Directory
     @backend = new Map # FilePath -> Backend
 
+    if process.env.GHC_PACKAGE_PATH? and not atom.config.get('haskell-ghc-mod.suppressGhcPackagePathWarning')
+      atom.notifications.addWarning """
+        haskell-ghc-mod: You have GHC_PACKAGE_PATH environment variable set!
+        """,
+        dismissable: true
+        detail: """
+          This configuration is not supported, and can break arbitrarily. You can try to band-aid it by adding
+           
+          delete process.env.GHC_PACKAGE_PATH
+           
+          to your Atom init script (Edit → Init Script...)
+           
+          You can suppress this warning in haskell-ghc-mod settings.
+          """
+
     @createQueues()
 
   getRootDir: (buffer) ->
@@ -122,6 +137,7 @@ class GhcModiProcess
       typeConstraints: false
       browseParents: false
       interactiveCaseSplit: false
+      importedFrom: false
 
     atLeast = (b) ->
       for v, i in b
@@ -152,10 +168,12 @@ class GhcModiProcess
     if atLeast [5, 5]
       caps.quoteArgs = true
       caps.optparse = true
-    if atLeast([5, 6]) or atom.config.get('haskell-ghc-mod.experimental')
+    if atLeast([5, 6])
       caps.typeConstraints = true
       caps.browseParents = true
       caps.interactiveCaseSplit = true
+    if atLeast([5, 7]) or atom.config.get('haskell-ghc-mod.experimental')
+      caps.importedFrom = true
     Util.debug JSON.stringify(caps)
     return caps
 
