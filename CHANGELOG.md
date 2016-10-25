@@ -1,3 +1,8 @@
+## 1.19.1
+* Add warning about GHC_PACKAGE_PATH;Settings tweaks
+* Fix LICENSE date
+* Update LICENSE
+
 ## 1.19.0
 * Support for arbitrary ghc-mod options
 * Global configuration; ghcOptions config option
