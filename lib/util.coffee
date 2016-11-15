@@ -84,7 +84,7 @@ module.exports = Util =
     Util.debug("Looking for stack sandbox...")
     env.PATH = joinPath(apd)
     Util.debug("Running stack with PATH ", env.PATH)
-    Util.execPromise 'stack', ['path', '--snapshot-install-root', '--local-install-root'],
+    Util.execPromise 'stack', ['path', '--snapshot-install-root', '--local-install-root', '--bin-path'],
       encoding: 'utf-8'
       stdio: 'pipe'
       cwd: rootPath
@@ -94,8 +94,11 @@ module.exports = Util =
       lines = out.split(EOL)
       sir = lines.filter((l) -> l.startsWith('snapshot-install-root: '))[0].slice(23) + "#{sep}bin"
       lir = lines.filter((l) -> l.startsWith('local-install-root: '))[0].slice(20) + "#{sep}bin"
-      Util.debug("Found stack sandbox ", lir, sir)
-      return [lir, sir]
+      bp =
+         lines.filter((l) -> l.startsWith('bin-path: '))[0].slice(10).split(delimiter).filter (p) ->
+           not ((p is sir) or (p is lir) or (p in apd))
+      Util.debug("Found stack sandbox ", lir, sir, bp...)
+      return [lir, sir, bp...]
     .catch (err) ->
       Util.warn("No stack sandbox found because ", err)
 
