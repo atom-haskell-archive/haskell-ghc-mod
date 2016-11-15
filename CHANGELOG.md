@@ -1,3 +1,6 @@
+## 1.19.2
+* Add parts of bin-path to stack-sandbox
+
 ## 1.19.1
 * Add warning about GHC_PACKAGE_PATH;Settings tweaks
 * Fix LICENSE date
