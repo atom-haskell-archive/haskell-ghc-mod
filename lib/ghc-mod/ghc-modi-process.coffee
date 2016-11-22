@@ -381,6 +381,27 @@ class GhcModiProcess
           ]
         replacement: text
 
+  doHoleFill: (buffer, crange) =>
+    return Promise.resolve [] unless buffer.getUri()?
+    crange = Util.tabShiftForRange(buffer, crange)
+    @queueCmd 'typeinfo',
+      interactive: @caps?.interactiveCaseSplit ? false
+      buffer: buffer
+      command: 'auto',
+      uri: buffer.getUri()
+      text: buffer.getText() if buffer.isModified()
+      args: [crange.start.row + 1, crange.start.column + 1]
+    .then (lines) ->
+      return null if lines.length == 0 or lines[1] == ""
+
+      [line_, rowstart, colstart, rowend, colend, text] = lines[0].match(/^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/)
+
+      range: Range.fromObject [
+        [parseInt(rowstart) - 1, parseInt(colstart) - 1],
+        [parseInt(rowend) - 1, parseInt(colend) - 1]
+      ]
+      suggestions: lines[1..]
+
   doSigFill: (buffer, crange) =>
     return Promise.resolve [] unless buffer.getUri()?
     crange = Util.tabShiftForRange(buffer, crange)
