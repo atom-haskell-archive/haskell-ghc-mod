@@ -97,27 +97,27 @@ class UPIConsumer
         if t = atom.config.get('haskell-ghc-mod.onSelectionShow')
           @["#{t}Tooltip"] editor, crange
 
-  checkCommand: ({target}) =>
-    editor = target.getModel()
+  checkCommand: ({currentTarget}) =>
+    editor = currentTarget.getModel()
     @process.doCheckBuffer(editor.getBuffer()).then (res) =>
       @setMessages res, ['error', 'warning']
 
-  lintCommand: ({target}) =>
-    editor = target.getModel()
+  lintCommand: ({currentTarget}) =>
+    editor = currentTarget.getModel()
     @process.doLintBuffer(editor.getBuffer()).then (res) =>
       @setMessages res, ['lint']
 
   tooltipCommand: (tooltipfun) =>
-    ({target, detail}) =>
+    ({currentTarget, detail}) =>
       @upi.showTooltip
-        editor: target.getModel()
+        editor: currentTarget.getModel()
         detail: detail
         tooltip: (crange) ->
-          tooltipfun target.getModel(), crange
+          tooltipfun currentTarget.getModel(), crange
 
-  insertTypeCommand: ({target, detail}) =>
+  insertTypeCommand: ({currentTarget, detail}) =>
     Util = require './util'
-    editor = target.getModel()
+    editor = currentTarget.getModel()
     @upi.withEventRange {editor, detail}, ({crange, pos}) =>
       @process.getTypeInBuffer(editor.getBuffer(), crange)
       .then (o) ->
@@ -138,16 +138,16 @@ class UPIConsumer
           editor.setTextInBufferRange o.range,
             "(#{editor.getTextInBufferRange(o.range)} :: #{type})"
 
-  caseSplitCommand: ({target, detail}) =>
-    editor = target.getModel()
+  caseSplitCommand: ({currentTarget, detail}) =>
+    editor = currentTarget.getModel()
     @upi.withEventRange {editor, detail}, ({crange}) =>
       @process.doCaseSplit(editor.getBuffer(), crange)
       .then (res) ->
         res.forEach ({range, replacement}) ->
           editor.setTextInBufferRange(range, replacement)
 
-  sigFillCommand: ({target, detail}) =>
-    editor = target.getModel()
+  sigFillCommand: ({currentTarget, detail}) =>
+    editor = currentTarget.getModel()
     @upi.withEventRange {editor, detail}, ({crange}) =>
       @process.doSigFill(editor.getBuffer(), crange)
       .then (res) ->
@@ -165,8 +165,8 @@ class UPIConsumer
             for row in newrange.getRows().slice(1)
               editor.setIndentationForBufferRow row, indent
 
-  goToDeclCommand: ({target, detail}) =>
-    editor = target.getModel()
+  goToDeclCommand: ({currentTarget, detail}) =>
+    editor = currentTarget.getModel()
     @upi.withEventRange {editor, detail}, ({crange}) =>
       @process.getInfoInBuffer(editor, crange)
       .then ({range, info}) =>
@@ -178,8 +178,8 @@ class UPIConsumer
           initialLine: parseInt(line) - 1
           initialColumn: parseInt(col) - 1
 
-  insertImportCommand: ({target, detail}) =>
-    editor = target.getModel()
+  insertImportCommand: ({currentTarget, detail}) =>
+    editor = currentTarget.getModel()
     buffer = editor.getBuffer()
     @upi.withEventRange {editor, detail}, ({crange}) =>
       @process.findSymbolProvidersInBuffer editor, crange
