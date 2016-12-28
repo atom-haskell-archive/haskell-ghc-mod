@@ -1,3 +1,6 @@
+## 1.19.3
+* s/target/currentTarget/
+
 ## 1.19.2
 * Add parts of bin-path to stack-sandbox
 
