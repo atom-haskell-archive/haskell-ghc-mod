@@ -54,6 +54,7 @@ class InteractiveProcess
       resultP =
         new Promise (resolve, reject) =>
           savedLines = []
+          chunks = []
           exitCallback = null
           parseData = null
           timer = null
@@ -63,8 +64,8 @@ class InteractiveProcess
             clearTimeout timer if timer?
           parseData = (data) ->
             debug "Got response from ghc-modi:#{EOL}#{data}"
-            lines = data.split(EOL)
-            savedLines = savedLines.concat lines
+            chunks.push data
+            savedLines = chunks.join('').split(EOL)
             result = savedLines[savedLines.length - 2]
             if result is 'OK'
               cleanup()
