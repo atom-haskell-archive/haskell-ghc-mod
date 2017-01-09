@@ -1,3 +1,6 @@
+## 1.19.4
+* Make interactive-process output buffering more robust
+
 ## 1.19.3
 * s/target/currentTarget/
 
