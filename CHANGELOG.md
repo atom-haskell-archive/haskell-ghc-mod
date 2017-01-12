@@ -1,3 +1,8 @@
+## 1.19.5
+* Merge remote-tracking branch 'origin/atom-1.13'
+* s/target/currentTarget/
+* Atom 1.13 update
+
 ## 1.19.4
 * Make interactive-process output buffering more robust
 
