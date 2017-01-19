@@ -1,3 +1,6 @@
+## 1.19.6
+* Ghc-mod 5.7 is a maintenance release, no new features
+
 ## 1.19.5
 * Merge remote-tracking branch 'origin/atom-1.13'
 * s/target/currentTarget/
