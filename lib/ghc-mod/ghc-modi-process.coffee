@@ -172,7 +172,7 @@ class GhcModiProcess
       caps.typeConstraints = true
       caps.browseParents = true
       caps.interactiveCaseSplit = true
-    if atLeast([5, 7]) or atom.config.get('haskell-ghc-mod.experimental')
+    if atom.config.get('haskell-ghc-mod.experimental')
       caps.importedFrom = true
     Util.debug JSON.stringify(caps)
     return caps
