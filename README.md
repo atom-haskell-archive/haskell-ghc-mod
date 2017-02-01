@@ -25,6 +25,7 @@ $ cabal install ghc-mod
 ```
 
 After this process finishes, you'll have `ghc-mod`, `ghc-modi` and `hlint` available in `$HOME/.cabal/bin/` directory.
+
 Note for Mac users: on OSX cabal install files into `$HOME/Library/Haskell/bin`
 
 Please note, that for ghc>=7.10 and/or cabal>=1.22, you need ghc-mod>=5.3.0.0. ghc-mod versions before 5.3.0.0 won't work.
