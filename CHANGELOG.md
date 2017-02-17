@@ -1,3 +1,6 @@
+## 1.19.7
+* Fix #198
+
 ## 1.19.6
 * Ghc-mod 5.7 is a maintenance release, no new features
 
