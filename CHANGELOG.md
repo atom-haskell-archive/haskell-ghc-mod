@@ -1,5 +1,8 @@
 ## 1.19.7
+* Merge branch 'master' of github.com:atom-haskell/haskell-ghc-mod
+* Update CHANGELOG
 * Fix #198
+* [README] Additional note for OS X users (#195) (Maciej Aleksandrowicz)
 
 ## 1.19.6
 * Ghc-mod 5.7 is a maintenance release, no new features
