@@ -204,6 +204,42 @@ class GhcModiProcess
   onQueueIdle: (callback) =>
     @emitter.on 'queue-idle', callback
 
+  getSettings: (runDir) ->
+    readSettings = (file) ->
+      new Promise (resolve, reject) ->
+        file.exists()
+        .then (ex) ->
+          if ex
+            file.read().then (contents) ->
+              try
+                resolve JSON.parse(contents)
+              catch err
+                atom.notifications.addError "Failed to parse #{file.getPath()}",
+                  detail: err
+                  dismissable: true
+                reject err
+          else
+            reject()
+      .catch (error) ->
+        Util.warn error if error?
+        return {}
+
+    localSettings = readSettings runDir.getFile('.haskell-ghc-mod.json')
+
+    [projectDir] = atom.project.getDirectories().filter (d) -> d.contains(runDir.getPath())
+    projectSettings =
+      if projectDir?
+        readSettings projectDir.getFile('.haskell-ghc-mod.json')
+      else
+        Promise.resolve({})
+
+    configDir = new Directory(atom.getConfigDirPath())
+    globalSettings = readSettings(configDir.getFile('haskell-ghc-mod.json'))
+
+    Promise.all [globalSettings, projectSettings, localSettings]
+    .then ([glob, prj, loc]) ->
+      _.extend(glob, prj, loc)
+
   queueCmd: (queueName, runArgs, backend) =>
     unless runArgs.buffer? or runArgs.dir?
       throw new Error ("Neither dir nor buffer is set in queueCmd invocation")
@@ -221,47 +257,7 @@ class GhcModiProcess
       q.getQueueLength() + q.getPendingLength() is 0
     promise = @commandQueues[queueName].add =>
       @emitter.emit 'backend-active'
-      rd = runArgs.dir or Util.getRootDir(runArgs.options.cwd)
-      localSettings = new Promise (resolve, reject) ->
-        file = rd.getFile('.haskell-ghc-mod.json')
-        file.exists()
-        .then (ex) ->
-          if ex
-            file.read().then (contents) ->
-              try
-                resolve JSON.parse(contents)
-              catch err
-                atom.notifications.addError 'Failed to parse .haskell-ghc-mod.json',
-                  detail: err
-                  dismissable: true
-                reject err
-          else
-            reject()
-      .catch (error) ->
-        Util.warn error if error?
-        return {}
-      globalSettings = new Promise (resolve, reject) ->
-        configDir = new Directory(atom.getConfigDirPath())
-        file = configDir.getFile('haskell-ghc-mod.json')
-        file.exists()
-        .then (ex) ->
-          if ex
-            file.read().then (contents) ->
-              try
-                resolve JSON.parse(contents)
-              catch err
-                atom.notifications.addError 'Failed to parse haskell-ghc-mod.json',
-                  detail: err
-                  dismissable: true
-                reject err
-          else
-            reject()
-      .catch (error) ->
-        Util.warn error if error?
-        return {}
-      Promise.all [globalSettings, localSettings]
-      .then ([glob, loc]) ->
-        _.extend(glob, loc)
+      @getSettings(runArgs.dir)
       .then (settings) ->
         throw new Error("Ghc-mod disabled in settings") if settings.disable
         runArgs.suppressErrors = settings.suppressErrors
