@@ -108,6 +108,8 @@ In some cases, it could be useful to disable ghc-mod completely for a given proj
 
 You can create `.haskell-ghc-mod.json` file in project root (i.e. directory containing a `*.cabal` file, or -- in case of plain projects -- Atom's project root directory).
 
+`.haskell-ghc-mod.json` from Atom project root will also be honored, if it exists, with lower priority.
+
 You can also create a global config file in `${ATOM_CONFIG_DIR}/haskell-ghc-mod.json`. `${ATOM_CONFIG_DIR}` is usually `${HOME}/.atom`, but you can check it's path by running `atom.getConfigDirPath()` in Atom's developer console (View → Developer → Toggle Developer Tools → Console).
 
 Config file is a JSON file with the following fields:
