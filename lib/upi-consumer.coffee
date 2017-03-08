@@ -15,9 +15,11 @@ class UPIConsumer
     'haskell-ghc-mod:lint-file': @lintCommand
 
   mainMenu:
-    [
+    label: 'ghc-mod'
+    menu: [
       {label: 'Check', command: 'haskell-ghc-mod:check-file'}
       {label: 'Lint', command: 'haskell-ghc-mod:lint-file'}
+      {label: 'Stop Backend', command: 'haskell-ghc-mod:shutdown-backend'}
     ]
 
   contextCommands: ->
@@ -50,38 +52,29 @@ class UPIConsumer
   process: null
 
   constructor: (service, @process) ->
-    @upi = service.registerPlugin @disposables = new CompositeDisposable
-    @upi.setMessageTypes @messageTypes
-
-    @disposables.add atom.commands.add @contextScope, @contextCommands()
-
-    @upi.onShouldShowTooltip @shouldShowTooltip
+    @disposables = new CompositeDisposable
+    @disposables.add service.consume
+      name: 'haskell-ghc-mod'
+      menu: @mainMenu
+      messageTypes: @messageTypes
+      tooltipEvent: @shouldShowTooltip
+      events:
+        onDidSaveBuffer: (buffer) =>
+          @checkLint buffer, 'Save'
+        onDidStopChanging: (buffer) =>
+          @checkLint buffer, 'Change', true
+      consumer: (@upi) =>
 
     @disposables.add @process.onBackendActive =>
-      @upi.setStatus status: 'progress'
+      @upi.messages.status status: 'progress'
 
     @disposables.add @process.onBackendIdle =>
-      @upi.setStatus status: 'ready'
+      @upi.messages.status status: 'ready'
 
+    @disposables.add atom.commands.add @contextScope, @contextCommands()
     cm = {}
     cm[@contextScope] = [@contextMenu]
     @disposables.add atom.contextMenu.add cm
-
-    unless atom.config.get 'haskell-ghc-mod.useLinter'
-      @disposables.add atom.commands.add @contextScope, @globalCommands()
-      @upi.setMenu 'ghc-mod', @mainMenu
-      @disposables.add @upi.onDidSaveBuffer (buffer) =>
-        @checkLint buffer, 'Save'
-      @disposables.add @upi.onDidStopChanging (buffer) =>
-        @checkLint buffer, 'Change', true
-    else
-      @upi.setMenu 'ghc-mod', [
-        {label: 'Check', command: 'linter:lint'}
-      ]
-
-    @upi.setMenu 'ghc-mod', [
-      {label: 'Stop Backend', command: 'haskell-ghc-mod:shutdown-backend'}
-    ]
 
   destroy: ->
     @disposables.dispose()
@@ -109,7 +102,7 @@ class UPIConsumer
 
   tooltipCommand: (tooltipfun) =>
     ({currentTarget, detail}) =>
-      @upi.showTooltip
+      @upi.tooltips.show
         editor: currentTarget.getModel()
         detail: detail
         tooltip: (crange) ->
@@ -118,7 +111,7 @@ class UPIConsumer
   insertTypeCommand: ({currentTarget, detail}) =>
     Util = require './util'
     editor = currentTarget.getModel()
-    @upi.withEventRange {editor, detail}, ({crange, pos}) =>
+    @upi.utils.withEventRange {editor, detail}, ({crange, pos}) =>
       @process.getTypeInBuffer(editor.getBuffer(), crange)
       .then (o) ->
         {type} = o
@@ -140,7 +133,7 @@ class UPIConsumer
 
   caseSplitCommand: ({currentTarget, detail}) =>
     editor = currentTarget.getModel()
-    @upi.withEventRange {editor, detail}, ({crange}) =>
+    @upi.utils.withEventRange {editor, detail}, ({crange}) =>
       @process.doCaseSplit(editor.getBuffer(), crange)
       .then (res) ->
         res.forEach ({range, replacement}) ->
@@ -148,7 +141,7 @@ class UPIConsumer
 
   sigFillCommand: ({currentTarget, detail}) =>
     editor = currentTarget.getModel()
-    @upi.withEventRange {editor, detail}, ({crange}) =>
+    @upi.utils.withEventRange {editor, detail}, ({crange}) =>
       @process.doSigFill(editor.getBuffer(), crange)
       .then (res) ->
         res.forEach ({type, range, body}) ->
@@ -167,7 +160,7 @@ class UPIConsumer
 
   goToDeclCommand: ({currentTarget, detail}) =>
     editor = currentTarget.getModel()
-    @upi.withEventRange {editor, detail}, ({crange}) =>
+    @upi.utils.withEventRange {editor, detail}, ({crange}) =>
       @process.getInfoInBuffer(editor, crange)
       .then ({range, info}) =>
         res = /.*-- Defined at (.+):(\d+):(\d+)/.exec info
@@ -181,7 +174,7 @@ class UPIConsumer
   insertImportCommand: ({currentTarget, detail}) =>
     editor = currentTarget.getModel()
     buffer = editor.getBuffer()
-    @upi.withEventRange {editor, detail}, ({crange}) =>
+    @upi.utils.withEventRange {editor, detail}, ({crange}) =>
       @process.findSymbolProvidersInBuffer editor, crange
       .then (lines) ->
         new ImportListView
@@ -270,7 +263,7 @@ class UPIConsumer
       (m) -> m
 
   setMessages: (messages, types) ->
-    @upi.setMessages messages.map(@setHighlighter()), types
+    @upi.messages.set messages.map(@setHighlighter()), types
 
   checkLint: (buffer, opt, fast) ->
     if atom.config.get("haskell-ghc-mod.on#{opt}Check") and

@@ -32,7 +32,7 @@
     "ide-haskell-upi": {
       "description": "Uses ide-haskell's unified pluggable interface",
       "versions": {
-        "0.0.1": "consumeUPI"
+        "^0.3.0": "consumeUPI"
       }
     }
   },
