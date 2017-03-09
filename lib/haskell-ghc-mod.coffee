@@ -143,7 +143,7 @@ module.exports = HaskellGhcMod =
     experimental:
       type: 'boolean'
       default: false
-      description: 'Enable experimentai features, which are expected to land in
+      description: 'Enable experimental features, which are expected to land in
                     next release of ghc-mod. ENABLE ONLY IF YOU KNOW WHAT YOU
                     ARE DOING'
       order: 999
