@@ -42,11 +42,6 @@
       "versions": {
         "1.0.0": "provideCompletionBackend"
       }
-    },
-    "linter": {
-      "versions": {
-        "1.0.0": "provideLinter"
-      }
     }
   }
 }
