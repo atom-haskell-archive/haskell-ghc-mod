@@ -53,23 +53,25 @@ class UPIConsumer
 
   constructor: (service, @process) ->
     @disposables = new CompositeDisposable
-    @disposables.add service.consume
+
+    @upi = service.register
       name: 'haskell-ghc-mod'
       menu: @mainMenu
       messageTypes: @messageTypes
-      tooltipEvent: @shouldShowTooltip
+      tooltip: @shouldShowTooltip
       events:
         onDidSaveBuffer: (buffer) =>
           @checkLint buffer, 'Save'
         onDidStopChanging: (buffer) =>
           @checkLint buffer, 'Change', true
-      consumer: (@upi) =>
+
+    @disposables.add(@upi)
 
     @disposables.add @process.onBackendActive =>
-      @upi.messages.status status: 'progress'
+      @upi.setStatus status: 'progress'
 
     @disposables.add @process.onBackendIdle =>
-      @upi.messages.status status: 'ready'
+      @upi.setStatus status: 'ready'
 
     @disposables.add atom.commands.add @contextScope, @contextCommands()
     cm = {}
@@ -102,7 +104,7 @@ class UPIConsumer
 
   tooltipCommand: (tooltipfun) =>
     ({currentTarget, detail}) =>
-      @upi.tooltips.show
+      @upi.showTooltip
         editor: currentTarget.getModel()
         detail: detail
         tooltip: (crange) ->
@@ -111,91 +113,91 @@ class UPIConsumer
   insertTypeCommand: ({currentTarget, detail}) =>
     Util = require './util'
     editor = currentTarget.getModel()
-    @upi.utils.withEventRange {editor, detail}, ({crange, pos}) =>
-      @process.getTypeInBuffer(editor.getBuffer(), crange)
-      .then (o) ->
-        {type} = o
-        {scope, range, symbol} = Util.getSymbolAtPoint editor, pos
-        if editor.getTextInBufferRange(o.range).match(/[=]/)?
-          indent = editor.getTextInBufferRange([[o.range.start.row, 0], o.range.start])
-          symbol = "(#{symbol})" if scope is 'keyword.operator.haskell'
-          birdTrack = ''
-          if 'meta.embedded.haskell' in editor.scopeDescriptorForBufferPosition(pos).getScopesArray()
-            birdTrack = indent.slice 0, 2
-            indent = indent.slice(2)
-          if indent.match(/\S/)?
-            indent = indent.replace /\S/g, ' '
-          editor.setTextInBufferRange [o.range.start, o.range.start],
-            "#{symbol} :: #{type}\n#{birdTrack}#{indent}"
-        else if not scope? #neither operator nor infix
-          editor.setTextInBufferRange o.range,
-            "(#{editor.getTextInBufferRange(o.range)} :: #{type})"
+    {crange, pos} = @upi.getEventRange(editor, detail)
+    @process.getTypeInBuffer(editor.getBuffer(), crange)
+    .then (o) ->
+      {type} = o
+      {scope, range, symbol} = Util.getSymbolAtPoint editor, pos
+      if editor.getTextInBufferRange(o.range).match(/[=]/)?
+        indent = editor.getTextInBufferRange([[o.range.start.row, 0], o.range.start])
+        symbol = "(#{symbol})" if scope is 'keyword.operator.haskell'
+        birdTrack = ''
+        if 'meta.embedded.haskell' in editor.scopeDescriptorForBufferPosition(pos).getScopesArray()
+          birdTrack = indent.slice 0, 2
+          indent = indent.slice(2)
+        if indent.match(/\S/)?
+          indent = indent.replace /\S/g, ' '
+        editor.setTextInBufferRange [o.range.start, o.range.start],
+          "#{symbol} :: #{type}\n#{birdTrack}#{indent}"
+      else if not scope? #neither operator nor infix
+        editor.setTextInBufferRange o.range,
+          "(#{editor.getTextInBufferRange(o.range)} :: #{type})"
 
   caseSplitCommand: ({currentTarget, detail}) =>
     editor = currentTarget.getModel()
-    @upi.utils.withEventRange {editor, detail}, ({crange}) =>
-      @process.doCaseSplit(editor.getBuffer(), crange)
-      .then (res) ->
-        res.forEach ({range, replacement}) ->
-          editor.setTextInBufferRange(range, replacement)
+    {crange} = @upi.getEventRange(editor, detail)
+    @process.doCaseSplit(editor.getBuffer(), crange)
+    .then (res) ->
+      res.forEach ({range, replacement}) ->
+        editor.setTextInBufferRange(range, replacement)
 
   sigFillCommand: ({currentTarget, detail}) =>
     editor = currentTarget.getModel()
-    @upi.utils.withEventRange {editor, detail}, ({crange}) =>
-      @process.doSigFill(editor.getBuffer(), crange)
-      .then (res) ->
-        res.forEach ({type, range, body}) ->
-          sig = editor.getTextInBufferRange(range)
-          indent = editor.indentLevelForLine(sig)
-          pos = range.end
-          text = "\n#{body}"
-          editor.transact ->
-            if type is 'instance'
-              indent += 1
-              unless sig.endsWith ' where'
-                editor.setTextInBufferRange([range.end, range.end], ' where')
-            newrange = editor.setTextInBufferRange([pos, pos], text)
-            for row in newrange.getRows().slice(1)
-              editor.setIndentationForBufferRow row, indent
+    {crange} = @upi.getEventRange(editor, detail)
+    @process.doSigFill(editor.getBuffer(), crange)
+    .then (res) ->
+      res.forEach ({type, range, body}) ->
+        sig = editor.getTextInBufferRange(range)
+        indent = editor.indentLevelForLine(sig)
+        pos = range.end
+        text = "\n#{body}"
+        editor.transact ->
+          if type is 'instance'
+            indent += 1
+            unless sig.endsWith ' where'
+              editor.setTextInBufferRange([range.end, range.end], ' where')
+          newrange = editor.setTextInBufferRange([pos, pos], text)
+          for row in newrange.getRows().slice(1)
+            editor.setIndentationForBufferRow row, indent
 
   goToDeclCommand: ({currentTarget, detail}) =>
     editor = currentTarget.getModel()
-    @upi.utils.withEventRange {editor, detail}, ({crange}) =>
-      @process.getInfoInBuffer(editor, crange)
-      .then ({range, info}) =>
-        res = /.*-- Defined at (.+):(\d+):(\d+)/.exec info
-        return unless res?
-        [_, fn, line, col] = res
-        rootDir = @process.getRootDir(editor.getBuffer())
-        atom.workspace.open (try rootDir.getFile(fn).getPath() ? fn),
-          initialLine: parseInt(line) - 1
-          initialColumn: parseInt(col) - 1
+    {crange} = @upi.getEventRange(editor, detail)
+    @process.getInfoInBuffer(editor, crange)
+    .then ({range, info}) =>
+      res = /.*-- Defined at (.+):(\d+):(\d+)/.exec info
+      return unless res?
+      [_, fn, line, col] = res
+      rootDir = @process.getRootDir(editor.getBuffer())
+      atom.workspace.open (try rootDir.getFile(fn).getPath() ? fn),
+        initialLine: parseInt(line) - 1
+        initialColumn: parseInt(col) - 1
 
   insertImportCommand: ({currentTarget, detail}) =>
     editor = currentTarget.getModel()
     buffer = editor.getBuffer()
-    @upi.utils.withEventRange {editor, detail}, ({crange}) =>
-      @process.findSymbolProvidersInBuffer editor, crange
-      .then (lines) ->
-        new ImportListView
-          items: lines
-          onConfirmed: (mod) ->
-            piP = new Promise (resolve) ->
-              buffer.backwardsScan /^(\s*)(import|module)/, ({match, range, stop}) ->
-                resolve
-                  pos: buffer.rangeForRow(range.start.row).end
-                  indent:
-                    switch match[2]
-                      when "import"
-                        "\n" + match[1]
-                      when "module"
-                        "\n\n" + match[1]
+    {crange} = @upi.getEventRange(editor, detail)
+    @process.findSymbolProvidersInBuffer editor, crange
+    .then (lines) ->
+      new ImportListView
+        items: lines
+        onConfirmed: (mod) ->
+          piP = new Promise (resolve) ->
+            buffer.backwardsScan /^(\s*)(import|module)/, ({match, range, stop}) ->
               resolve
-                pos: buffer.getFirstPosition()
-                indent: ""
-                end: "\n"
-            piP.then (pi) ->
-              editor.setTextInBufferRange [pi.pos, pi.pos], "#{pi.indent}import #{mod}#{pi.end ? ''}"
+                pos: buffer.rangeForRow(range.start.row).end
+                indent:
+                  switch match[2]
+                    when "import"
+                      "\n" + match[1]
+                    when "module"
+                      "\n\n" + match[1]
+            resolve
+              pos: buffer.getFirstPosition()
+              indent: ""
+              end: "\n"
+          piP.then (pi) ->
+            editor.setTextInBufferRange [pi.pos, pi.pos], "#{pi.indent}import #{mod}#{pi.end ? ''}"
 
   typeTooltip: (e, p) =>
     @process.getTypeInBuffer(e.getBuffer(), p)
@@ -263,7 +265,7 @@ class UPIConsumer
       (m) -> m
 
   setMessages: (messages, types) ->
-    @upi.messages.set messages.map(@setHighlighter()), types
+    @upi.setMessages messages.map(@setHighlighter())
 
   checkLint: (buffer, opt, fast) ->
     if atom.config.get("haskell-ghc-mod.on#{opt}Check") and
