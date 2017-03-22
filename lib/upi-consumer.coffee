@@ -51,10 +51,10 @@ class UPIConsumer
   upi: null
   process: null
 
-  constructor: (service, @process) ->
+  constructor: (register, @process) ->
     @disposables = new CompositeDisposable
 
-    @upi = service.register
+    @upi = register
       name: 'haskell-ghc-mod'
       menu: @mainMenu
       messageTypes: @messageTypes
