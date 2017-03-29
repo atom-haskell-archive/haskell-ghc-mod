@@ -1,3 +1,9 @@
+## 1.19.8
+* Provide name to linter
+* Typo
+* Readme update
+* Refactor .json advanced settings; add project settings
+
 ## 1.19.7
 * Merge branch 'master' of github.com:atom-haskell/haskell-ghc-mod
 * Update CHANGELOG
