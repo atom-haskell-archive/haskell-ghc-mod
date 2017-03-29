@@ -205,10 +205,10 @@ module.exports = HaskellGhcMod =
       scope: 'file'
       lintOnFly: false
       lint: (textEditor) =>
-        return unless @process?
-        return unless atom.config.get("haskell-ghc-mod.#{enabledConf}") or
+        return [] unless @process?
+        return [] unless atom.config.get("haskell-ghc-mod.#{enabledConf}") or
           atom.config.get("haskell-ghc-mod.#{lintOnFly}")
-        return if textEditor.isEmpty()
+        return [] if textEditor.isEmpty()
         @process[func](textEditor.getBuffer(), lintOnFly).then (res) ->
           res.map ({uri, position, message, severity}) ->
             [message, messages...] = message.split /^(?!\s)/gm
