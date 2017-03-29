@@ -200,6 +200,7 @@ module.exports = HaskellGhcMod =
       enabledConf: 'onSaveLint'
     ].map ({func, lintOnFly, enabledConf}) =>
       linter =
+      name: 'haskell-ghc-mod'
       grammarScopes: ['source.haskell', 'text.tex.latex.haskell']
       scope: 'file'
       lintOnFly: false
