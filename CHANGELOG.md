@@ -1,3 +1,6 @@
+## 1.19.9
+* Always return an array in linter code
+
 ## 1.19.8
 * Provide name to linter
 * Typo
