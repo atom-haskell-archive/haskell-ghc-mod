@@ -110,13 +110,6 @@ module.exports = HaskellGhcMod =
       default: ''
       enum: tooltipActions
       order: 30
-    useLinter:
-      type: 'boolean'
-      default: false
-      description: 'Use \'linter\' package instead of \'ide-haskell\'
-                    to display check and lint results
-                    (requires restart)'
-      order: 75
     maxBrowseProcesses:
       type: 'integer'
       default: 2
@@ -187,43 +180,3 @@ module.exports = HaskellGhcMod =
         upiConsumer.destroy()
     @disposables.add upiConsumerDisp
     return upiConsumerDisp
-
-  provideLinter: ->
-    return unless atom.config.get 'haskell-ghc-mod.useLinter'
-    [
-      func: 'doCheckBuffer'
-      lintOnFly: 'onChangeCheck'
-      enabledConf: 'onSaveCheck'
-    ,
-      func: 'doLintBuffer'
-      lintOnFly: 'onChangeLint'
-      enabledConf: 'onSaveLint'
-    ].map ({func, lintOnFly, enabledConf}) =>
-      linter =
-      name: 'haskell-ghc-mod'
-      grammarScopes: ['source.haskell', 'text.tex.latex.haskell']
-      scope: 'file'
-      lintOnFly: false
-      lint: (textEditor) =>
-        return [] unless @process?
-        return [] unless atom.config.get("haskell-ghc-mod.#{enabledConf}") or
-          atom.config.get("haskell-ghc-mod.#{lintOnFly}")
-        return [] if textEditor.isEmpty()
-        @process[func](textEditor.getBuffer(), lintOnFly).then (res) ->
-          res.map ({uri, position, message, severity}) ->
-            [message, messages...] = message.split /^(?!\s)/gm
-            {
-              type: severity
-              text: message.replace(/\n+$/, '')
-              filePath: uri
-              range: [position, position.translate [0, 1]]
-              trace: messages.map (text) ->
-                type: 'trace'
-                text: text.replace(/\n+$/, '')
-            }
-
-      # TODO: Rewrite this horribleness
-      atom.config.observe "haskell-ghc-mod.#{lintOnFly}", (value) ->
-        linter.lintOnFly = value
-
-      return linter

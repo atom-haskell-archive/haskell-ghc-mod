@@ -32,7 +32,7 @@
     "ide-haskell-upi": {
       "description": "Uses ide-haskell's unified pluggable interface",
       "versions": {
-        "0.0.1": "consumeUPI"
+        "^0.3.0": "consumeUPI"
       }
     }
   },
@@ -41,11 +41,6 @@
       "description": "Implements general haskell-completion-backend spec",
       "versions": {
         "1.0.0": "provideCompletionBackend"
-      }
-    },
-    "linter": {
-      "versions": {
-        "1.0.0": "provideLinter"
       }
     }
   }
