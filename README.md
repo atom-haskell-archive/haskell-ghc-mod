@@ -1,5 +1,7 @@
 # haskell-ghc-mod atom package
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/atom-haskell/haskell-ghc-mod.svg)](https://greenkeeper.io/)
+
 This package is primarily intended as backend for [ide-haskell](https://atom.io/packages/ide-haskell).
 
 Haskell ghc-mod opens pipe to ghc-modi and queries types, info and checks
