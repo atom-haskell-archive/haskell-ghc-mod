@@ -35,7 +35,8 @@ export class GhcModiProcess {
   private emitter: Emitter
   private bufferDirMap: WeakMap<AtomTypes.TextBuffer, AtomTypes.Directory>
   private commandQueues: {[K in Commands]: Queue}
-  private caps: GHCModCaps
+  private caps: Promise<GHCModCaps>
+  private resolveCapsPromise: (val: GHCModCaps) => void
 
   constructor () {
     this.disposables = new CompositeDisposable()
@@ -43,6 +44,7 @@ export class GhcModiProcess {
     this.disposables.add(this.emitter)
     this.bufferDirMap = new WeakMap()
     this.backend = new Map()
+    this.caps = new Promise((resolve) => this.resolveCapsPromise = resolve)
 
     if (process.env.GHC_PACKAGE_PATH && !atom.config.get('haskell-ghc-mod.suppressGhcPackagePathWarning')) {
       atom.notifications.addWarning(`\
@@ -121,18 +123,19 @@ You can suppress this warning in haskell-ghc-mod settings.\
   }
 
   public async runBrowse (rootDir: AtomTypes.Directory, modules: string[]): Promise<SymbolDesc[]> {
+    const caps = await this.resolveCaps(rootDir)
+    if (caps.browseMain === false) {
+      modules = modules.filter((v) => v !== 'Main')
+    }
+    if (modules.length === 0) { return [] }
     const lines = await this.queueCmd('browse', rootDir, {
       command: 'browse',
-      dashArgs (caps) {
-        const args = ['-d']
-        if (caps.browseParents) { args.push('-p') }
-        return args
-      },
+      dashArgs: caps.browseParents ? ['-d', '-p'] : ['-d'],
       args: modules
     })
     return lines.map((s) => {
       // enumFrom :: Enum a => a -> [a] -- from:Enum
-      const pattern = this.caps.browseParents ? /^(.*?) :: (.*?)(?: -- from:(.*))?$/ : /^(.*?) :: (.*)$/
+      const pattern = caps.browseParents ? /^(.*?) :: (.*?)(?: -- from:(.*))?$/ : /^(.*?) :: (.*)$/
       const match = s.match(pattern)
       let name, typeSignature, parent
       if (match) {
@@ -159,14 +162,14 @@ You can suppress this warning in haskell-ghc-mod settings.\
   )  {
     if (! buffer.getUri()) { throw new Error('No URI for buffer') }
     crange = Util.tabShiftForRange(buffer, crange)
-    const lines = await this.queueCmd('typeinfo', await this.getRootDir(buffer), {
+    const rootDir = await this.getRootDir(buffer)
+    const caps = await this.resolveCaps(rootDir)
+    const lines = await this.queueCmd('typeinfo', rootDir, {
       interactive: true,
       command: 'type',
       uri: buffer.getUri(),
       text: buffer.isModified() ? buffer.getText() : undefined,
-      dashArgs (caps) {
-        return caps.typeConstraints ? ['-c'] : []
-      },
+      dashArgs: caps.typeConstraints ? ['-c'] : [],
       args: [crange.start.row + 1, crange.start.column + 1].map((v) => v.toString())
     })
 
@@ -193,8 +196,10 @@ You can suppress this warning in haskell-ghc-mod settings.\
   public async doCaseSplit (buffer: AtomTypes.TextBuffer, crange: AtomTypes.Range) {
     if (! buffer.getUri()) { throw new Error('No URI for buffer') }
     crange = Util.tabShiftForRange(buffer, crange)
-    const lines = await this.queueCmd('typeinfo', await this.getRootDir(buffer), {
-      interactive: this.caps.interactiveCaseSplit,
+    const rootDir = await this.getRootDir(buffer)
+    const caps = await this.resolveCaps(rootDir)
+    const lines = await this.queueCmd('typeinfo', rootDir, {
+      interactive: caps.interactiveCaseSplit,
       command: 'split',
       uri: buffer.getUri(),
       text: buffer.isModified() ? buffer.getText() : undefined,
@@ -225,8 +230,10 @@ You can suppress this warning in haskell-ghc-mod settings.\
   public async doSigFill (buffer: AtomTypes.TextBuffer, crange: AtomTypes.Range) {
     if (! buffer.getUri()) { throw new Error('No URI for buffer') }
     crange = Util.tabShiftForRange(buffer, crange)
-    const lines = await this.queueCmd('typeinfo', await this.getRootDir(buffer), {
-      interactive: this.caps.interactiveCaseSplit,
+    const rootDir = await this.getRootDir(buffer)
+    const caps = await this.resolveCaps(rootDir)
+    const lines = await this.queueCmd('typeinfo', rootDir, {
+      interactive: caps.interactiveCaseSplit,
       command: 'sig',
       uri: buffer.getUri(),
       text: buffer.isModified() ? buffer.getText() : undefined,
@@ -310,8 +317,8 @@ You can suppress this warning in haskell-ghc-mod settings.\
       versP.then((v) => { this.checkComp(opts, v) })
       const vers = await versP
 
-      this.caps = await this.getCaps(vers)
-      const backend = new GhcModiProcessReal(this.caps, rootDir, opts)
+      this.resolveCapsPromise(await this.getCaps(vers))
+      const backend = new GhcModiProcessReal(await this.resolveCaps(rootDir), rootDir, opts)
       return backend
     } catch (err) {
       atom.notifications.addFatalError(
@@ -395,8 +402,13 @@ problems when using Cabal or Plain projects`
     }
   }
 
-  private getCaps ({ vers }: {vers: number[]}) {
-    const caps = {
+  private async resolveCaps (rootDir: AtomTypes.Directory): Promise<GHCModCaps> {
+    this.initBackend(rootDir)
+    return this.caps
+  }
+
+  private getCaps ({ vers }: {vers: number[]}): GHCModCaps {
+    const caps: GHCModCaps = {
       version: vers,
       fileMap: false,
       quoteArgs: false,
@@ -404,7 +416,8 @@ problems when using Cabal or Plain projects`
       typeConstraints: false,
       browseParents: false,
       interactiveCaseSplit: false,
-      importedFrom: false
+      importedFrom: false,
+      browseMain: false
     }
 
     const atLeast = (b: number[]) => {
@@ -505,7 +518,7 @@ Use at your own risk or update your ghc-mod installation`,
     dir: AtomTypes.Directory,
     runArgs: {
       command: string, text?: string, uri?: string, interactive?: boolean,
-      dashArgs?: string[] | ((caps: GHCModCaps) => string[]), args?: string[]
+      dashArgs?: string[], args?: string[]
     }
   ): Promise<string[]> {
     if (atom.config.get('haskell-ghc-mod.lowMemorySystem')) {

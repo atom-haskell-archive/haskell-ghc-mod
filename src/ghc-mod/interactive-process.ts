@@ -21,7 +21,8 @@ export interface GHCModCaps {
   typeConstraints: boolean,
   browseParents: boolean,
   interactiveCaseSplit: boolean,
-  importedFrom: boolean
+  importedFrom: boolean,
+  browseMain: boolean
 }
 
 export class InteractiveProcess {
@@ -44,6 +45,7 @@ export class InteractiveProcess {
     this.proc = CP.spawn(path, cmd, options)
     this.proc.stdout.setEncoding('utf-8')
     this.proc.stderr.setEncoding('utf-8')
+    this.proc.setMaxListeners(100)
     this.proc.stdout.setMaxListeners(100)
     this.proc.stderr.setMaxListeners(100)
     this.resetTimer()

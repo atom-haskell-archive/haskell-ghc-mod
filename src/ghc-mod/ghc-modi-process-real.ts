@@ -20,7 +20,7 @@ export interface RunArgs {
   command: string
   text?: string
   uri?: string
-  dashArgs?: string[] | ((caps: GHCModCaps) => string[])
+  dashArgs?: string[]
   args?: string[]
   suppressErrors?: boolean
   ghcOptions?: string[]
@@ -57,9 +57,6 @@ export class GhcModiProcessReal {
     ghcModOptions = ghcModOptions.concat(...ghcOptions.map((opt) => ['--ghc-option', opt]))
     if (atom.config.get('haskell-ghc-mod.lowMemorySystem')) {
       interactive = atom.config.get('haskell-ghc-mod.enableGhcModi')
-    }
-    if (typeof(dashArgs) === 'function') {
-      dashArgs = dashArgs(this.caps)
     }
     if (this.caps.optparse) {
       args = dashArgs.concat(['--']).concat(args)

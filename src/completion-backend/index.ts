@@ -25,11 +25,11 @@ export class CompletionBackend {
   private isActive: boolean
 
   constructor (private process: GhcModiProcess) {
-    this.bufferMap = new WeakMap() // buffer => BufferInfo
-    this.dirMap = new WeakMap() // dir => Map ModuleName ModuleInfo
-    this.modListMap = new WeakMap() // dir => [ModuleName]
-    this.languagePragmas = new WeakMap() // dir => pragmas
-    this.compilerOptions = new WeakMap() // dir => options
+    this.bufferMap = new WeakMap()
+    this.dirMap = new WeakMap()
+    this.modListMap = new WeakMap()
+    this.languagePragmas = new WeakMap()
+    this.compilerOptions = new WeakMap()
 
     // compatibility with old clients
     this.name = this.name.bind(this)
@@ -85,6 +85,7 @@ export class CompletionBackend {
     }
 
     const { bufferInfo } = this.getBufferInfo({ buffer })
+
     setImmediate(async () => {
       const { rootDir, moduleMap } = await this.getModuleMap({ bufferInfo })
 
@@ -400,15 +401,6 @@ export class CompletionBackend {
       moduleInfo = new ModuleInfo(moduleName, this.process, rootDir)
       moduleMap.set(moduleName, moduleInfo)
 
-      if (bufferInfo) {
-        moduleInfo.setBuffer(bufferInfo, rootDir)
-      } else {
-        for (const editor of atom.workspace.getTextEditors()) {
-          const bis = this.getBufferInfo({buffer: editor.getBuffer()})
-          moduleInfo.setBuffer(bis.bufferInfo, rootDir)
-        }
-      }
-
       const mn = moduleName
       moduleInfo.onDidDestroy(() => {
         moduleMap.delete(mn)
@@ -416,6 +408,7 @@ export class CompletionBackend {
       })
       await moduleInfo.initialUpdatePromise
     }
+    moduleInfo.setBuffer(bufferInfo)
     return {bufferInfo, rootDir, moduleMap, moduleInfo, moduleName}
   }
 

@@ -21,11 +21,13 @@ export class ModuleInfo {
   private emitter: Emitter
   private timeout: NodeJS.Timer
   private invalidateInterval = 30 * 60 * 1000 // if module unused for 30 minutes, remove it
+  private bufferSet: WeakSet<AtomTypes.TextBuffer>
 
-  constructor (private name: string, private process: GhcModiProcess, rootDir: AtomTypes.Directory) {
+  constructor (private name: string, private process: GhcModiProcess, private rootDir: AtomTypes.Directory) {
     Util.debug(`${this.name} created`)
     this.symbols = []
     this.disposables = new CompositeDisposable()
+    this.bufferSet = new WeakSet()
     this.emitter = new Emitter()
     this.disposables.add(this.emitter)
     this.initialUpdatePromise = this.update(rootDir)
@@ -44,20 +46,23 @@ export class ModuleInfo {
     return this.emitter.on('did-destroy', callback)
   }
 
-  public async setBuffer (bufferInfo: BufferInfo, rootDir: AtomTypes.Directory) {
-    const bufferRootDir = await this.process.getRootDir(bufferInfo.buffer) || await Util.getRootDir(bufferInfo.buffer)
-    if (rootDir.getPath() !== bufferRootDir.getPath()) { return }
+  public async setBuffer (bufferInfo: BufferInfo) {
     const name = await bufferInfo.getModuleName()
-    if (name !== this.name) {
-      Util.debug(`${this.name} moduleName mismatch: ${name} != ${this.name}`)
-      return
-    }
+    if (name !== this.name) { return }
+    if (this.bufferSet.has(bufferInfo.buffer)) { return }
+    this.bufferSet.add(bufferInfo.buffer)
     Util.debug(`${this.name} buffer is set`)
-    this.disposables.add(bufferInfo.onDidSave(() => {
+    const disposables = new CompositeDisposable()
+    disposables.add(bufferInfo.buffer.onDidSave(() => {
       Util.debug(`${this.name} did-save triggered`)
-      this.update(rootDir)
+      this.update(this.rootDir)
     }))
-    this.disposables.add(bufferInfo.onDidDestroy(this.unsetBuffer.bind(this)))
+    disposables.add(bufferInfo.buffer.onDidDestroy(() => {
+      disposables.dispose()
+      this.bufferSet.delete(bufferInfo.buffer)
+      this.disposables.remove(disposables)
+    }))
+    this.disposables.add(disposables)
   }
 
   public select (importDesc: IImport, symbolTypes?: SymbolType[], skipQualified: boolean = false) {
@@ -108,10 +113,5 @@ export class ModuleInfo {
     Util.debug(`${this.name} updating`)
     this.symbols = await this.process.runBrowse(rootDir, [this.name])
     Util.debug(`${this.name} updated`)
-  }
-
-  private unsetBuffer () {
-    this.disposables.dispose()
-    this.disposables = new CompositeDisposable()
   }
 }
