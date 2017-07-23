@@ -12,7 +12,7 @@
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 import { CompositeDisposable, Range } from 'atom'
-import {GhcModiProcess} from './ghc-mod/ghc-modi-process'
+import {GhcModiProcess} from './ghc-mod'
 import {importListView} from './views/import-list-view'
 import Util = require('./util')
 

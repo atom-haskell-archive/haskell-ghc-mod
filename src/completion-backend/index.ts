@@ -13,7 +13,7 @@ import * as FZ from 'fuzzaldrin'
 import { Disposable, Range } from 'atom'
 import {BufferInfo} from './buffer-info'
 import {ModuleInfo} from './module-info'
-import {GhcModiProcess, SymbolType} from '../ghc-mod/ghc-modi-process'
+import {GhcModiProcess, SymbolType} from '../ghc-mod'
 import * as Util from '../util'
 
 export class CompletionBackend {

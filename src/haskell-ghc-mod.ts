@@ -5,9 +5,9 @@
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-import {GhcModiProcess} from './ghc-mod/ghc-modi-process'
+import {GhcModiProcess} from './ghc-mod'
 import {CompositeDisposable, Disposable} from 'atom'
-import {CompletionBackend} from './completion-backend/completion-backend'
+import {CompletionBackend} from './completion-backend'
 import {UPIConsumer} from './upi-consumer'
 
 let process: GhcModiProcess | undefined

@@ -10,9 +10,9 @@
  */
 import { CompositeDisposable, Emitter } from 'atom'
 import * as Util from '../util'
-import {GhcModiProcess} from '../ghc-mod/ghc-modi-process'
+import {GhcModiProcess} from '../ghc-mod'
 import {BufferInfo, IImport} from './buffer-info'
-import {SymbolDesc, SymbolType} from '../ghc-mod/ghc-modi-process'
+import {SymbolDesc, SymbolType} from '../ghc-mod'
 
 export class ModuleInfo {
   public readonly initialUpdatePromise: Promise<void>
