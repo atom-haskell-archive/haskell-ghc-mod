@@ -44,6 +44,8 @@ export class InteractiveProcess {
     this.proc = CP.spawn(path, cmd, options)
     this.proc.stdout.setEncoding('utf-8')
     this.proc.stderr.setEncoding('utf-8')
+    this.proc.stdout.setMaxListeners(100)
+    this.proc.stderr.setMaxListeners(100)
     this.resetTimer()
     this.proc.once('exit', (code) => {
       this.timer && clearTimeout(this.timer)
