@@ -196,7 +196,7 @@ ${Util.getDebugLog()}\
     cmd.push(...args)
     const {stdout, stderr} = await Util.execPromise(modPath, cmd, this.options, stdin)
     return  {
-      stdout: stdout.split('\n'),
+      stdout: stdout.split('\n').slice(0, -1),
       stderr: stderr.split('\n')
     }
   }

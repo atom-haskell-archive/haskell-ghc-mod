@@ -349,6 +349,6 @@ export function tabUnshiftForRange (buffer: AtomTypes.TextBuffer, range: AtomTyp
   return new Range(start, end)
 }
 
-export function isUpperCase (ch: string | undefined): boolean {
-  return !!ch && (ch.toUpperCase() === ch)
+export function isUpperCase (ch: string): boolean {
+  return ch.toUpperCase() === ch
 }
