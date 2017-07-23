@@ -30,7 +30,7 @@ export interface SymbolDesc {
 }
 
 export class GhcModiProcess {
-  private backend: Map<string, GhcModiProcessReal>
+  private backend: Map<string, Promise<GhcModiProcessReal>>
   private disposables: CompositeDisposable
   private emitter: Emitter
   private bufferDirMap: WeakMap<AtomTypes.TextBuffer, AtomTypes.Directory>
@@ -78,14 +78,14 @@ You can suppress this warning in haskell-ghc-mod settings.\
 
   public killProcess () {
     for (const bp of this.backend.values()) {
-      bp.killProcess()
+      bp.then((b) => b.killProcess())
     }
     this.backend.clear()
   }
 
   public destroy () {
     for (const bp of this.backend.values()) {
-      bp.destroy()
+      bp.then((b) => b.destroy())
     }
     this.backend.clear()
     this.emitter.emit('did-destroy')
@@ -297,17 +297,21 @@ You can suppress this warning in haskell-ghc-mod settings.\
   private async initBackend (rootDir: AtomTypes.Directory): Promise<GhcModiProcessReal> {
     const rootPath = rootDir.getPath()
     const cached = this.backend.get(rootPath)
-    if (cached) { return cached }
+    if (cached) { return await cached }
+    const newBackend = this.initBackendReal(rootDir)
+    this.backend.set(rootPath, newBackend)
+    return await newBackend
+  }
 
+  private async initBackendReal (rootDir: AtomTypes.Directory): Promise<GhcModiProcessReal> {
     try {
-      const opts = await Util.getProcessOptions(rootPath)
+      const opts = await Util.getProcessOptions(rootDir.getPath())
       const versP = this.getVersion(opts)
       versP.then((v) => { this.checkComp(opts, v) })
       const vers = await versP
 
       this.caps = await this.getCaps(vers)
       const backend = new GhcModiProcessReal(this.caps, rootDir, opts)
-      this.backend.set(rootPath, backend)
       return backend
     } catch (err) {
       atom.notifications.addFatalError(

@@ -86,7 +86,7 @@ export class InteractiveProcess {
         })
         const readOutput = async () => {
           for await (const line of this.readgen(this.proc.stdout, isEnded)) {
-            debug(`Got response from ghc-modi:${EOL}${data}`)
+            debug(`Got response from ghc-modi: ${line}`)
             if (line === 'OK') {
               ended = true
             } else {

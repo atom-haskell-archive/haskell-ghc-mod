@@ -81,21 +81,20 @@ export class CompletionBackend {
   */
   public registerCompletionBuffer (buffer: AtomTypes.TextBuffer) {
     if (this.bufferMap.has(buffer)) {
-      return new Disposable(() => {/* void */})
+      return new Disposable(() => { /* void */ })
     }
 
+    const { bufferInfo } = this.getBufferInfo({ buffer })
     setImmediate(async () => {
-      const {bufferInfo} = this.getBufferInfo({buffer})
+      const { rootDir, moduleMap } = await this.getModuleMap({ bufferInfo })
 
-      const {rootDir, moduleMap} = await this.getModuleMap({bufferInfo})
-
-      this.getModuleInfo({bufferInfo, rootDir, moduleMap})
+      this.getModuleInfo({ bufferInfo, rootDir, moduleMap })
 
       return bufferInfo.getImports()
-      .then((imports) =>
-        imports.forEach(async ({name}) =>
-          this.getModuleInfo({moduleName: name, bufferInfo, rootDir, moduleMap})))
-  })
+        .then((imports) =>
+          imports.forEach(async ({ name }) =>
+            this.getModuleInfo({ moduleName: name, bufferInfo, rootDir, moduleMap })))
+    })
 
     return new Disposable(() =>
       this.unregisterCompletionBuffer(buffer))
@@ -420,7 +419,7 @@ export class CompletionBackend {
     return {bufferInfo, rootDir, moduleMap, moduleInfo, moduleName}
   }
 
-  private filter<T, K extends keyof T> (candidates: T[], prefix: string, keys: K[]) {
+  private filter<T, K extends keyof T> (candidates: T[], prefix: string, keys: K[]): T[] {
     if (!prefix) {
       return candidates
     }
@@ -449,6 +448,6 @@ export class CompletionBackend {
           return a.scoreN - b.scoreN
         }
         return s
-      })
+      }).map(({data}) => data)
   }
 }
