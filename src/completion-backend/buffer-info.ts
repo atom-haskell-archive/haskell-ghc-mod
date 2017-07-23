@@ -15,7 +15,7 @@ export class BufferInfo {
   private oldText: string = ''
   private oldImports: IModuleImports = { name: 'Main', imports: [] }
 
-  constructor (public buffer: AtomTypes.TextBuffer) {
+  constructor (public readonly buffer: AtomTypes.TextBuffer) {
     this.disposables = new CompositeDisposable()
     this.disposables.add(this.buffer.onDidDestroy(this.destroy.bind(this)))
   }

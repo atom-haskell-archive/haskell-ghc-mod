@@ -91,10 +91,10 @@ export class CompletionBackend {
 
       this.getModuleInfo({ bufferInfo, rootDir, moduleMap })
 
-      return bufferInfo.getImports()
-        .then((imports) =>
-          imports.forEach(async ({ name }) =>
-            this.getModuleInfo({ moduleName: name, bufferInfo, rootDir, moduleMap })))
+      const imports = await bufferInfo.getImports()
+      for (const imprt of imports) {
+        this.getModuleInfo({ moduleName: imprt.name, bufferInfo, rootDir, moduleMap })
+      }
     })
 
     return new Disposable(() =>
