@@ -20,11 +20,9 @@ import { GhcModiProcessReal, GHCModCaps } from './ghc-modi-process-real'
 
 type Commands = 'checklint' | 'browse' | 'typeinfo' | 'find' | 'init' | 'list' | 'lowmem'
 
-export type SymbolType = 'type' | 'class' | 'function' | 'operator' | 'tag'
-
 export interface SymbolDesc {
   name: string,
-  symbolType: SymbolType,
+  symbolType: UPI.CompletionBackend.SymbolType,
   typeSignature?: string,
   parent?: string
 }
@@ -145,7 +143,7 @@ You can suppress this warning in haskell-ghc-mod settings.\
       } else {
         name = s
       }
-      let symbolType: SymbolType
+      let symbolType: UPI.CompletionBackend.SymbolType
       if (typeSignature && /^(?:type|data|newtype)/.test(typeSignature)) {
         symbolType = 'type'
       } else if (typeSignature && /^(?:class)/.test(typeSignature)) {
