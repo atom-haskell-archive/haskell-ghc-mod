@@ -13,7 +13,7 @@ import * as FS from 'fs'
 import * as CP from 'child_process'
 import { EOL } from 'os'
 import {getRootDirFallback, getRootDir, isDirectory} from 'atom-haskell-utils'
-import { RunOptions } from './ghc-mod/ghc-modi-process-real'
+import { RunOptions, IErrorCallbackArgs } from './ghc-mod/ghc-modi-process-real'
 
 type ExecOpts = CP.ExecFileOptionsWithStringEncoding
 export {getRootDirFallback, getRootDir, isDirectory, ExecOpts}
@@ -265,7 +265,12 @@ export async function withTempFile<T> (contents: string, uri: string, gen: (path
     }))
 }
 
-export function mkError (name: string, message: string) {
+export type KnownErrorName =
+    'GHCModStdoutError'
+  | 'InteractiveActionTimeout'
+  | 'GHCModInteractiveCrash'
+
+export function mkError (name: KnownErrorName, message: string) {
   const err = new Error(message)
   err.name = name
   return err
@@ -351,4 +356,107 @@ export function tabUnshiftForRange (buffer: AtomTypes.TextBuffer, range: AtomTyp
 
 export function isUpperCase (ch: string): boolean {
   return ch.toUpperCase() === ch
+}
+
+export function getErrorDetail ({err, runArgs, caps}: IErrorCallbackArgs) {
+  return `caps:
+${JSON.stringify(caps, undefined, 2)}
+Args:
+${JSON.stringify(runArgs, undefined, 2)}
+message:
+${err.message}
+log:
+${getDebugLog()}`
+}
+
+export function formatError ({err, runArgs, caps}: IErrorCallbackArgs) {
+  if (err.name === 'InteractiveActionTimeout' && runArgs) {
+      return `\
+Haskell-ghc-mod: ghc-mod \
+${runArgs.interactive ? 'interactive ' : ''}command ${runArgs.command} \
+timed out. You can try to fix it by raising 'Interactive Action \
+Timeout' setting in haskell-ghc-mod settings.`
+  } else if (runArgs) {
+    return `\
+Haskell-ghc-mod: ghc-mod \
+${runArgs.interactive ? 'interactive ' : ''}command ${runArgs.command} \
+failed with error ${err.name}`
+  } else {
+    return `There was an unexpected error ${err.name}`
+  }
+}
+
+export function defaultErrorHandler (args: IErrorCallbackArgs) {
+  const {err, runArgs, caps} = args
+  const suppressErrors = runArgs && runArgs.suppressErrors
+
+  if (!suppressErrors) {
+    atom.notifications.addError(
+      formatError(args),
+      {
+        detail: getErrorDetail(args),
+        stack: err.stack,
+        dismissable: true
+      }
+    )
+  } else {
+    // tslint:disable-next-line: no-console
+    console.error(caps, runArgs, err)
+  }
+}
+
+export function warnGHCPackagePath () {
+  atom.notifications.addWarning(
+    'haskell-ghc-mod: You have GHC_PACKAGE_PATH environment variable set!',
+    {
+      dismissable: true,
+      detail: `\
+This configuration is not supported, and can break arbitrarily. You can try to band-aid it by adding
+
+delete process.env.GHC_PACKAGE_PATH
+
+to your Atom init script (Edit → Init Script...)
+
+You can suppress this warning in haskell-ghc-mod settings.`
+    }
+  )
+}
+
+function filterEnv (env: {[name: string]: string | undefined}) {
+  const fenv = {}
+  // tslint:disable-next-line: forin
+  for (const evar in env) {
+    const evarU = evar.toUpperCase()
+    if (
+         evarU === 'PATH'
+      || evarU.startsWith('GHC_')
+      || evarU.startsWith('STACK_')
+      || evarU.startsWith('CABAL_')
+    ) {
+      fenv[evar] = env[evar]
+    }
+  }
+  return fenv
+}
+
+export function notifySpawnFail (args: {dir: string, err: any, opts: any, vers: any, caps: any}) {
+  const optsclone = JSON.parse(JSON.stringify(args.opts))
+  optsclone.env = filterEnv(optsclone.env)
+  args.opts = optsclone
+  atom.notifications.addFatalError(
+    `Haskell-ghc-mod: ghc-mod failed to launch.
+It is probably missing or misconfigured. ${args.err.code}`,
+    {
+      detail: `\
+Error was: ${args.err.name}
+${args.err.message}
+Debug information:
+${JSON.stringify(args, undefined, 2)}
+Environment (filtered):
+${JSON.stringify(filterEnv(process.env), undefined, 2)}
+`,
+      stack: args.err.stack,
+      dismissable: true
+    }
+  )
 }

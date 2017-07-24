@@ -34,10 +34,18 @@ export interface RunOptions {
   maxBuffer: number
 }
 
+export interface IErrorCallbackArgs {
+  runArgs?: RunArgs
+  err: Error
+  caps: GHCModCaps
+}
+
 export class GhcModiProcessReal {
   private disposables: CompositeDisposable
   private emitter: MyEmitter<{
     'did-destroy': undefined
+    'warning': string
+    'error': IErrorCallbackArgs
   }>
   private ghcModOptions: string[]
   private proc: InteractiveProcess | undefined
@@ -49,8 +57,10 @@ export class GhcModiProcessReal {
   }
 
   public async run (
-    {interactive, command, text, uri, dashArgs, args, suppressErrors, ghcOptions, ghcModOptions}: RunArgs
+    runArgs: RunArgs
   ) {
+    let {interactive, dashArgs, args, suppressErrors, ghcOptions, ghcModOptions} = runArgs
+    const {command, text, uri} = runArgs
     if (! args) { args = [] }
     if (! dashArgs) { dashArgs = [] }
     if (! suppressErrors) { suppressErrors = false }
@@ -82,54 +92,12 @@ export class GhcModiProcessReal {
       }
       const {stdout, stderr} = await res
       if (stderr.join('').length) {
-        atom.notifications.addWarning('ghc-mod warning', {
-          detail: stderr.join('\n')
-        })
+        this.emitter.emit('warning', stderr.join('\n'))
       }
       return stdout.map((line) => line.replace(/\0/g, '\n'))
     } catch (err) {
       debug(err)
-      if (err.name === 'InteractiveActionTimeout') {
-        atom.notifications.addError(
-          `\
-Haskell-ghc-mod: ghc-mod \
-${interactive ? 'interactive ' : ''}command ${command} \
-timed out. You can try to fix it by raising 'Interactive Action \
-Timeout' setting in haskell-ghc-mod settings.`,
-          {
-            detail: `\
-caps: ${JSON.stringify(this.caps)}
-URI: ${uri}
-Args: ${command} ${dashArgs} -- ${args}
-message: ${err.message}\
-`,
-            stack: err.stack,
-            dismissable: true
-          }
-        )
-      } else if (!suppressErrors) {
-        atom.notifications.addFatalError(
-          `\
-Haskell-ghc-mod: ghc-mod \
-${interactive ? 'interactive ' : ''}command ${command} \
-failed with error ${err.name}`,
-          {
-            detail: `\
-caps: ${JSON.stringify(this.caps)}
-URI: ${uri}
-Args: ${args}
-message: ${err.message}
-log:
-${Util.getDebugLog()}\
-`,
-            stack: err.stack,
-            dismissable: true
-          }
-        )
-      } else {
-        // tslint:disable-next-line: no-console
-        console.error(err)
-      }
+      this.emitter.emit('error', {runArgs, err, caps: this.caps})
       return []
     }
   }
@@ -148,6 +116,14 @@ ${Util.getDebugLog()}\
 
   public onDidDestroy (callback: () => void) {
     return this.emitter.on('did-destroy', callback)
+  }
+
+  public onWarning (callback: (warning: string) => void) {
+    return this.emitter.on('warning', callback)
+  }
+
+  public onError (callback: (error: IErrorCallbackArgs) => void) {
+    return this.emitter.on('error', callback)
   }
 
   private async spawnProcess (ghcModOptions: string[]): Promise<InteractiveProcess | undefined> {

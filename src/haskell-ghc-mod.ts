@@ -9,9 +9,11 @@ import {GhcModiProcess} from './ghc-mod'
 import {CompositeDisposable, Disposable} from 'atom'
 import {CompletionBackend} from './completion-backend'
 import {UPIConsumer} from './upi-consumer'
+import {defaultErrorHandler} from './util'
 
 let process: GhcModiProcess | undefined
 let disposables: CompositeDisposable | undefined
+let tempDisposables: CompositeDisposable | undefined
 let completionBackend: CompletionBackend | undefined
 
 export {config} from './config'
@@ -19,10 +21,21 @@ export {config} from './config'
 export function activate (state: never) {
   process = new GhcModiProcess()
   disposables = new CompositeDisposable()
+  tempDisposables = new CompositeDisposable()
+  disposables.add(tempDisposables)
 
-  disposables.add(atom.commands.add('atom-workspace', {
-    'haskell-ghc-mod:shutdown-backend': () => process && process.killProcess()
-  }))
+  tempDisposables.add(
+    process.onError(defaultErrorHandler),
+    process.onWarning((detail: string) => {
+      atom.notifications.addWarning('ghc-mod warning', {detail})
+    }),
+  )
+
+  disposables.add(
+    atom.commands.add('atom-workspace', {
+      'haskell-ghc-mod:shutdown-backend': () => process && process.killProcess()
+    })
+  )
 }
 
 export function deactivate () {
@@ -41,6 +54,7 @@ export function provideCompletionBackend () {
 
 export function consumeUPI (service: UPI.IUPIRegistration) {
   if (!process || !disposables) { return }
+  tempDisposables && tempDisposables.dispose()
   const upiConsumer = new UPIConsumer(service, process)
   const upiConsumerDisp =
     new Disposable(() => upiConsumer.destroy())

@@ -16,7 +16,9 @@ import { extname } from 'path'
 import Queue = require('promise-queue')
 import { unlit } from 'atom-haskell-utils'
 
-import { GhcModiProcessReal, GHCModCaps } from './ghc-modi-process-real'
+import { GhcModiProcessReal, GHCModCaps, RunArgs, RunOptions, IErrorCallbackArgs } from './ghc-modi-process-real'
+
+export {IErrorCallbackArgs, RunArgs, GHCModCaps}
 
 type Commands = 'checklint' | 'browse' | 'typeinfo' | 'find' | 'init' | 'list' | 'lowmem'
 
@@ -32,6 +34,8 @@ export class GhcModiProcess {
   private disposables: CompositeDisposable
   private emitter: MyEmitter<{
     'did-destroy': undefined
+    'warning': string
+    'error': IErrorCallbackArgs
     'backend-active': void
     'backend-idle': void
     'queue-idle': { queue: Commands }
@@ -50,21 +54,7 @@ export class GhcModiProcess {
     this.caps = new Promise((resolve) => this.resolveCapsPromise = resolve)
 
     if (process.env.GHC_PACKAGE_PATH && !atom.config.get('haskell-ghc-mod.suppressGhcPackagePathWarning')) {
-      atom.notifications.addWarning(`\
-haskell-ghc-mod: You have GHC_PACKAGE_PATH environment variable set!\
-`,                                  {
-          dismissable: true,
-          detail: `\
-This configuration is not supported, and can break arbitrarily. You can try to band-aid it by adding
-
-delete process.env.GHC_PACKAGE_PATH
-
-to your Atom init script (Edit → Init Script...)
-
-You can suppress this warning in haskell-ghc-mod settings.\
-`
-        }
-      )
+      Util.warnGHCPackagePath()
     }
 
     this.createQueues()
@@ -99,6 +89,14 @@ You can suppress this warning in haskell-ghc-mod settings.\
 
   public onDidDestroy (callback: () => void) {
     return this.emitter.on('did-destroy', callback)
+  }
+
+  public onWarning (callback: (warning: string) => void) {
+    return this.emitter.on('warning', callback)
+  }
+
+  public onError (callback: (error: IErrorCallbackArgs) => void) {
+    return this.emitter.on('error', callback)
   }
 
   public onBackendActive (callback: () => void) {
@@ -318,31 +316,23 @@ You can suppress this warning in haskell-ghc-mod settings.\
   }
 
   private async initBackendReal (rootDir: AtomTypes.Directory): Promise<GhcModiProcessReal> {
+    let opts, vers, caps
     try {
-      const opts = await Util.getProcessOptions(rootDir.getPath())
+      opts = await Util.getProcessOptions(rootDir.getPath())
       const versP = this.getVersion(opts)
-      versP.then((v) => { this.checkComp(opts, v) })
-      const vers = await versP
-
-      this.resolveCapsPromise(await this.getCaps(vers))
+      const bopts = opts
+      versP.then((v) => { this.checkComp(bopts, v) })
+      vers = await versP
+      caps = await this.getCaps(vers)
+      this.resolveCapsPromise(caps)
       const backend = new GhcModiProcessReal(await this.resolveCaps(rootDir), rootDir, opts)
+      this.disposables.add(
+        backend.onError((arg) => this.emitter.emit('error', arg)),
+        backend.onWarning((arg) => this.emitter.emit('warning', arg))
+      )
       return backend
     } catch (err) {
-      atom.notifications.addFatalError(
-        `\
-Haskell-ghc-mod: ghc-mod failed to launch.
-It is probably missing or misconfigured. ${err.code}`,
-        {
-          detail: `\
-${err}
-PATH: ${process.env.PATH}
-path: ${process.env.path}
-Path: ${process.env.Path}\
-`,
-          stack: err.stack,
-          dismissable: true
-        }
-      )
+      Util.notifySpawnFail({dir: rootDir.getPath(), err, opts, vers, caps})
       throw err
     }
   }
@@ -622,10 +612,10 @@ Use at your own risk or update your ghc-mod installation`,
       const [file2, row, col, warning, message] = match.slice(1)
       if (file2 === 'Dummy' && row === '0' && col === '0') {
         if (warning === 'Error') {
-          atom.notifications.addError(message)
+          this.emitter.emit('error', {err: Util.mkError('GHCModStdoutError', message), caps: await this.caps})
           continue
         } else if (warning === 'Warning') {
-          atom.notifications.addWarning(message)
+          this.emitter.emit('warning', message)
           continue
         }
       }

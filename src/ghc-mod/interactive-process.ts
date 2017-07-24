@@ -104,7 +104,7 @@ export class InteractiveProcess {
         const exitEvent = async () => new Promise<never>((resolve, reject) => {
           this.proc.once('exit', (code) => {
             warn(stdout)
-            reject(mkError('ghc-modi crashed', `${stdout}\n\n${stderr}`))
+            reject(mkError('GHCModInteractiveCrash', `${stdout}\n\n${stderr}`))
           })
         })
         const timeoutEvent = async () => new Promise<never>((resolve, reject) => {

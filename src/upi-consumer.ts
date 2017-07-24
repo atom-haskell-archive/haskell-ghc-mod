@@ -12,14 +12,18 @@
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 import { CompositeDisposable, Range } from 'atom'
-import {GhcModiProcess} from './ghc-mod'
+import {GhcModiProcess, IErrorCallbackArgs} from './ghc-mod'
 import {importListView} from './views/import-list-view'
 import Util = require('./util')
 
 const messageTypes = {
-  error: {},
-  warning: {},
-  lint: {}
+  'error': {},
+  'warning': {},
+  'lint': {},
+  'ghc-mod': {
+    uriFilter: false,
+    autoScroll: true
+  }
 }
 
 const contextScope = 'atom-text-editor[data-grammar~="haskell"]'
@@ -35,8 +39,9 @@ const mainMenu = {
 
 export class UPIConsumer {
   private upi: UPI.IUPIInstance
-  private process: GhcModiProcess
-  private disposables: CompositeDisposable
+  private disposables: CompositeDisposable = new CompositeDisposable()
+  private processMessages: UPI.IResultItem[] = []
+  private lastMessages: UPI.IResultItem[] = []
 
   private contextCommands = {
     'haskell-ghc-mod:show-type': this.tooltipCommand(this.typeTooltip.bind(this)),
@@ -74,9 +79,11 @@ export class UPIConsumer {
       ]
   }
 
-  constructor (register: UPI.IUPIRegistration, process: GhcModiProcess) {
-    this.process = process
-    this.disposables = new CompositeDisposable()
+  constructor (register: UPI.IUPIRegistration, private process: GhcModiProcess) {
+    this.disposables.add(
+      this.process.onError(this.handleProcessError.bind(this)),
+      this.process.onWarning(this.handleProcessWarning.bind(this)),
+    )
 
     this.upi = register({
       name: 'haskell-ghc-mod',
@@ -340,7 +347,12 @@ export class UPIConsumer {
   }
 
   private setMessages (messages: UPI.IResultItem[]) {
-    return this.upi.setMessages(messages.map(this.setHighlighter()))
+    this.lastMessages = messages.map(this.setHighlighter())
+    this.sendMessages()
+  }
+
+  private sendMessages () {
+    this.upi.setMessages(this.processMessages.concat(this.lastMessages))
   }
 
   private async checkLint (buffer: AtomTypes.TextBuffer, opt: 'Save' | 'Change', fast: boolean = false) {
@@ -355,5 +367,25 @@ export class UPIConsumer {
     if (res) {
       this.setMessages(res)
     }
+  }
+
+  private handleProcessError (arg: IErrorCallbackArgs) {
+    this.processMessages.push({
+      message: Util.formatError(arg)
+        + '\n\nSee console (View → Developer → Toggle Developer Tools → Console tab) for details.',
+      severity: 'ghc-mod'
+    })
+    // tslint:disable-next-line: no-console
+    console.error(Util.formatError(arg), Util.getErrorDetail(arg))
+    this.sendMessages()
+  }
+
+  private handleProcessWarning (warning: string) {
+    this.processMessages.push({
+      message: warning,
+      severity: 'ghc-mod'
+    })
+    Util.warn(warning)
+    this.sendMessages()
   }
 }
