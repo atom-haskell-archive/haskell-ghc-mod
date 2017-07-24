@@ -1,15 +1,3 @@
-/*
- * decaffeinate suggestions:
- * DS101: Remove unnecessary use of Array.from
- * DS102: Remove unnecessary code created because of implicit returns
- * DS103: Rewrite code to no longer use __guard__
- * DS104: Avoid inline assignments
- * DS201: Simplify complex destructure assignments
- * DS205: Consider reworking code to avoid use of IIFEs
- * DS206: Consider reworking classes to avoid initClass
- * DS207: Consider shorter variations of null checks
- * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
- */
 import { Range, Point, Emitter, CompositeDisposable, Directory } from 'atom'
 import * as Util from '../util'
 import { extname } from 'path'
@@ -496,7 +484,7 @@ Use at your own risk or update your ghc-mod installation`,
 
     const localSettings = readSettings(runDir.getFile('.haskell-ghc-mod.json'))
 
-    const [projectDir] = Array.from(atom.project.getDirectories().filter((d) => d.contains(runDir.getPath())))
+    const [projectDir] = atom.project.getDirectories().filter((d) => d.contains(runDir.getPath()))
     const projectSettings =
       projectDir ?
         readSettings(projectDir.getFile('.haskell-ghc-mod.json'))

@@ -1,10 +1,3 @@
-/*
- * decaffeinate suggestions:
- * DS101: Remove unnecessary use of Array.from
- * DS102: Remove unnecessary code created because of implicit returns
- * DS207: Consider shorter variations of null checks
- * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
- */
 import { Emitter, CompositeDisposable, Directory } from 'atom'
 import * as CP from 'child_process'
 import {InteractiveProcess, GHCModCaps} from './interactive-process'
@@ -145,7 +138,7 @@ export class GhcModiProcessReal {
     this.proc = new InteractiveProcess(modPath, ghcModOptions.concat(['legacy-interactive']), this.options, this.caps)
     this.proc.onceExit((code) => {
       debug(`ghc-modi for ${this.rootDir.getPath()} ended with ${code}`)
-      return this.proc = undefined
+      this.proc = undefined
     })
     return this.proc
   }

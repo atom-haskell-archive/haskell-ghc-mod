@@ -1,16 +1,3 @@
-/*
- * decaffeinate suggestions:
- * DS101: Remove unnecessary use of Array.from
- * DS102: Remove unnecessary code created because of implicit returns
- * DS103: Rewrite code to no longer use __guard__
- * DS104: Avoid inline assignments
- * DS201: Simplify complex destructure assignments
- * DS204: Change includes calls to have a more natural evaluation order
- * DS205: Consider reworking code to avoid use of IIFEs
- * DS206: Consider reworking classes to avoid initClass
- * DS207: Consider shorter variations of null checks
- * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
- */
 import { CompositeDisposable, Range } from 'atom'
 import {GhcModiProcess, IErrorCallbackArgs} from './ghc-mod'
 import {importListView} from './views/import-list-view'
@@ -113,7 +100,9 @@ export class UPIConsumer {
     this.disposables.dispose()
   }
 
-  private shouldShowTooltip (editor: AtomTypes.TextEditor, crange: AtomTypes.Range, type: UPI.TEventRangeType) {
+  private async shouldShowTooltip (
+    editor: AtomTypes.TextEditor, crange: AtomTypes.Range, type: UPI.TEventRangeType
+  ): Promise<UPI.ITooltipData | undefined> {
       if (type === 'mouse') {
         const t = atom.config.get('haskell-ghc-mod.onMouseHoverShow')
         if (t) {
@@ -130,13 +119,13 @@ export class UPIConsumer {
   private async checkCommand ({currentTarget}: IEventDesc) {
     const editor = currentTarget.getModel()
     const res = await this.process.doCheckBuffer(editor.getBuffer())
-    return this.setMessages(res)
+    this.setMessages(res)
   }
 
   private async lintCommand ({currentTarget}: IEventDesc) {
     const editor = currentTarget.getModel()
     const res = await this.process.doLintBuffer(editor.getBuffer())
-    return this.setMessages(res)
+    this.setMessages(res)
   }
 
   private tooltipCommand (tooltipfun: (e: AtomTypes.TextEditor, p: AtomTypes.Range) => Promise<UPI.ITooltipData>) {
@@ -170,10 +159,12 @@ export class UPIConsumer {
       if (indent.match(/\S/)) {
         indent = indent.replace(/\S/g, ' ')
       }
-      return editor.setTextInBufferRange([range.start, range.start],
-                                         `${symbol} :: ${type}\n${birdTrack}${indent}`)
+      editor.setTextInBufferRange(
+        [range.start, range.start],
+        `${symbol} :: ${type}\n${birdTrack}${indent}`
+      )
     } else if (!scope) { // neither operator nor infix
-      return editor.setTextInBufferRange(range, `(${editor.getTextInBufferRange(range)} :: ${type})`)
+      editor.setTextInBufferRange(range, `(${editor.getTextInBufferRange(range)} :: ${type})`)
     }
   }
 
@@ -208,7 +199,7 @@ export class UPIConsumer {
         }
       }
       const newrange = editor.setTextInBufferRange([pos, pos], text)
-      return newrange.getRows().slice(1).map((row) =>
+      newrange.getRows().slice(1).map((row) =>
         editor.setIndentationForBufferRow(row, indent))
     })
   }
@@ -225,7 +216,7 @@ export class UPIConsumer {
     const rootDir = await this.process.getRootDir(editor.getBuffer())
     if (!rootDir) { return }
     const uri = rootDir.getFile(fn).getPath() || fn
-    return atom.workspace.open(uri, {
+    atom.workspace.open(uri, {
         initialLine: parseInt(line, 10) - 1,
         initialColumn: parseInt(col, 10) - 1
       }

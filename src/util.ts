@@ -1,11 +1,3 @@
-/*
- * decaffeinate suggestions:
- * DS102: Remove unnecessary code created because of implicit returns
- * DS201: Simplify complex destructure assignments
- * DS207: Consider shorter variations of null checks
- * DS208: Avoid top-level this
- * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
- */
 import { Range, Point, Directory } from 'atom'
 import { delimiter, sep, extname } from 'path'
 import * as Temp from 'temp'
@@ -66,15 +58,15 @@ export async function execPromise (cmd: string, args: string[], opts: ExecOpts, 
         warn(`Running ${cmd} ${args} failed with `, error)
         if (stdout) { warn(stdout) }
         error.stack = (new Error()).stack
-        return reject(error)
+        reject(error)
       } else {
         debug(`Got response from ${cmd} ${args}`, {stdout, stderr})
-        return resolve({stdout, stderr})
+        resolve({stdout, stderr})
       }
     })
     if (stdin) {
       debug(`sending stdin text to ${cmd} ${args}`)
-      return child.stdin.write(stdin)
+      child.stdin.write(stdin)
     }
   })
 }
@@ -82,8 +74,9 @@ export async function execPromise (cmd: string, args: string[], opts: ExecOpts, 
 export async function getCabalSandbox (rootPath: string) {
   debug('Looking for cabal sandbox...')
   const sbc = await parseSandboxConfig(`${rootPath}${sep}cabal.sandbox.config`)
-  if (sbc && sbc['install-dirs'] && sbc['install-dirs'].bindir) {
-    const sandbox = sbc['install-dirs'].bindir
+  // tslint:disable: no-string-literal
+  if (sbc && sbc['install-dirs'] && sbc['install-dirs']['bindir']) {
+    const sandbox = sbc['install-dirs']['bindir']
     debug('Found cabal sandbox: ', sandbox)
     if (isDirectory(sandbox)) {
       return sandbox
@@ -93,6 +86,7 @@ export async function getCabalSandbox (rootPath: string) {
   } else {
     warn('No cabal sandbox found')
   }
+  // tslint:enable: no-string-literal
 }
 
 export async function getStackSandbox (rootPath: string , apd: string[], env: {[key: string]: string | undefined}) {
@@ -258,9 +252,8 @@ export async function withTempFile<T> (contents: string, uri: string, gen: (path
       if (err) {
         reject(err)
       } else {
-        const res = await gen(info.path)
+        resolve(await gen(info.path))
         FS.close(info.fd, () => FS.unlink(info.path, () => { /*noop*/ }))
-        return res
       }
     }))
 }
@@ -305,11 +298,11 @@ export async function parseSandboxConfig (file: string) {
         const m = line.match(/^\s*([\w-]+):\s*(.*)\s*$/)
         if (m) {
           const [_, name, val] = m
-          return scope[name] = rv(val)
+          scope[name] = rv(val)
         } else {
           const newscope = {}
           scope[line] = newscope
-          return scope = newscope
+          scope = newscope
         }
       }
     }
