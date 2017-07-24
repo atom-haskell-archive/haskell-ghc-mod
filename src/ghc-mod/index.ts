@@ -20,7 +20,7 @@ import { GhcModiProcessReal, GHCModCaps } from './ghc-modi-process-real'
 
 type Commands = 'checklint' | 'browse' | 'typeinfo' | 'find' | 'init' | 'list' | 'lowmem'
 
-export type SymbolType = 'type' | 'class' | 'function'
+export type SymbolType = 'type' | 'class' | 'function' | 'operator' | 'tag'
 
 export interface SymbolDesc {
   name: string,
@@ -130,7 +130,7 @@ You can suppress this warning in haskell-ghc-mod settings.\
     if (modules.length === 0) { return [] }
     const lines = await this.queueCmd('browse', rootDir, {
       command: 'browse',
-      dashArgs: caps.browseParents ? ['-d', '-p'] : ['-d'],
+      dashArgs: caps.browseParents ? ['-d', '-o', '-p'] : ['-d', '-o'],
       args: modules
     })
     return lines.map((s) => {
@@ -150,6 +150,10 @@ You can suppress this warning in haskell-ghc-mod settings.\
         symbolType = 'type'
       } else if (typeSignature && /^(?:class)/.test(typeSignature)) {
         symbolType = 'class'
+      } else if (/^\(.*\)$/.test(name)) {
+        symbolType = 'operator'
+      } else if (Util.isUpperCase(name[0])) {
+        symbolType = 'tag'
       } else {
         symbolType = 'function'
       }

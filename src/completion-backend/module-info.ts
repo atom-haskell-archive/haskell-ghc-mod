@@ -84,10 +84,7 @@ export class ModuleInfo {
       const specific = {
         name: symbol.name,
         typeSignature: symbol.typeSignature,
-        symbolType:
-          (symbol.symbolType === 'function') && (Util.isUpperCase(symbol.name[0]))
-          ? 'tag'
-          : symbol.symbolType,
+        symbolType: symbol.symbolType,
         module: importDesc
       }
       const qn = (n: string) => `${importDesc.alias || importDesc.name}.${n}`
