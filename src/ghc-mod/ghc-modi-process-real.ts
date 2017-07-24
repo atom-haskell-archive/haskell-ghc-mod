@@ -36,7 +36,9 @@ export interface RunOptions {
 
 export class GhcModiProcessReal {
   private disposables: CompositeDisposable
-  private emitter: Emitter
+  private emitter: MyEmitter<{
+    'did-destroy': undefined
+  }>
   private ghcModOptions: string[]
   private proc: InteractiveProcess | undefined
 
@@ -140,12 +142,12 @@ ${Util.getDebugLog()}\
   public destroy () {
     debug('GhcModiProcessBase destroying')
     this.killProcess()
-    this.emitter.emit('did-destroy')
+    this.emitter.emit('did-destroy', undefined)
     this.disposables.dispose()
   }
 
   public onDidDestroy (callback: () => void) {
-    this.emitter.on('did-destroy', callback)
+    return this.emitter.on('did-destroy', callback)
   }
 
   private async spawnProcess (ghcModOptions: string[]): Promise<InteractiveProcess | undefined> {

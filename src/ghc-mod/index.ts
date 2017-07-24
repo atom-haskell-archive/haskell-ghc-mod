@@ -30,7 +30,12 @@ export interface SymbolDesc {
 export class GhcModiProcess {
   private backend: Map<string, Promise<GhcModiProcessReal>>
   private disposables: CompositeDisposable
-  private emitter: Emitter
+  private emitter: MyEmitter<{
+    'did-destroy': undefined
+    'backend-active': void
+    'backend-idle': void
+    'queue-idle': { queue: Commands }
+  }>
   private bufferDirMap: WeakMap<AtomTypes.TextBuffer, AtomTypes.Directory>
   private commandQueues: {[K in Commands]: Queue}
   private caps: Promise<GHCModCaps>
@@ -88,7 +93,7 @@ You can suppress this warning in haskell-ghc-mod settings.\
       bp.then((b) => b.destroy())
     }
     this.backend.clear()
-    this.emitter.emit('did-destroy')
+    this.emitter.emit('did-destroy', undefined)
     this.disposables.dispose()
   }
 
@@ -528,7 +533,7 @@ Use at your own risk or update your ghc-mod installation`,
     }
     const backend = await this.initBackend(dir)
     const promise = this.commandQueues[queueName].add(async () => {
-      this.emitter.emit('backend-active')
+      this.emitter.emit('backend-active', undefined)
       try {
         const settings = await this.getSettings(dir)
         if (settings.disable) { throw new Error('Ghc-mod disabled in settings') }
@@ -551,7 +556,7 @@ Use at your own risk or update your ghc-mod installation`,
       if (qe(queueName)) {
         this.emitter.emit('queue-idle', { queue: queueName })
         if (Object.keys(this.commandQueues).every(qe)) {
-          this.emitter.emit('backend-idle')
+          this.emitter.emit('backend-idle', undefined)
         }
       }
     })

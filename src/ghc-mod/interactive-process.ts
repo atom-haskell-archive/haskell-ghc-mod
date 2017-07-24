@@ -27,7 +27,9 @@ export interface GHCModCaps {
 
 export class InteractiveProcess {
   private disposables: CompositeDisposable
-  private emitter: Emitter
+  private emitter: MyEmitter<{
+    'did-exit': number
+  }>
   private proc: CP.ChildProcess
   private cwd: string
   private timer: NodeJS.Timer

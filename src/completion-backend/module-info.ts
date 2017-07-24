@@ -20,7 +20,9 @@ export class ModuleInfo {
   public readonly initialUpdatePromise: Promise<void>
   private symbols: SymbolDesc[] // module symbols
   private disposables: CompositeDisposable
-  private emitter: Emitter
+  private emitter: MyEmitter<{
+    'did-destroy': undefined
+  }>
   private timeout: NodeJS.Timer
   private invalidateInterval = 30 * 60 * 1000 // if module unused for 30 minutes, remove it
   private bufferSet: WeakSet<AtomTypes.TextBuffer>
@@ -40,7 +42,7 @@ export class ModuleInfo {
   public destroy () {
     Util.debug(`${this.name} destroyed`)
     clearTimeout(this.timeout)
-    this.emitter.emit('did-destroy')
+    this.emitter.emit('did-destroy', undefined)
     this.disposables.dispose()
   }
 
