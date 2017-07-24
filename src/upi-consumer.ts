@@ -96,7 +96,7 @@ export class UPIConsumer {
     this.disposables.add(atom.contextMenu.add(cm))
   }
 
-  public destroy () {
+  public dispose () {
     this.disposables.dispose()
   }
 

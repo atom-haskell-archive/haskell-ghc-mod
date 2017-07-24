@@ -1,5 +1,5 @@
 import {GhcModiProcess} from './ghc-mod'
-import {CompositeDisposable, Disposable} from 'atom'
+import {CompositeDisposable} from 'atom'
 import {CompletionBackend} from './completion-backend'
 import {UPIConsumer} from './upi-consumer'
 import {defaultErrorHandler} from './util'
@@ -49,8 +49,6 @@ export function consumeUPI (service: UPI.IUPIRegistration) {
   if (!process || !disposables) { return }
   tempDisposables && tempDisposables.dispose()
   const upiConsumer = new UPIConsumer(service, process)
-  const upiConsumerDisp =
-    new Disposable(() => upiConsumer.destroy())
-  disposables.add(upiConsumerDisp)
-  return upiConsumerDisp
+  disposables.add(upiConsumer)
+  return upiConsumer
 }
