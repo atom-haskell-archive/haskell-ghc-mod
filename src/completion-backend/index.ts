@@ -11,10 +11,21 @@
  */
 import * as FZ from 'fuzzaldrin'
 import { Disposable, Range } from 'atom'
-import {BufferInfo} from './buffer-info'
+import {BufferInfo, IImport} from './buffer-info'
 import {ModuleInfo} from './module-info'
 import {GhcModiProcess, SymbolType} from '../ghc-mod'
 import * as Util from '../util'
+
+export {IImport, SymbolType}
+
+export interface ISymbol {
+    qparent: string | undefined
+    qname: string
+    name: string
+    typeSignature: string | undefined
+    symbolType: SymbolType
+    module: IImport
+}
 
 export class CompletionBackend {
   private bufferMap: WeakMap<AtomTypes.TextBuffer, BufferInfo>
@@ -132,7 +143,9 @@ export class CompletionBackend {
       hiding: Boolean, true if module is imported with hiding clause
       importList: [String], array of explicit imports/hidden imports
   */
-  public async getCompletionsForSymbol (buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point) {
+  public async getCompletionsForSymbol (
+    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+  ): Promise<ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
     const symbols = await this.getSymbolsForBuffer(buffer)
@@ -149,7 +162,9 @@ export class CompletionBackend {
   symbol: Same as getCompletionsForSymbol, except
           symbolType is one of ['type', 'class']
   */
-  public async getCompletionsForType (buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point) {
+  public async getCompletionsForType (
+    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+  ): Promise<ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
     const symbols = await this.getSymbolsForBuffer(buffer, ['type', 'class'])
@@ -166,7 +181,9 @@ export class CompletionBackend {
   symbol: Same as getCompletionsForSymbol, except
           symbolType is one of ['class']
   */
-  public async getCompletionsForClass (buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point) {
+  public async getCompletionsForClass (
+    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+  ): Promise<ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
     const symbols = await this.getSymbolsForBuffer(buffer, ['class'])
@@ -182,7 +199,9 @@ export class CompletionBackend {
   Returns: Promise([module])
   module: String, module name
   */
-  public async getCompletionsForModule (buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point) {
+  public async getCompletionsForModule (
+    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+  ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
     const rootDir = await this.process.getRootDir(buffer)
     let modules = this.modListMap.get(rootDir)
@@ -214,7 +233,7 @@ export class CompletionBackend {
   public async getCompletionsForSymbolInModule (
     buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point,
     opts?: {module: string}
-  ) {
+  ): Promise<ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
     let moduleName = opts ? opts.module : undefined
     if (!moduleName) {
@@ -253,7 +272,7 @@ export class CompletionBackend {
   */
   public async getCompletionsForLanguagePragmas (
     buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
-  ) {
+  ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
     const dir = await this.process.getRootDir(buffer)
@@ -277,7 +296,7 @@ export class CompletionBackend {
   */
   public async getCompletionsForCompilerOptions (
     buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
-  ) {
+  ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
     const dir = await this.process.getRootDir(buffer)
@@ -302,7 +321,9 @@ export class CompletionBackend {
   Returns: Promise([symbol])
   symbol: Same as getCompletionsForSymbol
   */
-  public async getCompletionsForHole (buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point) {
+  public async getCompletionsForHole (
+    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+  ): Promise<ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
     const range = new Range(position, position)
     if (prefix.startsWith('_')) { prefix = prefix.slice(1) }
@@ -324,7 +345,7 @@ export class CompletionBackend {
     }
   }
 
-  private async getSymbolsForBuffer (buffer: AtomTypes.TextBuffer, symbolTypes?: SymbolType[]) {
+  private async getSymbolsForBuffer (buffer: AtomTypes.TextBuffer, symbolTypes?: SymbolType[]): Promise<ISymbol[]> {
     const {bufferInfo} = this.getBufferInfo({buffer})
     const {rootDir, moduleMap} = await this.getModuleMap({bufferInfo})
     if (bufferInfo && moduleMap) {

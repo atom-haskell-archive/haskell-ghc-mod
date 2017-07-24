@@ -271,6 +271,8 @@ export function mkError (name: string, message: string) {
   return err
 }
 
+export interface SandboxConfigTree {[k: string]: SandboxConfigTree | string}
+
 export async function parseSandboxConfig (file: string) {
   try {
     const sbc = await new Promise<string>((resolve, reject) =>
@@ -281,9 +283,7 @@ export async function parseSandboxConfig (file: string) {
           resolve(sbc2)
         }
       }))
-
-    interface T {[k: string]: T | string}
-    const vars: T = {}
+    const vars: SandboxConfigTree = {}
     let scope = vars
     const rv = (v: string) => {
       for (const k1 of Object.keys(scope)) {
