@@ -182,45 +182,17 @@ export async function getProcessOptions (rootPath?: string): Promise<RunOptions>
   return res
 }
 
-export function getSymbolAtPoint (editor: AtomTypes.TextEditor, point: AtomTypes.Point) {
-  let range, symbol
-  const inScope = (scope: string, point2: AtomTypes.IPoint) =>
-    editor.scopeDescriptorForBufferPosition(point2).getScopesArray().some((v) => v === scope)
-
-  const tb = editor.getBuffer()
-  const line = tb.rangeForRow(point.row)
-  const find = (test: (point: AtomTypes.Point) => boolean) => {
-    let end = point
-    let start = point
-    let start2 = start.translate([0, -1])
-    while (test(start2) && start2.isGreaterThanOrEqual(line.start)) {
-      start = start2
-      start2 = start.translate([0, -1])
-    }
-    while (test(end) && end.isLessThan(line.end)) {
-      end = end.translate([0, 1])
-    }
-    return new Range(start, end)
-  }
-
-  const regex = /[\w'.]/
-  const scopes = [
-    'keyword.operator.haskell',
-    'entity.name.function.infix.haskell'
-  ]
-  for (const scope of scopes) {
-    range = find((p) => inScope(scope, p))
-    if (!range.isEmpty()) {
-      symbol = tb.getTextInRange(range)
+export function getSymbolAtPoint (
+  editor: AtomTypes.TextEditor, point: AtomTypes.Point
+) {
+  const [scope] = editor.scopeDescriptorForBufferPosition(point).getScopesArray().slice(-1)
+  if (scope) {
+    const range = editor.bufferRangeForScopeAtPosition(scope, point)
+    if (range && !range.isEmpty()) {
+      const symbol = editor.getTextInBufferRange(range)
       return {scope, range, symbol}
     }
   }
-
-  // else
-  // tslint:disable-next-line: no-null-keyword
-  range = find((p) => tb.getTextInRange([p, p.translate([0, 1])]).match(regex) !== null)
-  symbol = tb.getTextInRange(range)
-  return {scope: undefined, range, symbol}
 }
 
 export function getSymbolInRange (editor: AtomTypes.TextEditor, crange: AtomTypes.Range) {

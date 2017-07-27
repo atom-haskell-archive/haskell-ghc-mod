@@ -146,11 +146,11 @@ export class UPIConsumer {
     const {crange, pos} = er
     const {type} = await this.process.getTypeInBuffer(editor.getBuffer(), crange)
     const symInfo = Util.getSymbolAtPoint(editor, pos)
-    const {scope, range} = symInfo
-    let {symbol} = symInfo
-    if (editor.getTextInBufferRange(range).match(/[=]/)) {
+    if (!symInfo) { return }
+    const {scope, range, symbol} = symInfo
+    if (scope.startsWith('keyword.operator.')) { return } // can't correctly handle infix notation
+    if (editor.getTextInBufferRange([range.end, editor.bufferRangeForBufferRow(range.end.row).end]).match(/=/)) {
       let indent = editor.getTextInBufferRange([[range.start.row, 0], range.start])
-      if (scope === 'keyword.operator.haskell') { symbol = `(${symbol})` }
       let birdTrack = ''
       if (editor.scopeDescriptorForBufferPosition(pos).getScopesArray().includes('meta.embedded.haskell')) {
         birdTrack = indent.slice(0, 2)
@@ -160,10 +160,9 @@ export class UPIConsumer {
         indent = indent.replace(/\S/g, ' ')
       }
       editor.setTextInBufferRange(
-        [range.start, range.start],
-        `${symbol} :: ${type}\n${birdTrack}${indent}`
+        [range.start, range.start], `${symbol} :: ${type}\n${birdTrack}${indent}`
       )
-    } else if (!scope) { // neither operator nor infix
+    } else {
       editor.setTextInBufferRange(range, `(${editor.getTextInBufferRange(range)} :: ${type})`)
     }
   }

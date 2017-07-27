@@ -252,7 +252,9 @@ export class GhcModiProcess {
   public async getInfoInBuffer (editor: AtomTypes.TextEditor, crange: AtomTypes.Range) {
     const buffer = editor.getBuffer()
     if (!buffer.getUri()) { throw new Error('No URI for buffer') }
-    const { symbol, range } = Util.getSymbolInRange(editor, crange)
+    const symInfo = Util.getSymbolInRange(editor, crange)
+    if (!symInfo) { throw new Error('Couldn\'t get symbol for info') }
+    const { symbol, range } = symInfo
 
     const lines = await this.queueCmd('typeinfo', await this.getRootDir(buffer), {
       interactive: true,
@@ -272,7 +274,9 @@ export class GhcModiProcess {
 
   public async findSymbolProvidersInBuffer (editor: AtomTypes.TextEditor, crange: AtomTypes.Range) {
     const buffer = editor.getBuffer()
-    const { symbol } = Util.getSymbolInRange(editor, crange)
+    const symInfo = Util.getSymbolInRange(editor, crange)
+    if (!symInfo) { throw new Error('Couldn\'t get symbol for import') }
+    const { symbol } = symInfo
 
     return this.queueCmd('find', await this.getRootDir(buffer), {
       interactive: true,
