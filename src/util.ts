@@ -43,6 +43,12 @@ export function warn (...messages: any[]) {
   savelog(...messages.map((v) => JSON.stringify(v)))
 }
 
+export function error (...messages: any[]) {
+  // tslint:disable-next-line: no-console
+  console.error('haskell-ghc-mod error:', ...messages)
+  savelog(...messages.map((v) => JSON.stringify(v)))
+}
+
 export function getDebugLog () {
   const ts = Date.now()
   debuglog = debuglog.filter(({timestamp}) => (ts - timestamp) < logKeep)
@@ -365,8 +371,7 @@ export function defaultErrorHandler (args: IErrorCallbackArgs) {
       }
     )
   } else {
-    // tslint:disable-next-line: no-console
-    console.error(caps, runArgs, err)
+    error(caps, runArgs, err)
   }
 }
 

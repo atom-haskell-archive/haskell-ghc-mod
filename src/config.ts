@@ -165,5 +165,16 @@ ARE DOING`,
     description: `Suppress warning about GHC_PACKAGE_PATH environment variable. \
 ENABLE ONLY IF YOU KNOW WHAT YOU ARE DOING.`,
     order: 999
+  },
+  ghcModMessages: {
+    type: 'string',
+    description: 'How to show warnings/errors reported by ghc-mod (requires restart)',
+    default: 'console',
+    enum: [
+      {value: 'console', description: 'Developer Console'},
+      {value: 'upi', description: 'Output Panel'},
+      {value: 'popup', description: 'Error/Warning Popups'},
+    ],
+    order: 42
   }
 }

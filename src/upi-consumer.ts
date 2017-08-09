@@ -4,9 +4,12 @@ import {importListView} from './views/import-list-view'
 import Util = require('./util')
 
 const messageTypes = {
-  'error': {},
-  'warning': {},
-  'lint': {},
+  error: {},
+  warning: {},
+  lint: {}
+}
+
+const addMsgTypes = {
   'ghc-mod': {
     uriFilter: false,
     autoScroll: true
@@ -24,11 +27,18 @@ const mainMenu = {
   ]
 }
 
+const enum MsgBackend {
+  Console = 'console',
+  UPI = 'upi',
+  Popup = 'popup',
+}
+
 export class UPIConsumer {
   private upi: UPI.IUPIInstance
   private disposables: CompositeDisposable = new CompositeDisposable()
   private processMessages: UPI.IResultItem[] = []
   private lastMessages: UPI.IResultItem[] = []
+  private msgBackend: MsgBackend = atom.config.get('haskell-ghc-mod.ghcModMessages')
 
   private contextCommands = {
     'haskell-ghc-mod:show-type': this.tooltipCommand(this.typeTooltip.bind(this)),
@@ -72,10 +82,15 @@ export class UPIConsumer {
       this.process.onWarning(this.handleProcessWarning.bind(this)),
     )
 
+    const msgTypes =
+      this.msgBackend === MsgBackend.UPI
+      ? { ...messageTypes, ...addMsgTypes }
+      : messageTypes
+
     this.upi = register({
       name: 'haskell-ghc-mod',
       menu: mainMenu,
-      messageTypes,
+      messageTypes: msgTypes,
       tooltip: this.shouldShowTooltip.bind(this),
       events: {
         onDidSaveBuffer: async (buffer) =>
@@ -359,23 +374,53 @@ export class UPIConsumer {
     }
   }
 
+  private consoleReport (arg: IErrorCallbackArgs) {
+    Util.error(Util.formatError(arg), Util.getErrorDetail(arg))
+  }
+
   private handleProcessError (arg: IErrorCallbackArgs) {
-    this.processMessages.push({
-      message: Util.formatError(arg)
-        + '\n\nSee console (View → Developer → Toggle Developer Tools → Console tab) for details.',
-      severity: 'ghc-mod'
-    })
-    // tslint:disable-next-line: no-console
-    console.error(Util.formatError(arg), Util.getErrorDetail(arg))
-    this.sendMessages()
+    switch (this.msgBackend) {
+      case MsgBackend.UPI:
+        this.processMessages.push({
+          message: Util.formatError(arg)
+            + '\n\nSee console (View → Developer → Toggle Developer Tools → Console tab) for details.',
+          severity: 'ghc-mod'
+        })
+        this.consoleReport(arg)
+        this.sendMessages()
+        break
+      case MsgBackend.Console:
+        this.consoleReport(arg)
+        break
+      case MsgBackend.Popup:
+        this.consoleReport(arg)
+        atom.notifications.addError(Util.formatError(arg), {
+          detail: Util.getErrorDetail(arg),
+          dismissable: true
+        })
+        break
+    }
   }
 
   private handleProcessWarning (warning: string) {
-    this.processMessages.push({
-      message: warning,
-      severity: 'ghc-mod'
-    })
-    Util.warn(warning)
-    this.sendMessages()
+    switch (this.msgBackend) {
+      case MsgBackend.UPI:
+        this.processMessages.push({
+          message: warning,
+          severity: 'ghc-mod'
+        })
+        Util.warn(warning)
+        this.sendMessages()
+        break
+      case MsgBackend.Console:
+        Util.warn(warning)
+        break
+      case MsgBackend.Popup:
+        Util.warn(warning)
+        atom.notifications.addWarning(warning, {
+          dismissable: false
+        })
+        break
+    }
   }
 }
