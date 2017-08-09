@@ -1,3 +1,6 @@
+## 2.0.3
+* Use OS-dependent line-breaks for non-interactive commands too
+
 ## 2.0.2
 * Revert to dumb browse parsing
 
