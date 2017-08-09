@@ -1,3 +1,6 @@
+## 2.0.4
+* Revert "Revert to dumb browse parsing"
+
 ## 2.0.3
 * Use OS-dependent line-breaks for non-interactive commands too
 
