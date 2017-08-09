@@ -1,3 +1,6 @@
+## 2.0.5
+* Fix type-only highlight in type-and-info tooltips
+
 ## 2.0.4
 * Revert "Revert to dumb browse parsing"
 
