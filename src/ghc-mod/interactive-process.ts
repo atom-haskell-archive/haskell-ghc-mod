@@ -4,6 +4,8 @@ import { EOL } from 'os'
 import * as CP from 'child_process'
 import Queue = require('promise-queue')
 
+(Symbol as any).asyncIterator = Symbol.asyncIterator || Symbol.for('Symbol.asyncIterator')
+
 export interface GHCModCaps {
   version: number[],
   fileMap: boolean,
