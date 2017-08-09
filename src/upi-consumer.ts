@@ -322,7 +322,7 @@ export class UPIConsumer {
       text = `:: ${type.text.text}\n${info.text.text}`
     } else if (type) {
       range = type.range
-      text = type.text.text
+      text = `:: ${type.text.text}`
     } else if (info) {
       range = info.range
       text = info.text.text
