@@ -1,3 +1,6 @@
+## 2.0.1
+* Use OS-dependent line breaks in InteractiveProcess
+
 ## 2.0.0
 * Made ghc-mod error/warning report output configurable
 * Whole thing rewritten in TypeScript (which hopefully makes it more robusut)
