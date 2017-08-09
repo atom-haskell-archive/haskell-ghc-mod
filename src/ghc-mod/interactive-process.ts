@@ -156,8 +156,8 @@ export class InteractiveProcess {
       // tslint:disable-next-line: no-null-keyword
       if (read !== null) {
         buffer += read
-        if (buffer.match(/\n/)) {
-          const arr = buffer.split('\n')
+        if (buffer.includes(EOL)) {
+          const arr = buffer.split(EOL)
           buffer = arr.pop() || ''
           yield* arr
         }
