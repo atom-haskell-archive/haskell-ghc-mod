@@ -124,8 +124,16 @@ export class GhcModiProcess {
     })
     return lines.map((s) => {
       // enumFrom :: Enum a => a -> [a] -- from:Enum
-      const [name, sigAndPar] = s.split(' :: ')
-      const [typeSignature, parent] = sigAndPar.split(' -- from:')
+      const pattern = caps.browseParents ? /^(.*?) :: (.*?)(?: -- from:(.*))?$/ : /^(.*?) :: (.*)$/
+      const match = s.match(pattern)
+      let name, typeSignature, parent
+      if (match) {
+        name = match[1]
+        typeSignature = match[2]
+        parent = match[3]
+      } else {
+        name = s
+      }
       let symbolType: UPI.CompletionBackend.SymbolType
       if (typeSignature && /^(?:type|data|newtype)/.test(typeSignature)) {
         symbolType = 'type'
