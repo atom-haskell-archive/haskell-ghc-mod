@@ -1,3 +1,9 @@
+## 2.0.0
+* Made ghc-mod error/warning report output configurable
+* Whole thing rewritten in TypeScript (which hopefully makes it more robusut)
+* Now includes operators in completions
+* Migrated to UPI 0.3
+
 ## 1.19.9
 * Always return an array in linter code
 
