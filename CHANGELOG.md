@@ -1,3 +1,6 @@
+## 2.0.6
+* Define Symbol.asyncIterator
+
 ## 2.0.5
 * Fix type-only highlight in type-and-info tooltips
 
