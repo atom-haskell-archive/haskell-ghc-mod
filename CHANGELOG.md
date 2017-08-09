@@ -1,3 +1,6 @@
+## 2.0.2
+* Revert to dumb browse parsing
+
 ## 2.0.1
 * Use OS-dependent line breaks in InteractiveProcess
 
