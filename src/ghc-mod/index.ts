@@ -1,4 +1,4 @@
-import { Range, Point, Emitter, CompositeDisposable, Directory } from 'atom'
+import { Range, Point, TEmitter, Emitter, CompositeDisposable, Directory } from 'atom'
 import * as Util from '../util'
 import { extname } from 'path'
 import Queue = require('promise-queue')
@@ -20,7 +20,7 @@ export interface SymbolDesc {
 export class GhcModiProcess {
   private backend: Map<string, Promise<GhcModiProcessReal>>
   private disposables: CompositeDisposable
-  private emitter: MyEmitter<{
+  private emitter: TEmitter<{
     'did-destroy': undefined
     'warning': string
     'error': IErrorCallbackArgs

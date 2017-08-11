@@ -1,4 +1,4 @@
-import { CompositeDisposable, Range } from 'atom'
+import { IEventDesc, CompositeDisposable, Range } from 'atom'
 import {GhcModiProcess, IErrorCallbackArgs} from './ghc-mod'
 import {importListView} from './views/import-list-view'
 import Util = require('./util')

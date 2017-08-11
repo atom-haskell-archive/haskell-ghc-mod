@@ -1,4 +1,4 @@
-import { Emitter, CompositeDisposable } from 'atom'
+import { TEmitter, Emitter, CompositeDisposable } from 'atom'
 import { debug, warn, mkError, EOT } from '../util'
 import { EOL } from 'os'
 import * as CP from 'child_process'
@@ -20,7 +20,7 @@ export interface GHCModCaps {
 
 export class InteractiveProcess {
   private disposables: CompositeDisposable
-  private emitter: MyEmitter<{
+  private emitter: TEmitter<{
     'did-exit': number
   }>
   private proc: CP.ChildProcess

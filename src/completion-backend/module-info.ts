@@ -1,4 +1,4 @@
-import { CompositeDisposable, Emitter } from 'atom'
+import { CompositeDisposable, TEmitter, Emitter } from 'atom'
 import * as Util from '../util'
 import {GhcModiProcess} from '../ghc-mod'
 import {BufferInfo, IImport} from './buffer-info'
@@ -10,7 +10,7 @@ export class ModuleInfo {
   public readonly initialUpdatePromise: Promise<void>
   private symbols: SymbolDesc[] // module symbols
   private disposables: CompositeDisposable
-  private emitter: MyEmitter<{
+  private emitter: TEmitter<{
     'did-destroy': undefined
   }>
   private timeout: NodeJS.Timer

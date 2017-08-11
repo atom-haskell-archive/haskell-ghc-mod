@@ -1,4 +1,4 @@
-import { Emitter, CompositeDisposable, Directory } from 'atom'
+import { TEmitter, Emitter, CompositeDisposable, Directory } from 'atom'
 import * as CP from 'child_process'
 import {InteractiveProcess, GHCModCaps} from './interactive-process'
 import * as Util from '../util'
@@ -35,7 +35,7 @@ export interface IErrorCallbackArgs {
 
 export class GhcModiProcessReal {
   private disposables: CompositeDisposable
-  private emitter: MyEmitter<{
+  private emitter: TEmitter<{
     'did-destroy': undefined
     'warning': string
     'error': IErrorCallbackArgs
