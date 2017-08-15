@@ -141,6 +141,7 @@ export class GhcModiProcess {
         symbolType = 'class'
       } else if (/^\(.*\)$/.test(name)) {
         symbolType = 'operator'
+        name = name.slice(1, -1)
       } else if (Util.isUpperCase(name[0])) {
         symbolType = 'tag'
       } else {
