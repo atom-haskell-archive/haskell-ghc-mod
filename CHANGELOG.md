@@ -1,3 +1,6 @@
+## 2.0.7
+* Remove parentheses around operators when providing completion suggestions
+
 ## 2.0.6
 * Define Symbol.asyncIterator
 
