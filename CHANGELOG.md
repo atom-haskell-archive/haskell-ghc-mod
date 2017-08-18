@@ -1,3 +1,6 @@
+## 2.0.8
+* Handle some exceptions via UPI status
+
 ## 2.0.7
 * Remove parentheses around operators when providing completion suggestions
 
