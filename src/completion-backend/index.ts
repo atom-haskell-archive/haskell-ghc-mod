@@ -1,20 +1,23 @@
 import * as FZ from 'fuzzaldrin'
-import { Disposable, Range } from 'atom'
+import {
+  TextBuffer, Point, Disposable, Range, Directory
+} from 'atom'
 import {BufferInfo} from './buffer-info'
 import {ModuleInfo} from './module-info'
 import {GhcModiProcess} from '../ghc-mod'
 import * as Util from '../util'
+import {handleException} from '../util'
 import CB = UPI.CompletionBackend
 
 export class CompletionBackend implements CB.ICompletionBackend {
-  private bufferMap: WeakMap<AtomTypes.TextBuffer, BufferInfo>
-  private dirMap: WeakMap<AtomTypes.Directory, Map<string, ModuleInfo>>
-  private modListMap: WeakMap<AtomTypes.Directory, string[]>
-  private languagePragmas: WeakMap<AtomTypes.Directory, string[]>
-  private compilerOptions: WeakMap<AtomTypes.Directory, string[]>
+  private bufferMap: WeakMap<TextBuffer, BufferInfo>
+  private dirMap: WeakMap<Directory, Map<string, ModuleInfo>>
+  private modListMap: WeakMap<Directory, string[]>
+  private languagePragmas: WeakMap<Directory, string[]>
+  private compilerOptions: WeakMap<Directory, string[]>
   private isActive: boolean
 
-  constructor (private process: GhcModiProcess) {
+  constructor (private process: GhcModiProcess, public upi: Promise<UPI.IUPIInstance>) {
     this.bufferMap = new WeakMap()
     this.dirMap = new WeakMap()
     this.modListMap = new WeakMap()
@@ -70,7 +73,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
 
   Returns: Disposable, which will remove buffer from autocompletion
   */
-  public registerCompletionBuffer (buffer: AtomTypes.TextBuffer) {
+  public registerCompletionBuffer (buffer: TextBuffer) {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
     if (this.bufferMap.has(buffer)) {
@@ -98,7 +101,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   unregisterCompletionBuffer(buffer)
   buffer: TextBuffer, buffer to be removed from autocompletion
   */
-  public unregisterCompletionBuffer (buffer: AtomTypes.TextBuffer) {
+  public unregisterCompletionBuffer (buffer: TextBuffer) {
     const x = this.bufferMap.get(buffer)
     if (x) {
       x.destroy()
@@ -125,8 +128,9 @@ export class CompletionBackend implements CB.ICompletionBackend {
       hiding: Boolean, true if module is imported with hiding clause
       importList: [String], array of explicit imports/hidden imports
   */
+  @handleException
   public async getCompletionsForSymbol (
-    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+    buffer: TextBuffer, prefix: string, position: Point
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
@@ -144,8 +148,9 @@ export class CompletionBackend implements CB.ICompletionBackend {
   symbol: Same as getCompletionsForSymbol, except
           symbolType is one of ['type', 'class']
   */
+  @handleException
   public async getCompletionsForType (
-    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+    buffer: TextBuffer, prefix: string, position: Point
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
@@ -164,7 +169,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
           symbolType is one of ['class']
   */
   public async getCompletionsForClass (
-    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+    buffer: TextBuffer, prefix: string, position: Point
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
@@ -182,7 +187,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   module: String, module name
   */
   public async getCompletionsForModule (
-    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+    buffer: TextBuffer, prefix: string, position: Point
   ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
     const rootDir = await this.process.getRootDir(buffer)
@@ -213,7 +218,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
     symbolType: String, one of ['type', 'class', 'function']
   */
   public async getCompletionsForSymbolInModule (
-    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point,
+    buffer: TextBuffer, prefix: string, position: Point,
     opts?: {module: string}
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
@@ -253,7 +258,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   pragma: String, language option
   */
   public async getCompletionsForLanguagePragmas (
-    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+    buffer: TextBuffer, prefix: string, position: Point
   ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
@@ -277,7 +282,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   ghcopt: String, compiler option (starts with '-f')
   */
   public async getCompletionsForCompilerOptions (
-    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+    buffer: TextBuffer, prefix: string, position: Point
   ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
@@ -303,8 +308,9 @@ export class CompletionBackend implements CB.ICompletionBackend {
   Returns: Promise([symbol])
   symbol: Same as getCompletionsForSymbol
   */
+  @handleException
   public async getCompletionsForHole (
-    buffer: AtomTypes.TextBuffer, prefix: string, position: AtomTypes.Point
+    buffer: TextBuffer, prefix: string, position: Point
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
     const range = new Range(position, position)
@@ -328,7 +334,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   }
 
   private async getSymbolsForBuffer (
-    buffer: AtomTypes.TextBuffer, symbolTypes?: CB.SymbolType[]
+    buffer: TextBuffer, symbolTypes?: CB.SymbolType[]
   ): Promise<CB.ISymbol[]> {
     const {bufferInfo} = this.getBufferInfo({buffer})
     const {rootDir, moduleMap} = await this.getModuleMap({bufferInfo})
@@ -352,7 +358,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
     }
   }
 
-  private getBufferInfo ({buffer}: {buffer: AtomTypes.TextBuffer}): {bufferInfo: BufferInfo} {
+  private getBufferInfo ({buffer}: {buffer: TextBuffer}): {bufferInfo: BufferInfo} {
     let bi = this.bufferMap.get(buffer)
     if (! bi) {
       bi = new BufferInfo(buffer)
@@ -362,8 +368,8 @@ export class CompletionBackend implements CB.ICompletionBackend {
   }
 
   private async getModuleMap (
-    {bufferInfo, rootDir}: {bufferInfo: BufferInfo, rootDir?: AtomTypes.Directory}
-  ): Promise<{rootDir: AtomTypes.Directory, moduleMap: Map<string, ModuleInfo>}> {
+    {bufferInfo, rootDir}: {bufferInfo: BufferInfo, rootDir?: Directory}
+  ): Promise<{rootDir: Directory, moduleMap: Map<string, ModuleInfo>}> {
     if (! rootDir) {
       rootDir = await this.process.getRootDir(bufferInfo.buffer)
     }
@@ -382,7 +388,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   private async getModuleInfo (
     arg: {
       bufferInfo: BufferInfo, moduleName?: string,
-      rootDir?: AtomTypes.Directory, moduleMap?: Map<string, ModuleInfo>
+      rootDir?: Directory, moduleMap?: Map<string, ModuleInfo>
     }
   ) {
     const {bufferInfo} = arg

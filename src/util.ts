@@ -430,3 +430,28 @@ ${JSON.stringify(filterEnv(process.env), undefined, 2)}
     }
   )
 }
+
+export function handleException<T> (
+  target: {upi: UPI.IUPIInstance | Promise<UPI.IUPIInstance>}, key: string,
+  desc: TypedPropertyDescriptor<(...args: any[]) => Promise<T>>
+): TypedPropertyDescriptor<(...args: any[]) => Promise<T>> {
+  return {
+    ...desc,
+    async value (...args: any[]) {
+      try {
+        // tslint:disable-next-line: no-non-null-assertion
+        return await desc.value!.call(this, ...args)
+      } catch (e) {
+        // tslint:disable-next-line: no-console
+        debug(e)
+        const upi: UPI.IUPIInstance = await (this as any).upi
+        upi.setStatus({
+          status: 'warning',
+          detail: e.toString()
+        })
+        // TODO: returning a promise that never resolves... ugly, but works?
+        return new Promise(() => { /* noop */})
+      }
+    }
+  }
+}

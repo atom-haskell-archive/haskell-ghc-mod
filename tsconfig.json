@@ -20,6 +20,7 @@
         "inlineSourceMap": true,
         "strictNullChecks": true,
         "allowJs": true,
+        "experimentalDecorators": true,
         "lib": [
           "dom",
           "es2017",

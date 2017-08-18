@@ -8,6 +8,8 @@ let process: GhcModiProcess | undefined
 let disposables: CompositeDisposable | undefined
 let tempDisposables: CompositeDisposable | undefined
 let completionBackend: CompletionBackend | undefined
+let resolveUpiPromise: (v: UPI.IUPIInstance) => void
+const upiPromise = new Promise<UPI.IUPIInstance>((resolve) => resolveUpiPromise = resolve)
 
 export {config} from './config'
 
@@ -41,7 +43,9 @@ export function deactivate () {
 
 export function provideCompletionBackend () {
   if (! process) { return }
-  if (! completionBackend) { completionBackend = new CompletionBackend(process) }
+  if (! completionBackend) {
+    completionBackend = new CompletionBackend(process, upiPromise)
+  }
   return completionBackend
 }
 
@@ -49,6 +53,7 @@ export function consumeUPI (service: UPI.IUPIRegistration) {
   if (!process || !disposables) { return }
   tempDisposables && tempDisposables.dispose()
   const upiConsumer = new UPIConsumer(service, process)
+  resolveUpiPromise(upiConsumer.upi)
   disposables.add(upiConsumer)
   return upiConsumer
 }

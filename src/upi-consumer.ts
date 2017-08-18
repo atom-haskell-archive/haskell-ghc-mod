@@ -1,7 +1,8 @@
 import { IEventDesc, CompositeDisposable, Range } from 'atom'
 import {GhcModiProcess, IErrorCallbackArgs} from './ghc-mod'
 import {importListView} from './views/import-list-view'
-import Util = require('./util')
+import * as Util from './util'
+import {handleException} from './util'
 
 const messageTypes = {
   error: {},
@@ -34,7 +35,7 @@ const enum MsgBackend {
 }
 
 export class UPIConsumer {
-  private upi: UPI.IUPIInstance
+  public upi: UPI.IUPIInstance
   private disposables: CompositeDisposable = new CompositeDisposable()
   private processMessages: UPI.IResultItem[] = []
   private lastMessages: UPI.IResultItem[] = []
@@ -50,7 +51,7 @@ export class UPIConsumer {
     'haskell-ghc-mod:show-type-fallback-to-info': this.tooltipCommand(this.typeInfoTooltip.bind(this)),
     'haskell-ghc-mod:show-type-and-info': this.tooltipCommand(this.typeAndInfoTooltip.bind(this)),
     'haskell-ghc-mod:insert-type': this.insertTypeCommand.bind(this),
-    'haskell-ghc-mod:insert-import': this.insertImportCommand.bind(this)
+    'haskell-ghc-mod:insert-import': this.insertImportCommand.bind(this),
   }
 
   private globalCommands = {
@@ -131,12 +132,14 @@ export class UPIConsumer {
       }
   }
 
+  @handleException
   private async checkCommand ({currentTarget}: IEventDesc) {
     const editor = currentTarget.getModel()
     const res = await this.process.doCheckBuffer(editor.getBuffer())
     this.setMessages(res)
   }
 
+  @handleException
   private async lintCommand ({currentTarget}: IEventDesc) {
     const editor = currentTarget.getModel()
     const res = await this.process.doLintBuffer(editor.getBuffer())
@@ -154,6 +157,7 @@ export class UPIConsumer {
       })
   }
 
+  @handleException
   private async insertTypeCommand ({currentTarget, detail}: IEventDesc) {
     const editor = currentTarget.getModel()
     const er = this.upi.getEventRange(editor, detail)
@@ -182,6 +186,7 @@ export class UPIConsumer {
     }
   }
 
+  @handleException
   private async caseSplitCommand ({currentTarget, detail}: IEventDesc) {
     const editor = currentTarget.getModel()
     const evr = this.upi.getEventRange(editor, detail)
@@ -193,6 +198,7 @@ export class UPIConsumer {
     }
   }
 
+  @handleException
   private async sigFillCommand ({currentTarget, detail}: IEventDesc) {
     const editor = currentTarget.getModel()
     const evr = this.upi.getEventRange(editor, detail)
@@ -218,6 +224,7 @@ export class UPIConsumer {
     })
   }
 
+  @handleException
   private async goToDeclCommand ({currentTarget, detail}: IEventDesc) {
     const editor = currentTarget.getModel()
     const evr = this.upi.getEventRange(editor, detail)
@@ -237,6 +244,7 @@ export class UPIConsumer {
     )
   }
 
+  @handleException
   private async insertImportCommand ({currentTarget, detail}: IEventDesc) {
     const editor = currentTarget.getModel()
     const buffer = editor.getBuffer()
