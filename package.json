@@ -48,7 +48,7 @@
     "@types/temp": "^0.8.29",
     "@types/underscore": "^1.8.1",
     "atom-haskell-tslint-rules": "0.0.4",
-    "tslint": "^5.5.0",
+    "tslint": "^5.6.0",
     "typescript": "^2.4.2"
   }
 }
