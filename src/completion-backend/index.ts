@@ -2,11 +2,11 @@ import * as FZ from 'fuzzaldrin'
 import {
   TextBuffer, Point, Disposable, Range, Directory
 } from 'atom'
-import {BufferInfo} from './buffer-info'
-import {ModuleInfo} from './module-info'
-import {GhcModiProcess} from '../ghc-mod'
+import { BufferInfo } from './buffer-info'
+import { ModuleInfo } from './module-info'
+import { GhcModiProcess } from '../ghc-mod'
 import * as Util from '../util'
-import {handleException} from '../util'
+import { handleException } from '../util'
 import CB = UPI.CompletionBackend
 
 export class CompletionBackend implements CB.ICompletionBackend {
@@ -17,7 +17,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   private compilerOptions: WeakMap<Directory, string[]>
   private isActive: boolean
 
-  constructor (private process: GhcModiProcess, public upi: Promise<UPI.IUPIInstance>) {
+  constructor(private process: GhcModiProcess, public upi: Promise<UPI.IUPIInstance>) {
     this.bufferMap = new WeakMap()
     this.dirMap = new WeakMap()
     this.modListMap = new WeakMap()
@@ -51,7 +51,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
 
   Returns String, unique string describing a given backend
   */
-  public name () { return 'haskell-ghc-mod' }
+  public name() { return 'haskell-ghc-mod' }
 
   /*
   onDidDestroy(callback)
@@ -59,7 +59,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   package deactivation.
   callback: () ->
   */
-  public onDidDestroy (callback: () => void) {
+  public onDidDestroy(callback: () => void) {
     if (!this.isActive) { throw new Error('Backend inactive') }
     return this.process.onDidDestroy(callback)
   }
@@ -73,7 +73,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
 
   Returns: Disposable, which will remove buffer from autocompletion
   */
-  public registerCompletionBuffer (buffer: TextBuffer) {
+  public registerCompletionBuffer(buffer: TextBuffer) {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
     if (this.bufferMap.has(buffer)) {
@@ -101,7 +101,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   unregisterCompletionBuffer(buffer)
   buffer: TextBuffer, buffer to be removed from autocompletion
   */
-  public unregisterCompletionBuffer (buffer: TextBuffer) {
+  public unregisterCompletionBuffer(buffer: TextBuffer) {
     const x = this.bufferMap.get(buffer)
     if (x) {
       x.destroy()
@@ -129,8 +129,8 @@ export class CompletionBackend implements CB.ICompletionBackend {
       importList: [String], array of explicit imports/hidden imports
   */
   @handleException
-  public async getCompletionsForSymbol (
-    buffer: TextBuffer, prefix: string, position: Point
+  public async getCompletionsForSymbol(
+    buffer: TextBuffer, prefix: string, position: Point,
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
@@ -149,13 +149,13 @@ export class CompletionBackend implements CB.ICompletionBackend {
           symbolType is one of ['type', 'class']
   */
   @handleException
-  public async getCompletionsForType (
-    buffer: TextBuffer, prefix: string, position: Point
+  public async getCompletionsForType(
+    buffer: TextBuffer, prefix: string, position: Point,
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
     const symbols = await this.getSymbolsForBuffer(buffer, ['type', 'class'])
-    return FZ.filter(symbols, prefix, {key: 'qname'})
+    return FZ.filter(symbols, prefix, { key: 'qname' })
   }
 
   /*
@@ -168,13 +168,13 @@ export class CompletionBackend implements CB.ICompletionBackend {
   symbol: Same as getCompletionsForSymbol, except
           symbolType is one of ['class']
   */
-  public async getCompletionsForClass (
-    buffer: TextBuffer, prefix: string, position: Point
+  public async getCompletionsForClass(
+    buffer: TextBuffer, prefix: string, position: Point,
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
     const symbols = await this.getSymbolsForBuffer(buffer, ['class'])
-    return FZ.filter(symbols, prefix, {key: 'qname'})
+    return FZ.filter(symbols, prefix, { key: 'qname' })
   }
 
   /*
@@ -186,13 +186,13 @@ export class CompletionBackend implements CB.ICompletionBackend {
   Returns: Promise([module])
   module: String, module name
   */
-  public async getCompletionsForModule (
-    buffer: TextBuffer, prefix: string, position: Point
+  public async getCompletionsForModule(
+    buffer: TextBuffer, prefix: string, position: Point,
   ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
     const rootDir = await this.process.getRootDir(buffer)
     let modules = this.modListMap.get(rootDir)
-    if (! modules) {
+    if (!modules) {
       modules = await this.process.runList(buffer)
       this.modListMap.set(rootDir, modules)
       // refresh every minute
@@ -217,20 +217,22 @@ export class CompletionBackend implements CB.ICompletionBackend {
     typeSignature: String, type signature
     symbolType: String, one of ['type', 'class', 'function']
   */
-  public async getCompletionsForSymbolInModule (
+  public async getCompletionsForSymbolInModule(
     buffer: TextBuffer, prefix: string, position: Point,
-    opts?: {module: string}
+    opts?: { module: string },
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
     let moduleName = opts ? opts.module : undefined
     if (!moduleName) {
       const lineRange = new Range([0, position.row], position)
-      buffer.backwardsScanInRange(/^import\s+([\w.]+)/,
-                                  lineRange, ({match}) => moduleName = match[1])
+      buffer.backwardsScanInRange(
+        /^import\s+([\w.]+)/,
+        lineRange, ({ match }) => moduleName = match[1],
+      )
     }
 
-    const {bufferInfo} = this.getBufferInfo({buffer})
-    const mis = await this.getModuleInfo({bufferInfo, moduleName})
+    const { bufferInfo } = this.getBufferInfo({ buffer })
+    const mis = await this.getModuleInfo({ bufferInfo, moduleName })
 
     // tslint:disable: no-null-keyword
     const symbols = mis.moduleInfo.select(
@@ -239,13 +241,13 @@ export class CompletionBackend implements CB.ICompletionBackend {
         hiding: false,
         name: moduleName || mis.moduleName,
         importList: null,
-        alias: null
+        alias: null,
       },
       undefined,
-      true
+      true,
     )
     // tslint:enable: no-null-keyword
-    return FZ.filter(symbols, prefix, {key: 'name'})
+    return FZ.filter(symbols, prefix, { key: 'name' })
   }
 
   /*
@@ -257,15 +259,15 @@ export class CompletionBackend implements CB.ICompletionBackend {
   Returns: Promise([pragma])
   pragma: String, language option
   */
-  public async getCompletionsForLanguagePragmas (
-    buffer: TextBuffer, prefix: string, position: Point
+  public async getCompletionsForLanguagePragmas(
+    buffer: TextBuffer, prefix: string, position: Point,
   ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
     const dir = await this.process.getRootDir(buffer)
 
     let ps = this.languagePragmas.get(dir)
-    if (! ps) {
+    if (!ps) {
       ps = await this.process.runLang(dir)
       ps && this.languagePragmas.set(dir, ps)
     }
@@ -281,15 +283,15 @@ export class CompletionBackend implements CB.ICompletionBackend {
   Returns: Promise([ghcopt])
   ghcopt: String, compiler option (starts with '-f')
   */
-  public async getCompletionsForCompilerOptions (
-    buffer: TextBuffer, prefix: string, position: Point
+  public async getCompletionsForCompilerOptions(
+    buffer: TextBuffer, prefix: string, position: Point,
   ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
     const dir = await this.process.getRootDir(buffer)
 
     let co = this.compilerOptions.get(dir)
-    if (! co) {
+    if (!co) {
       co = await this.process.runFlag(dir)
       this.compilerOptions.set(dir, co)
     }
@@ -309,16 +311,16 @@ export class CompletionBackend implements CB.ICompletionBackend {
   symbol: Same as getCompletionsForSymbol
   */
   @handleException
-  public async getCompletionsForHole (
-    buffer: TextBuffer, prefix: string, position: Point
+  public async getCompletionsForHole(
+    buffer: TextBuffer, prefix: string, position: Point,
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
     const range = new Range(position, position)
     if (prefix.startsWith('_')) { prefix = prefix.slice(1) }
-    const {type} = await this.process.getTypeInBuffer(buffer, range)
+    const { type } = await this.process.getTypeInBuffer(buffer, range)
     const symbols = await this.getSymbolsForBuffer(buffer)
     const ts = symbols.filter((s) => {
-      if (! s.typeSignature) { return false }
+      if (!s.typeSignature) { return false }
       const tl = s.typeSignature.split(' -> ').slice(-1)[0]
       if (tl.match(/^[a-z]$/)) { return false }
       const ts2 = tl.replace(/[.?*+^$[\]\\(){}|-]/g, '\\$&')
@@ -329,15 +331,15 @@ export class CompletionBackend implements CB.ICompletionBackend {
       // tslint:disable-next-line: no-non-null-assertion
       return ts.sort((a, b) => FZ.score(b.typeSignature!, type) - FZ.score(a.typeSignature!, type))
     } else {
-      return FZ.filter(ts, prefix, {key: 'qname'})
+      return FZ.filter(ts, prefix, { key: 'qname' })
     }
   }
 
-  private async getSymbolsForBuffer (
-    buffer: TextBuffer, symbolTypes?: CB.SymbolType[]
+  private async getSymbolsForBuffer(
+    buffer: TextBuffer, symbolTypes?: CB.SymbolType[],
   ): Promise<CB.ISymbol[]> {
-    const {bufferInfo} = this.getBufferInfo({buffer})
-    const {rootDir, moduleMap} = await this.getModuleMap({bufferInfo})
+    const { bufferInfo } = this.getBufferInfo({ buffer })
+    const { rootDir, moduleMap } = await this.getModuleMap({ bufferInfo })
     if (bufferInfo && moduleMap) {
       const imports = await bufferInfo.getImports()
       const promises = await Promise.all(
@@ -346,11 +348,11 @@ export class CompletionBackend implements CB.ICompletionBackend {
             bufferInfo,
             moduleName: imp.name,
             rootDir,
-            moduleMap
+            moduleMap,
           })
           if (!res) { return [] }
           return res.moduleInfo.select(imp, symbolTypes)
-        })
+        }),
       )
       return ([] as typeof promises[0]).concat(...promises)
     } else {
@@ -358,19 +360,19 @@ export class CompletionBackend implements CB.ICompletionBackend {
     }
   }
 
-  private getBufferInfo ({buffer}: {buffer: TextBuffer}): {bufferInfo: BufferInfo} {
+  private getBufferInfo({ buffer }: { buffer: TextBuffer }): { bufferInfo: BufferInfo } {
     let bi = this.bufferMap.get(buffer)
-    if (! bi) {
+    if (!bi) {
       bi = new BufferInfo(buffer)
       this.bufferMap.set(buffer, bi)
     }
-    return {bufferInfo: bi}
+    return { bufferInfo: bi }
   }
 
-  private async getModuleMap (
-    {bufferInfo, rootDir}: {bufferInfo: BufferInfo, rootDir?: Directory}
-  ): Promise<{rootDir: Directory, moduleMap: Map<string, ModuleInfo>}> {
-    if (! rootDir) {
+  private async getModuleMap(
+    { bufferInfo, rootDir }: { bufferInfo: BufferInfo, rootDir?: Directory },
+  ): Promise<{ rootDir: Directory, moduleMap: Map<string, ModuleInfo> }> {
+    if (!rootDir) {
       rootDir = await this.process.getRootDir(bufferInfo.buffer)
     }
     let mm = this.dirMap.get(rootDir)
@@ -381,24 +383,24 @@ export class CompletionBackend implements CB.ICompletionBackend {
 
     return {
       rootDir,
-      moduleMap: mm
+      moduleMap: mm,
     }
   }
 
-  private async getModuleInfo (
+  private async getModuleInfo(
     arg: {
       bufferInfo: BufferInfo, moduleName?: string,
       rootDir?: Directory, moduleMap?: Map<string, ModuleInfo>
-    }
+    },
   ) {
-    const {bufferInfo} = arg
+    const { bufferInfo } = arg
     let dat
     if (arg.rootDir && arg.moduleMap) {
-      dat = {rootDir: arg.rootDir, moduleMap: arg.moduleMap}
+      dat = { rootDir: arg.rootDir, moduleMap: arg.moduleMap }
     } else {
-      dat = await this.getModuleMap({bufferInfo})
+      dat = await this.getModuleMap({ bufferInfo })
     }
-    const {moduleMap, rootDir} = dat
+    const { moduleMap, rootDir } = dat
     let moduleName = arg.moduleName
     if (!moduleName) {
       moduleName = await bufferInfo.getModuleName()
@@ -420,10 +422,10 @@ export class CompletionBackend implements CB.ICompletionBackend {
       await moduleInfo.initialUpdatePromise
     }
     moduleInfo.setBuffer(bufferInfo)
-    return {bufferInfo, rootDir, moduleMap, moduleInfo, moduleName}
+    return { bufferInfo, rootDir, moduleMap, moduleInfo, moduleName }
   }
 
-  private filter<T, K extends keyof T> (candidates: T[], prefix: string, keys: K[]): T[] {
+  private filter<T, K extends keyof T>(candidates: T[], prefix: string, keys: K[]): T[] {
     if (!prefix) {
       return candidates
     }
@@ -442,16 +444,16 @@ export class CompletionBackend implements CB.ICompletionBackend {
         list.push({
           score,
           scoreN: scores.indexOf(score),
-          data: candidate
+          data: candidate,
         })
       }
     }
     return list.sort((a, b) => {
-        const s = b.score - a.score
-        if (s === 0) {
-          return a.scoreN - b.scoreN
-        }
-        return s
-      }).map(({data}) => data)
+      const s = b.score - a.score
+      if (s === 0) {
+        return a.scoreN - b.scoreN
+      }
+      return s
+    }).map(({ data }) => data)
   }
 }

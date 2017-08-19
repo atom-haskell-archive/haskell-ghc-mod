@@ -25,10 +25,10 @@ export class InteractiveProcess {
   }>
   private proc: CP.ChildProcess
   private cwd: string
-  private timer: NodeJS.Timer
+  private timer: NodeJS.Timer | undefined
   private requestQueue: Queue
 
-  constructor (path: string, cmd: string[], options: {cwd: string}, private caps: GHCModCaps) {
+  constructor(path: string, cmd: string[], options: { cwd: string }, private caps: GHCModCaps) {
     this.caps = caps
     this.disposables = new CompositeDisposable()
     this.emitter = new Emitter()
@@ -52,11 +52,11 @@ export class InteractiveProcess {
     })
   }
 
-  public onceExit (action: (code: number) => void) {
+  public onceExit(action: (code: number) => void) {
     return this.emitter.once('did-exit', action)
   }
 
-  public async kill (): Promise<number> {
+  public async kill(): Promise<number> {
     this.proc.stdin.end()
     this.proc.kill()
     return new Promise<number>((resolve) => {
@@ -64,9 +64,9 @@ export class InteractiveProcess {
     })
   }
 
-  public async interact (
-    command: string, args: string[], data?: string
-  ): Promise<{stdout: string[], stderr: string[]}> {
+  public async interact(
+    command: string, args: string[], data?: string,
+  ): Promise<{ stdout: string[], stderr: string[] }> {
     return this.requestQueue.add(async () => {
       this.proc.stdout.pause()
       this.proc.stderr.pause()
@@ -92,7 +92,7 @@ export class InteractiveProcess {
               stdout.push(line)
             }
           }
-          return {stdout, stderr}
+          return { stdout, stderr }
         }
         const exitEvent = async () => new Promise<never>((resolve, reject) => {
           this.proc.once('exit', (code) => {
@@ -103,16 +103,19 @@ export class InteractiveProcess {
         const timeoutEvent = async () => new Promise<never>((resolve, reject) => {
           const tml: number = atom.config.get('haskell-ghc-mod.interactiveActionTimeout')
           if (tml) {
-            setTimeout(() => {
-              reject(mkError('InteractiveActionTimeout', `${stdout}\n\n${stderr}`))
-            },         tml * 1000)
+            setTimeout(
+              () => {
+                reject(mkError('InteractiveActionTimeout', `${stdout}\n\n${stderr}`))
+              },
+              tml * 1000,
+            )
           }
         })
 
         const args2 =
           this.caps.quoteArgs ?
             ['ascii-escape', command].concat(args.map((x) => `\x02${x}\x03`))
-          :
+            :
             [command, ...args]
         debug(`Running ghc-modi command ${command}`, ...args)
         this.proc.stdin.write(`${args2.join(' ').replace(/(?:\r?\n|\r)/g, ' ')}${EOL}`)
@@ -123,7 +126,7 @@ export class InteractiveProcess {
         return await Promise.race([readOutput(), exitEvent(), timeoutEvent()])
       } catch (error) {
         if (error.name === 'InteractiveActionTimeout') {
-          await this.proc.kill()
+          this.proc.kill()
         }
         throw error
       } finally {
@@ -135,7 +138,7 @@ export class InteractiveProcess {
     })
   }
 
-  private resetTimer () {
+  private resetTimer() {
     if (this.timer) {
       clearTimeout(this.timer)
     }
@@ -145,15 +148,15 @@ export class InteractiveProcess {
     }
   }
 
-  private async waitReadable (stream: NodeJS.ReadableStream) {
+  private async waitReadable(stream: NodeJS.ReadableStream) {
     return new Promise((resolve) => stream.once('readable', () => {
       resolve()
     }))
   }
 
-  private async *readgen (out: NodeJS.ReadableStream, isEnded: () => boolean) {
+  private async *readgen(out: NodeJS.ReadableStream, isEnded: () => boolean) {
     let buffer = ''
-    while (! isEnded()) {
+    while (!isEnded()) {
       const read = out.read() as (string | null)
       // tslint:disable-next-line: no-null-keyword
       if (read !== null) {

@@ -1,8 +1,8 @@
 import { CompositeDisposable, TEmitter, Emitter } from 'atom'
 import * as Util from '../util'
-import {GhcModiProcess} from '../ghc-mod'
-import {BufferInfo, IImport} from './buffer-info'
-import {SymbolDesc} from '../ghc-mod'
+import { GhcModiProcess } from '../ghc-mod'
+import { BufferInfo, IImport } from './buffer-info'
+import { SymbolDesc } from '../ghc-mod'
 
 import SymbolType = UPI.CompletionBackend.SymbolType
 
@@ -17,7 +17,7 @@ export class ModuleInfo {
   private invalidateInterval = 30 * 60 * 1000 // if module unused for 30 minutes, remove it
   private bufferSet: WeakSet<AtomTypes.TextBuffer>
 
-  constructor (private name: string, private process: GhcModiProcess, private rootDir: AtomTypes.Directory) {
+  constructor(private name: string, private process: GhcModiProcess, private rootDir: AtomTypes.Directory) {
     Util.debug(`${this.name} created`)
     this.symbols = []
     this.disposables = new CompositeDisposable()
@@ -29,18 +29,18 @@ export class ModuleInfo {
     this.disposables.add(this.process.onDidDestroy(this.destroy.bind(this)))
   }
 
-  public destroy () {
+  public destroy() {
     Util.debug(`${this.name} destroyed`)
     clearTimeout(this.timeout)
     this.emitter.emit('did-destroy', undefined)
     this.disposables.dispose()
   }
 
-  public onDidDestroy (callback: () => void) {
+  public onDidDestroy(callback: () => void) {
     return this.emitter.on('did-destroy', callback)
   }
 
-  public async setBuffer (bufferInfo: BufferInfo) {
+  public async setBuffer(bufferInfo: BufferInfo) {
     const name = await bufferInfo.getModuleName()
     if (name !== this.name) { return }
     if (this.bufferSet.has(bufferInfo.buffer)) { return }
@@ -59,7 +59,7 @@ export class ModuleInfo {
     this.disposables.add(disposables)
   }
 
-  public select (importDesc: IImport, symbolTypes?: SymbolType[], skipQualified: boolean = false) {
+  public select(importDesc: IImport, symbolTypes?: SymbolType[], skipQualified: boolean = false) {
     clearTimeout(this.timeout)
     this.timeout = setTimeout(this.destroy.bind(this), this.invalidateInterval)
     let symbols = this.symbols
@@ -79,28 +79,28 @@ export class ModuleInfo {
         name: symbol.name,
         typeSignature: symbol.typeSignature,
         symbolType: symbol.symbolType,
-        module: importDesc
+        module: importDesc,
       }
       const qn = (n: string) => `${importDesc.alias || importDesc.name}.${n}`
       if (!skipQualified) {
         res.push({
           ...specific,
           qparent: symbol.parent ? qn(symbol.parent) : undefined,
-          qname: qn(symbol.name)
+          qname: qn(symbol.name),
         })
       }
-      if (! importDesc.qualified) {
+      if (!importDesc.qualified) {
         res.push({
           ...specific,
           qparent: symbol.parent,
-          qname: symbol.name
+          qname: symbol.name,
         })
       }
     }
     return res
   }
 
-  private async update (rootDir: AtomTypes.Directory) {
+  private async update(rootDir: AtomTypes.Directory) {
     Util.debug(`${this.name} updating`)
     this.symbols = await this.process.runBrowse(rootDir, [this.name])
     Util.debug(`${this.name} updated`)

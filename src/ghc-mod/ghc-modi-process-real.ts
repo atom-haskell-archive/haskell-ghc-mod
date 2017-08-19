@@ -1,8 +1,7 @@
-import { TEmitter, Emitter, CompositeDisposable, Directory } from 'atom'
-import * as CP from 'child_process'
-import {InteractiveProcess, GHCModCaps} from './interactive-process'
+import { TEmitter, Emitter, CompositeDisposable } from 'atom'
+import { InteractiveProcess, GHCModCaps } from './interactive-process'
 import * as Util from '../util'
-const {debug, warn, mkError, withTempFile, EOT} = Util
+const { debug, withTempFile, EOT } = Util
 import { EOL } from 'os'
 import * as _ from 'underscore'
 
@@ -40,25 +39,25 @@ export class GhcModiProcessReal {
     'warning': string
     'error': IErrorCallbackArgs
   }>
-  private ghcModOptions: string[]
+  private ghcModOptions: string[] | undefined
   private proc: InteractiveProcess | undefined
 
-  constructor (private caps: GHCModCaps, private rootDir: AtomTypes.Directory, private options: RunOptions) {
+  constructor(private caps: GHCModCaps, private rootDir: AtomTypes.Directory, private options: RunOptions) {
     this.disposables = new CompositeDisposable()
     this.emitter = new Emitter()
     this.disposables.add(this.emitter)
   }
 
-  public async run (
-    runArgs: RunArgs
+  public async run(
+    runArgs: RunArgs,
   ) {
-    let {interactive, dashArgs, args, suppressErrors, ghcOptions, ghcModOptions} = runArgs
-    const {command, text, uri} = runArgs
-    if (! args) { args = [] }
-    if (! dashArgs) { dashArgs = [] }
-    if (! suppressErrors) { suppressErrors = false }
-    if (! ghcOptions) { ghcOptions = [] }
-    if (! ghcModOptions) { ghcModOptions = [] }
+    let { interactive, dashArgs, args, suppressErrors, ghcOptions, ghcModOptions } = runArgs
+    const { command, text, uri } = runArgs
+    if (!args) { args = [] }
+    if (!dashArgs) { dashArgs = [] }
+    if (!suppressErrors) { suppressErrors = false }
+    if (!ghcOptions) { ghcOptions = [] }
+    if (!ghcModOptions) { ghcModOptions = [] }
     ghcModOptions = ghcModOptions.concat(...ghcOptions.map((opt) => ['--ghc-option', opt]))
     if (atom.config.get('haskell-ghc-mod.lowMemorySystem')) {
       interactive = atom.config.get('haskell-ghc-mod.enableGhcModi')
@@ -72,60 +71,62 @@ export class GhcModiProcessReal {
     try {
       let res
       if (uri && text && !this.caps.fileMap) {
-        const myOpts = {ghcModOptions, command, args}
+        const myOpts = { ghcModOptions, command, args }
         res = withTempFile(text, uri, async (tempuri) => {
-          const {stdout, stderr} = await fun({...myOpts,  uri: tempuri})
+          const { stdout, stderr } = await fun({ ...myOpts, uri: tempuri })
           return {
             stdout: stdout.map((line) => line.split(tempuri).join(uri)),
-            stderr: stderr.map((line) => line.split(tempuri).join(uri))
+            stderr: stderr.map((line) => line.split(tempuri).join(uri)),
           }
         })
       } else {
-        res = fun({ghcModOptions, command, text, uri, args})
+        res = fun({ ghcModOptions, command, text, uri, args })
       }
-      const {stdout, stderr} = await res
+      const { stdout, stderr } = await res
       if (stderr.join('').length) {
         this.emitter.emit('warning', stderr.join('\n'))
       }
       return stdout.map((line) => line.replace(/\0/g, '\n'))
     } catch (err) {
       debug(err)
-      this.emitter.emit('error', {runArgs, err, caps: this.caps})
+      this.emitter.emit('error', { runArgs, err, caps: this.caps })
       return []
     }
   }
 
-  public killProcess () {
+  public killProcess() {
     debug(`Killing ghc-modi process for ${this.rootDir.getPath()}`)
     this.proc && this.proc.kill()
   }
 
-  public destroy () {
+  public destroy() {
     debug('GhcModiProcessBase destroying')
     this.killProcess()
     this.emitter.emit('did-destroy', undefined)
     this.disposables.dispose()
   }
 
-  public onDidDestroy (callback: () => void) {
+  public onDidDestroy(callback: () => void) {
     return this.emitter.on('did-destroy', callback)
   }
 
-  public onWarning (callback: (warning: string) => void) {
+  public onWarning(callback: (warning: string) => void) {
     return this.emitter.on('warning', callback)
   }
 
-  public onError (callback: (error: IErrorCallbackArgs) => void) {
+  public onError(callback: (error: IErrorCallbackArgs) => void) {
     return this.emitter.on('error', callback)
   }
 
-  private async spawnProcess (ghcModOptions: string[]): Promise<InteractiveProcess | undefined> {
-    if (!atom.config.get('haskell-ghc-mod.enableGhcModi')) { return }
+  private async spawnProcess(ghcModOptions: string[]): Promise<InteractiveProcess | undefined> {
+    if (!atom.config.get('haskell-ghc-mod.enableGhcModi')) { return undefined }
     debug(`Checking for ghc-modi in ${this.rootDir.getPath()}`)
     if (this.proc) {
       if (!_.isEqual(this.ghcModOptions, ghcModOptions)) {
-        debug(`Found running ghc-modi instance for ${this.rootDir.getPath()}, but ghcModOptions don't match. Old: `,
-              this.ghcModOptions, ' new: ', ghcModOptions)
+        debug(
+          `Found running ghc-modi instance for ${this.rootDir.getPath()}, but ghcModOptions don't match. Old: `,
+          this.ghcModOptions, ' new: ', ghcModOptions,
+        )
         await this.proc.kill()
         return this.spawnProcess(ghcModOptions)
       }
@@ -143,14 +144,12 @@ export class GhcModiProcessReal {
     return this.proc
   }
 
-  private async runModCmd (
+  private async runModCmd(
     {
-      ghcModOptions, command, text, uri, args
-    }: {ghcModOptions: string[], command: string, text?: string, uri?: string, args: string[]}
+      ghcModOptions, command, text, uri, args,
+    }: { ghcModOptions: string[], command: string, text?: string, uri?: string, args: string[] },
   ) {
     const modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
-    const result = []
-    const err = []
     let stdin
     const cmd = [...ghcModOptions]
     if (text && uri) {
@@ -162,18 +161,18 @@ export class GhcModiProcessReal {
       cmd.push(uri)
     }
     cmd.push(...args)
-    const {stdout, stderr} = await Util.execPromise(modPath, cmd, this.options, stdin)
-    return  {
+    const { stdout, stderr } = await Util.execPromise(modPath, cmd, this.options, stdin)
+    return {
       stdout: stdout.split(EOL).slice(0, -1),
-      stderr: stderr.split(EOL)
+      stderr: stderr.split(EOL),
     }
   }
 
-  private async runModiCmd (
-    o: {ghcModOptions: string[], command: string, text?: string, uri?: string, args: string[]}
+  private async runModiCmd(
+    o: { ghcModOptions: string[], command: string, text?: string, uri?: string, args: string[] },
   ) {
-    const {ghcModOptions, command, text, args} = o
-    let {uri} = o
+    const { ghcModOptions, command, text, args } = o
+    let { uri } = o
     debug(`Trying to run ghc-modi in ${this.rootDir.getPath()}`)
     const proc = await this.spawnProcess(ghcModOptions)
     if (!proc) {

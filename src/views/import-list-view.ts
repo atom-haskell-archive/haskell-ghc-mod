@@ -1,13 +1,13 @@
 import SelectListView = require('atom-select-list')
-import {Panel} from 'atom'
+import { Panel } from 'atom'
 
-export async function importListView (
-  imports: string[]
-): Promise<string|undefined> {
+export async function importListView(
+  imports: string[],
+): Promise<string | undefined> {
   let panel: Panel | undefined
   let res: string | undefined
   try {
-    res = await new Promise<string|undefined>((resolve, reject) => {
+    res = await new Promise<string | undefined>((resolve, reject) => {
       const select = new SelectListView({
         items: imports,
         // infoMessage: heading,
@@ -22,12 +22,12 @@ export async function importListView (
         },
         didConfirmSelection: (item: string) => {
           resolve(item)
-        }
+        },
       })
       select.element.classList.add('ide-haskell')
       panel = atom.workspace.addModalPanel({
         item: select,
-        visible: true
+        visible: true,
       })
       select.focus()
     })

@@ -1,35 +1,35 @@
-import { Range, Point, Directory } from 'atom'
+import { Range, Point } from 'atom'
 import { delimiter, sep, extname } from 'path'
 import * as Temp from 'temp'
 import * as FS from 'fs'
 import * as CP from 'child_process'
 import { EOL } from 'os'
-import {getRootDirFallback, getRootDir, isDirectory} from 'atom-haskell-utils'
+import { getRootDirFallback, getRootDir, isDirectory } from 'atom-haskell-utils'
 import { RunOptions, IErrorCallbackArgs } from './ghc-mod/ghc-modi-process-real'
 
 type ExecOpts = CP.ExecFileOptionsWithStringEncoding
-export {getRootDirFallback, getRootDir, isDirectory, ExecOpts}
+export { getRootDirFallback, getRootDir, isDirectory, ExecOpts }
 
-let debuglog: Array<{timestamp: number, messages: string[]}> = []
+let debuglog: Array<{ timestamp: number, messages: string[] }> = []
 const logKeep = 30000 // ms
 
-function savelog (...messages: string[]) {
+function savelog(...messages: string[]) {
   const ts = Date.now()
   debuglog.push({
     timestamp: ts,
-    messages
+    messages,
   })
-  debuglog = debuglog.filter(({timestamp}) => (ts - timestamp) < logKeep)
+  debuglog = debuglog.filter(({ timestamp }) => (ts - timestamp) < logKeep)
 }
 
-function joinPath (ds: string[]) {
+function joinPath(ds: string[]) {
   const set = new Set(ds)
   return Array.from(set).join(delimiter)
 }
 
 export const EOT = `${EOL}\x04${EOL}`
 
-export function debug (...messages: any[]) {
+export function debug(...messages: any[]) {
   if (atom.config.get('haskell-ghc-mod.debug')) {
     // tslint:disable-next-line: no-console
     console.log('haskell-ghc-mod debug:', ...messages)
@@ -37,26 +37,26 @@ export function debug (...messages: any[]) {
   savelog(...messages.map((v) => JSON.stringify(v)))
 }
 
-export function warn (...messages: any[]) {
+export function warn(...messages: any[]) {
   // tslint:disable-next-line: no-console
   console.warn('haskell-ghc-mod warning:', ...messages)
   savelog(...messages.map((v) => JSON.stringify(v)))
 }
 
-export function error (...messages: any[]) {
+export function error(...messages: any[]) {
   // tslint:disable-next-line: no-console
   console.error('haskell-ghc-mod error:', ...messages)
   savelog(...messages.map((v) => JSON.stringify(v)))
 }
 
-export function getDebugLog () {
+export function getDebugLog() {
   const ts = Date.now()
-  debuglog = debuglog.filter(({timestamp}) => (ts - timestamp) < logKeep)
-  return debuglog.map(({timestamp, messages}) => `${(timestamp - ts) / 1000}s: ${messages.join(',')}`).join(EOL)
+  debuglog = debuglog.filter(({ timestamp }) => (ts - timestamp) < logKeep)
+  return debuglog.map(({ timestamp, messages }) => `${(timestamp - ts) / 1000}s: ${messages.join(',')}`).join(EOL)
 }
 
-export async function execPromise (cmd: string, args: string[], opts: ExecOpts, stdin?: string) {
-  return new Promise<{stdout: string, stderr: string}>((resolve, reject) => {
+export async function execPromise(cmd: string, args: string[], opts: ExecOpts, stdin?: string) {
+  return new Promise<{ stdout: string, stderr: string }>((resolve, reject) => {
     debug(`Running ${cmd} ${args} with opts = `, opts)
     const child = CP.execFile(cmd, args, opts, (error, stdout: string, stderr: string) => {
       if (stderr.trim().length > 0) { warn(stderr) }
@@ -66,8 +66,8 @@ export async function execPromise (cmd: string, args: string[], opts: ExecOpts, 
         error.stack = (new Error()).stack
         reject(error)
       } else {
-        debug(`Got response from ${cmd} ${args}`, {stdout, stderr})
-        resolve({stdout, stderr})
+        debug(`Got response from ${cmd} ${args}`, { stdout, stderr })
+        resolve({ stdout, stderr })
       }
     })
     if (stdin) {
@@ -77,7 +77,7 @@ export async function execPromise (cmd: string, args: string[], opts: ExecOpts, 
   })
 }
 
-export async function getCabalSandbox (rootPath: string) {
+export async function getCabalSandbox(rootPath: string) {
   debug('Looking for cabal sandbox...')
   const sbc = await parseSandboxConfig(`${rootPath}${sep}cabal.sandbox.config`)
   // tslint:disable: no-string-literal
@@ -95,7 +95,7 @@ export async function getCabalSandbox (rootPath: string) {
   // tslint:enable: no-string-literal
 }
 
-export async function getStackSandbox (rootPath: string , apd: string[], env: {[key: string]: string | undefined}) {
+export async function getStackSandbox(rootPath: string, apd: string[], env: { [key: string]: string | undefined }) {
   debug('Looking for stack sandbox...')
   env.PATH = joinPath(apd)
   debug('Running stack with PATH ', env.PATH)
@@ -104,7 +104,7 @@ export async function getStackSandbox (rootPath: string , apd: string[], env: {[
       encoding: 'utf8',
       cwd: rootPath,
       env,
-      timeout: atom.config.get('haskell-ghc-mod.initTimeout') * 1000
+      timeout: atom.config.get('haskell-ghc-mod.initTimeout') * 1000,
     })
 
     const lines = out.stdout.split(EOL)
@@ -123,8 +123,8 @@ export async function getStackSandbox (rootPath: string , apd: string[], env: {[
 
 const processOptionsCache = new Map<string, RunOptions>()
 
-export async function getProcessOptions (rootPath?: string): Promise<RunOptions> {
-  if (! rootPath) {
+export async function getProcessOptions(rootPath?: string): Promise<RunOptions> {
+  if (!rootPath) {
     // tslint:disable-next-line: no-null-keyword
     rootPath = getRootDirFallback(null).getPath()
   }
@@ -135,15 +135,13 @@ export async function getProcessOptions (rootPath?: string): Promise<RunOptions>
   }
 
   debug(`getProcessOptions(${rootPath})`)
-  const env = {...process.env}
+  const env = { ...process.env }
 
   if (process.platform === 'win32') {
     const PATH = []
     const capMask = (str: string, mask: number) => {
       const a = str.split('')
       for (let i = 0; i < a.length; i++) {
-        const c = a[i]
-        // tslint:disable-next-line: no-bitwise
         if (mask & Math.pow(2, i)) {
           a[i] = a[i].toUpperCase()
         }
@@ -162,11 +160,10 @@ export async function getProcessOptions (rootPath?: string): Promise<RunOptions>
   const PATH = env.PATH || ''
 
   const apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories').concat(PATH.split(delimiter))
-  const sbd = false
-  const cabalSandbox =
-    atom.config.get('haskell-ghc-mod.cabalSandbox') ? getCabalSandbox(rootPath) : Promise.resolve() // undefined
-  const stackSandbox =
-    atom.config.get('haskell-ghc-mod.stackSandbox') ? getStackSandbox(rootPath, apd, {...env}) : Promise.resolve()
+  const cabalSandbox = atom.config.get('haskell-ghc-mod.cabalSandbox')
+    ? getCabalSandbox(rootPath) : Promise.resolve()
+  const stackSandbox = atom.config.get('haskell-ghc-mod.stackSandbox')
+    ? getStackSandbox(rootPath, apd, { ...env }) : Promise.resolve()
   const [cabalSandboxDir, stackSandboxDirs] = await Promise.all([cabalSandbox, stackSandbox])
   const newp = []
   if (cabalSandboxDir) {
@@ -182,49 +179,49 @@ export async function getProcessOptions (rootPath?: string): Promise<RunOptions>
     cwd: rootPath,
     env,
     encoding: 'utf8',
-    maxBuffer: Infinity
+    maxBuffer: Infinity,
   }
   processOptionsCache.set(rootPath, res)
   return res
 }
 
-export function getSymbolAtPoint (
-  editor: AtomTypes.TextEditor, point: AtomTypes.Point
+export function getSymbolAtPoint(
+  editor: AtomTypes.TextEditor, point: AtomTypes.Point,
 ) {
   const [scope] = editor.scopeDescriptorForBufferPosition(point).getScopesArray().slice(-1)
   if (scope) {
     const range = editor.bufferRangeForScopeAtPosition(scope, point)
     if (range && !range.isEmpty()) {
       const symbol = editor.getTextInBufferRange(range)
-      return {scope, range, symbol}
+      return { scope, range, symbol }
     }
   }
 }
 
-export function getSymbolInRange (editor: AtomTypes.TextEditor, crange: AtomTypes.Range) {
+export function getSymbolInRange(editor: AtomTypes.TextEditor, crange: AtomTypes.Range) {
   const buffer = editor.getBuffer()
   if (crange.isEmpty()) {
     return getSymbolAtPoint(editor, crange.start)
   } else {
     return {
       symbol: buffer.getTextInRange(crange),
-      range: crange
+      range: crange,
     }
   }
 }
 
-export async function withTempFile<T> (contents: string, uri: string, gen: (path: string) => Promise<T>): Promise<T> {
+export async function withTempFile<T>(contents: string, uri: string, gen: (path: string) => Promise<T>): Promise<T> {
   const info = await new Promise<Temp.OpenFile>(
     (resolve, reject) =>
-    Temp.open(
-      {prefix: 'haskell-ghc-mod', suffix: extname(uri || '.hs')},
-      (err, info2) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(info2)
-        }
-    }))
+      Temp.open(
+        { prefix: 'haskell-ghc-mod', suffix: extname(uri || '.hs') },
+        (err, info2) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(info2)
+          }
+        }))
   return new Promise<T>((resolve, reject) =>
     FS.write(info.fd, contents, async (err) => {
       if (err) {
@@ -237,22 +234,22 @@ export async function withTempFile<T> (contents: string, uri: string, gen: (path
 }
 
 export type KnownErrorName =
-    'GHCModStdoutError'
+  'GHCModStdoutError'
   | 'InteractiveActionTimeout'
   | 'GHCModInteractiveCrash'
 
-export function mkError (name: KnownErrorName, message: string) {
+export function mkError(name: KnownErrorName, message: string) {
   const err = new Error(message)
   err.name = name
   return err
 }
 
-export interface SandboxConfigTree {[k: string]: SandboxConfigTree | string}
+export interface SandboxConfigTree { [k: string]: SandboxConfigTree | string }
 
-export async function parseSandboxConfig (file: string) {
+export async function parseSandboxConfig(file: string) {
   try {
     const sbc = await new Promise<string>((resolve, reject) =>
-      FS.readFile(file, {encoding: 'utf-8'}, (err, sbc2) => {
+      FS.readFile(file, { encoding: 'utf-8' }, (err, sbc2) => {
         if (err) {
           reject(err)
         } else {
@@ -273,7 +270,7 @@ export async function parseSandboxConfig (file: string) {
     for (const line of sbc.split(/\r?\n|\r/)) {
       if (!line.match(/^\s*--/) && !line.match(/^\s*$/)) {
         const [l] = line.split(/--/)
-        const m = line.match(/^\s*([\w-]+):\s*(.*)\s*$/)
+        const m = l.match(/^\s*([\w-]+):\s*(.*)\s*$/)
         if (m) {
           const [_, name, val] = m
           scope[name] = rv(val)
@@ -291,20 +288,20 @@ export async function parseSandboxConfig (file: string) {
 }
 
 // A dirty hack to work with tabs
-export function tabShiftForPoint (buffer: AtomTypes.TextBuffer, point: AtomTypes.Point) {
+export function tabShiftForPoint(buffer: AtomTypes.TextBuffer, point: AtomTypes.Point) {
   const line = buffer.lineForRow(point.row)
   const match = line ? (line.slice(0, point.column).match(/\t/g) || []) : []
   const columnShift = 7 * match.length
   return new Point(point.row, point.column + columnShift)
 }
 
-export function tabShiftForRange (buffer: AtomTypes.TextBuffer, range: AtomTypes.Range) {
+export function tabShiftForRange(buffer: AtomTypes.TextBuffer, range: AtomTypes.Range) {
   const start = tabShiftForPoint(buffer, range.start)
   const end = tabShiftForPoint(buffer, range.end)
   return new Range(start, end)
 }
 
-export function tabUnshiftForPoint (buffer: AtomTypes.TextBuffer, point: AtomTypes.Point) {
+export function tabUnshiftForPoint(buffer: AtomTypes.TextBuffer, point: AtomTypes.Point) {
   const line = buffer.lineForRow(point.row)
   let columnl = 0
   let columnr = point.column
@@ -319,17 +316,17 @@ export function tabUnshiftForPoint (buffer: AtomTypes.TextBuffer, point: AtomTyp
   return new Point(point.row, columnr)
 }
 
-export function tabUnshiftForRange (buffer: AtomTypes.TextBuffer, range: AtomTypes.Range) {
+export function tabUnshiftForRange(buffer: AtomTypes.TextBuffer, range: AtomTypes.Range) {
   const start = tabUnshiftForPoint(buffer, range.start)
   const end = tabUnshiftForPoint(buffer, range.end)
   return new Range(start, end)
 }
 
-export function isUpperCase (ch: string): boolean {
+export function isUpperCase(ch: string): boolean {
   return ch.toUpperCase() === ch
 }
 
-export function getErrorDetail ({err, runArgs, caps}: IErrorCallbackArgs) {
+export function getErrorDetail({ err, runArgs, caps }: IErrorCallbackArgs) {
   return `caps:
 ${JSON.stringify(caps, undefined, 2)}
 Args:
@@ -340,9 +337,9 @@ log:
 ${getDebugLog()}`
 }
 
-export function formatError ({err, runArgs, caps}: IErrorCallbackArgs) {
+export function formatError({ err, runArgs, caps }: IErrorCallbackArgs) {
   if (err.name === 'InteractiveActionTimeout' && runArgs) {
-      return `\
+    return `\
 Haskell-ghc-mod: ghc-mod \
 ${runArgs.interactive ? 'interactive ' : ''}command ${runArgs.command} \
 timed out. You can try to fix it by raising 'Interactive Action \
@@ -357,8 +354,8 @@ failed with error ${err.name}`
   }
 }
 
-export function defaultErrorHandler (args: IErrorCallbackArgs) {
-  const {err, runArgs, caps} = args
+export function defaultErrorHandler(args: IErrorCallbackArgs) {
+  const { err, runArgs, caps } = args
   const suppressErrors = runArgs && runArgs.suppressErrors
 
   if (!suppressErrors) {
@@ -367,15 +364,15 @@ export function defaultErrorHandler (args: IErrorCallbackArgs) {
       {
         detail: getErrorDetail(args),
         stack: err.stack,
-        dismissable: true
-      }
+        dismissable: true,
+      },
     )
   } else {
     error(caps, runArgs, err)
   }
 }
 
-export function warnGHCPackagePath () {
+export function warnGHCPackagePath() {
   atom.notifications.addWarning(
     'haskell-ghc-mod: You have GHC_PACKAGE_PATH environment variable set!',
     {
@@ -387,18 +384,18 @@ delete process.env.GHC_PACKAGE_PATH
 
 to your Atom init script (Edit → Init Script...)
 
-You can suppress this warning in haskell-ghc-mod settings.`
-    }
+You can suppress this warning in haskell-ghc-mod settings.`,
+    },
   )
 }
 
-function filterEnv (env: {[name: string]: string | undefined}) {
+function filterEnv(env: { [name: string]: string | undefined }) {
   const fenv = {}
   // tslint:disable-next-line: forin
   for (const evar in env) {
     const evarU = evar.toUpperCase()
     if (
-         evarU === 'PATH'
+      evarU === 'PATH'
       || evarU.startsWith('GHC_')
       || evarU.startsWith('STACK_')
       || evarU.startsWith('CABAL_')
@@ -409,7 +406,7 @@ function filterEnv (env: {[name: string]: string | undefined}) {
   return fenv
 }
 
-export function notifySpawnFail (args: {dir: string, err: any, opts: any, vers: any, caps: any}) {
+export function notifySpawnFail(args: { dir: string, err: any, opts: any, vers: any, caps: any }) {
   const optsclone = JSON.parse(JSON.stringify(args.opts))
   optsclone.env = filterEnv(optsclone.env)
   args.opts = optsclone
@@ -426,18 +423,18 @@ Environment (filtered):
 ${JSON.stringify(filterEnv(process.env), undefined, 2)}
 `,
       stack: args.err.stack,
-      dismissable: true
-    }
+      dismissable: true,
+    },
   )
 }
 
-export function handleException<T> (
-  target: {upi: UPI.IUPIInstance | Promise<UPI.IUPIInstance>}, key: string,
-  desc: TypedPropertyDescriptor<(...args: any[]) => Promise<T>>
+export function handleException<T>(
+  target: { upi: UPI.IUPIInstance | Promise<UPI.IUPIInstance> }, key: string,
+  desc: TypedPropertyDescriptor<(...args: any[]) => Promise<T>>,
 ): TypedPropertyDescriptor<(...args: any[]) => Promise<T>> {
   return {
     ...desc,
-    async value (...args: any[]) {
+    async value(...args: any[]) {
       try {
         // tslint:disable-next-line: no-non-null-assertion
         return await desc.value!.call(this, ...args)
@@ -447,11 +444,11 @@ export function handleException<T> (
         const upi: UPI.IUPIInstance = await (this as any).upi
         upi.setStatus({
           status: 'warning',
-          detail: e.toString()
+          detail: e.toString(),
         })
         // TODO: returning a promise that never resolves... ugly, but works?
-        return new Promise(() => { /* noop */})
+        return new Promise(() => { /* noop */ })
       }
-    }
+    },
   }
 }

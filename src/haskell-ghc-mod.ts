@@ -1,8 +1,8 @@
-import {GhcModiProcess} from './ghc-mod'
-import {CompositeDisposable} from 'atom'
-import {CompletionBackend} from './completion-backend'
-import {UPIConsumer} from './upi-consumer'
-import {defaultErrorHandler} from './util'
+import { GhcModiProcess } from './ghc-mod'
+import { CompositeDisposable } from 'atom'
+import { CompletionBackend } from './completion-backend'
+import { UPIConsumer } from './upi-consumer'
+import { defaultErrorHandler } from './util'
 
 let process: GhcModiProcess | undefined
 let disposables: CompositeDisposable | undefined
@@ -11,9 +11,9 @@ let completionBackend: CompletionBackend | undefined
 let resolveUpiPromise: (v: UPI.IUPIInstance) => void
 const upiPromise = new Promise<UPI.IUPIInstance>((resolve) => resolveUpiPromise = resolve)
 
-export {config} from './config'
+export { config } from './config'
 
-export function activate (state: never) {
+export function activate(state: never) {
   process = new GhcModiProcess()
   disposables = new CompositeDisposable()
   tempDisposables = new CompositeDisposable()
@@ -22,18 +22,18 @@ export function activate (state: never) {
   tempDisposables.add(
     process.onError(defaultErrorHandler),
     process.onWarning((detail: string) => {
-      atom.notifications.addWarning('ghc-mod warning', {detail})
+      atom.notifications.addWarning('ghc-mod warning', { detail })
     }),
   )
 
   disposables.add(
     atom.commands.add('atom-workspace', {
-      'haskell-ghc-mod:shutdown-backend': () => process && process.killProcess()
-    })
+      'haskell-ghc-mod:shutdown-backend': () => process && process.killProcess(),
+    }),
   )
 }
 
-export function deactivate () {
+export function deactivate() {
   process && process.destroy()
   process = undefined
   completionBackend = undefined
@@ -41,16 +41,16 @@ export function deactivate () {
   disposables = undefined
 }
 
-export function provideCompletionBackend () {
-  if (! process) { return }
-  if (! completionBackend) {
+export function provideCompletionBackend() {
+  if (!process) { return undefined }
+  if (!completionBackend) {
     completionBackend = new CompletionBackend(process, upiPromise)
   }
   return completionBackend
 }
 
-export function consumeUPI (service: UPI.IUPIRegistration) {
-  if (!process || !disposables) { return }
+export function consumeUPI(service: UPI.IUPIRegistration) {
+  if (!process || !disposables) { return undefined }
   tempDisposables && tempDisposables.dispose()
   const upiConsumer = new UPIConsumer(service, process)
   resolveUpiPromise(upiConsumer.upi)
