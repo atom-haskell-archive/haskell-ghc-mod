@@ -585,6 +585,7 @@ Use at your own risk or update your ghc-mod installation`,
     }
     // end of dirty hack
 
+    // tslint:disable-next-line: totality-check
     if (cmd === 'lint') {
       const opts: string[] = atom.config.get('haskell-ghc-mod.hlintOptions')
       dashArgs = []

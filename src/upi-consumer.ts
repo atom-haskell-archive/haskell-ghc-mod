@@ -119,16 +119,13 @@ export class UPIConsumer {
   private async shouldShowTooltip(
     editor: AtomTypes.TextEditor, crange: AtomTypes.Range, type: UPI.TEventRangeType,
   ): Promise<UPI.ITooltipData | undefined> {
-    if (type === 'mouse') {
-      const t = atom.config.get('haskell-ghc-mod.onMouseHoverShow')
-      if (t) {
-        return this[`${t}Tooltip`](editor, crange)
-      }
-    } else if (type === 'selection') {
-      const t = atom.config.get('haskell-ghc-mod.onSelectionShow')
-      if (t) {
-        return this[`${t}Tooltip`](editor, crange)
-      }
+    const map: { [K in UPI.TEventRangeType]?: any } = {
+      mouse: atom.config.get('haskell-ghc-mod.onMouseHoverShow'),
+      selection: atom.config.get('haskell-ghc-mod.onSelectionShow'),
+    }
+    const t = map[type]
+    if (t) {
+      return this[`${t}Tooltip`](editor, crange)
     }
   }
 

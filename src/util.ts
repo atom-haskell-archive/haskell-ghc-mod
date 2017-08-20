@@ -137,6 +137,7 @@ export async function getProcessOptions(rootPath?: string): Promise<RunOptions> 
   debug(`getProcessOptions(${rootPath})`)
   const env = { ...process.env }
 
+  // tslint:disable-next-line: totality-check
   if (process.platform === 'win32') {
     const PATH = []
     const capMask = (str: string, mask: number) => {
