@@ -381,7 +381,8 @@ export class UPIConsumer {
   }
 
   private consoleReport(arg: IErrorCallbackArgs) {
-    Util.error(Util.formatError(arg), Util.getErrorDetail(arg))
+    // tslint:disbale-next-line: no-console
+    console.error(Util.formatError(arg), Util.getErrorDetail(arg))
   }
 
   private handleProcessError(arg: IErrorCallbackArgs) {
