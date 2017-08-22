@@ -96,7 +96,7 @@ export class InteractiveProcess {
         }
         const exitEvent = async () => new Promise<never>((resolve, reject) => {
           this.proc.once('exit', (code) => {
-            warn(stdout)
+            warn(stdout.join('\n'))
             reject(mkError('GHCModInteractiveCrash', `${stdout}\n\n${stderr}`))
           })
         })
