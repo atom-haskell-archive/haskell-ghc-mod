@@ -1,3 +1,6 @@
+## 2.0.10
+* Fix explosive log growth
+
 ## 2.0.9
 * Print stdout in warnings as string, not array
 * Enforce consistent code style
