@@ -1,3 +1,7 @@
+## 2.0.9
+* Print stdout in warnings as string, not array
+* Enforce consistent code style
+
 ## 2.0.8
 * Handle some exceptions via UPI status
 
