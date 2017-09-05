@@ -95,7 +95,7 @@ export class UPIConsumer {
       tooltip: this.shouldShowTooltip.bind(this),
       events: {
         onDidSaveBuffer: async (buffer) =>
-          this.checkLint(buffer, 'Save', false),
+          this.checkLint(buffer, 'Save', atom.config.get('haskell-ghc-mod.alwaysInteractiveCheck')),
         onDidStopChanging: async (buffer) =>
           this.checkLint(buffer, 'Change', true),
       },
@@ -132,7 +132,7 @@ export class UPIConsumer {
   @handleException
   private async checkCommand({ currentTarget }: IEventDesc) {
     const editor = currentTarget.getModel()
-    const res = await this.process.doCheckBuffer(editor.getBuffer(), false)
+    const res = await this.process.doCheckBuffer(editor.getBuffer(), atom.config.get('haskell-ghc-mod.alwaysInteractiveCheck'))
     this.setMessages(res)
   }
 

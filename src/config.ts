@@ -110,6 +110,14 @@ means wait forever.`,
     description: 'Lint file on change',
     order: 25,
   },
+  alwaysInteractiveCheck: {
+    type: 'boolean',
+    default: true,
+    description: `Always use interactive mode for check. Much faster on large \
+projects, but can lead to problems. Try disabling if experiencing slowdowns or \
+crashes`,
+    order: 26,
+  },
   onMouseHoverShow: {
     type: 'string',
     description: 'Contents of tooltip on mouse hover',
