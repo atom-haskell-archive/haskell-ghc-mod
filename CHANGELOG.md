@@ -1,3 +1,8 @@
+## 2.1.0
+* Option for always interactive check, on by default
+* Explicit fastcheck
+* Optimize debuglog saving
+
 ## 2.0.10
 * Fix explosive log growth
 
