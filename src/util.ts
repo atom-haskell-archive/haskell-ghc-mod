@@ -19,7 +19,14 @@ function savelog(...messages: string[]) {
     timestamp: ts,
     messages,
   })
-  debuglog = debuglog.filter(({ timestamp }) => (ts - timestamp) < logKeep)
+  let ks = 0
+  for (const v of debuglog) {
+    if ((ts - v.timestamp) >= logKeep) {
+      break
+    }
+    ks++
+  }
+  debuglog.splice(0, ks)
 }
 
 function joinPath(ds: string[]) {
