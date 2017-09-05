@@ -289,16 +289,16 @@ export class GhcModiProcess {
     })
   }
 
-  public async doCheckBuffer(buffer: AtomTypes.TextBuffer, fast: boolean = false) {
+  public async doCheckBuffer(buffer: AtomTypes.TextBuffer, fast: boolean) {
     return this.doCheckOrLintBuffer('check', buffer, fast)
   }
 
-  public async doLintBuffer(buffer: AtomTypes.TextBuffer, fast: boolean = false) {
-    return this.doCheckOrLintBuffer('lint', buffer, fast)
+  public async doLintBuffer(buffer: AtomTypes.TextBuffer) {
+    return this.doCheckOrLintBuffer('lint', buffer, false)
   }
 
   public async doCheckAndLint(buffer: AtomTypes.TextBuffer, fast: boolean) {
-    const [cr, lr] = await Promise.all([this.doCheckBuffer(buffer, fast), this.doLintBuffer(buffer, fast)])
+    const [cr, lr] = await Promise.all([this.doCheckBuffer(buffer, fast), this.doLintBuffer(buffer)])
     return cr.concat(lr)
   }
 

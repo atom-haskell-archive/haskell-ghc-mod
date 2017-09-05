@@ -95,7 +95,7 @@ export class UPIConsumer {
       tooltip: this.shouldShowTooltip.bind(this),
       events: {
         onDidSaveBuffer: async (buffer) =>
-          this.checkLint(buffer, 'Save'),
+          this.checkLint(buffer, 'Save', false),
         onDidStopChanging: async (buffer) =>
           this.checkLint(buffer, 'Change', true),
       },
@@ -132,7 +132,7 @@ export class UPIConsumer {
   @handleException
   private async checkCommand({ currentTarget }: IEventDesc) {
     const editor = currentTarget.getModel()
-    const res = await this.process.doCheckBuffer(editor.getBuffer())
+    const res = await this.process.doCheckBuffer(editor.getBuffer(), false)
     this.setMessages(res)
   }
 
@@ -366,14 +366,14 @@ export class UPIConsumer {
     this.upi.setMessages(this.processMessages.concat(this.lastMessages))
   }
 
-  private async checkLint(buffer: AtomTypes.TextBuffer, opt: 'Save' | 'Change', fast: boolean = false) {
+  private async checkLint(buffer: AtomTypes.TextBuffer, opt: 'Save' | 'Change', fast: boolean) {
     let res
     if (atom.config.get(`haskell-ghc-mod.on${opt}Check`) && atom.config.get(`haskell-ghc-mod.on${opt}Lint`)) {
       res = await this.process.doCheckAndLint(buffer, fast)
     } else if (atom.config.get(`haskell-ghc-mod.on${opt}Check`)) {
       res = await this.process.doCheckBuffer(buffer, fast)
     } else if (atom.config.get(`haskell-ghc-mod.on${opt}Lint`)) {
-      res = await this.process.doLintBuffer(buffer, fast)
+      res = await this.process.doLintBuffer(buffer)
     }
     if (res) {
       this.setMessages(res)
