@@ -427,6 +427,8 @@ Error was: ${args.err.name}
 ${args.err.message}
 Debug information:
 ${JSON.stringify(args, undefined, 2)}
+Config:
+${JSON.stringify(atom.config.get('haskell-ghc-mod'),undefined,2)}
 Environment (filtered):
 ${JSON.stringify(filterEnv(process.env), undefined, 2)}
 `,
