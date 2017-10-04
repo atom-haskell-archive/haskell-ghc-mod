@@ -10,10 +10,10 @@ export class BufferInfo {
 
   constructor(public readonly buffer: AtomTypes.TextBuffer) {
     this.disposables = new CompositeDisposable()
-    this.disposables.add(this.buffer.onDidDestroy(this.destroy.bind(this)))
+    this.disposables.add(this.buffer.onDidDestroy(this.destroy))
   }
 
-  public destroy() {
+  public destroy = () => {
     this.disposables.dispose()
   }
 

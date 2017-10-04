@@ -67,7 +67,7 @@ export class GhcModiProcessReal {
     } else {
       args = dashArgs.concat(args)
     }
-    const fun = interactive ? this.runModiCmd.bind(this) : this.runModCmd.bind(this)
+    const fun = interactive ? this.runModiCmd : this.runModCmd
     try {
       let res
       if (uri && text && !this.caps.fileMap) {
@@ -144,11 +144,11 @@ export class GhcModiProcessReal {
     return this.proc
   }
 
-  private async runModCmd(
+  private runModCmd = async (
     {
       ghcModOptions, command, text, uri, args,
     }: { ghcModOptions: string[], command: string, text?: string, uri?: string, args: string[] },
-  ) {
+  ) => {
     const modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     let stdin
     const cmd = [...ghcModOptions]
@@ -168,9 +168,9 @@ export class GhcModiProcessReal {
     }
   }
 
-  private async runModiCmd(
+  private runModiCmd = async (
     o: { ghcModOptions: string[], command: string, text?: string, uri?: string, args: string[] },
-  ) {
+  ) => {
     const { ghcModOptions, command, text, args } = o
     let { uri } = o
     debug(`Trying to run ghc-modi in ${this.rootDir.getPath()}`)

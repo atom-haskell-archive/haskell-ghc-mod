@@ -25,11 +25,11 @@ export class ModuleInfo {
     this.emitter = new Emitter()
     this.disposables.add(this.emitter)
     this.initialUpdatePromise = this.update(rootDir)
-    this.timeout = setTimeout(this.destroy.bind(this), this.invalidateInterval)
-    this.disposables.add(this.process.onDidDestroy(this.destroy.bind(this)))
+    this.timeout = setTimeout(this.destroy, this.invalidateInterval)
+    this.disposables.add(this.process.onDidDestroy(this.destroy))
   }
 
-  public destroy() {
+  public destroy = () => {
     Util.debug(`${this.name} destroyed`)
     clearTimeout(this.timeout)
     this.emitter.emit('did-destroy', undefined)
@@ -61,7 +61,7 @@ export class ModuleInfo {
 
   public select(importDesc: IImport, symbolTypes?: SymbolType[], skipQualified: boolean = false) {
     clearTimeout(this.timeout)
-    this.timeout = setTimeout(this.destroy.bind(this), this.invalidateInterval)
+    this.timeout = setTimeout(this.destroy, this.invalidateInterval)
     let symbols = this.symbols
     if (importDesc.importList) {
       const il = importDesc.importList
