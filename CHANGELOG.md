@@ -1,3 +1,7 @@
+## 2.1.1
+* Update README
+* Add current config to spawn fail report.
+
 ## 2.1.0
 * Option for always interactive check, on by default
 * Explicit fastcheck
