@@ -28,18 +28,12 @@ const mainMenu = {
   ],
 }
 
-const enum MsgBackend {
-  Console = 'console',
-  UPI = 'upi',
-  Popup = 'popup',
-}
-
 export class UPIConsumer {
   public upi: UPI.IUPIInstance
   private disposables: CompositeDisposable = new CompositeDisposable()
   private processMessages: UPI.IResultItem[] = []
   private lastMessages: UPI.IResultItem[] = []
-  private msgBackend: MsgBackend = atom.config.get('haskell-ghc-mod.ghcModMessages')
+  private msgBackend = atom.config.get('haskell-ghc-mod.ghcModMessages')
 
   private contextCommands = {
     'haskell-ghc-mod:show-type': this.tooltipCommand(this.typeTooltip.bind(this)),
@@ -84,7 +78,7 @@ export class UPIConsumer {
     )
 
     const msgTypes =
-      this.msgBackend === MsgBackend.UPI
+      this.msgBackend === 'upi'
         ? { ...messageTypes, ...addMsgTypes }
         : messageTypes
 
@@ -119,14 +113,11 @@ export class UPIConsumer {
   private async shouldShowTooltip(
     editor: AtomTypes.TextEditor, crange: AtomTypes.Range, type: UPI.TEventRangeType,
   ): Promise<UPI.ITooltipData | undefined> {
-    const map: { [K in UPI.TEventRangeType]?: any } = {
-      mouse: atom.config.get('haskell-ghc-mod.onMouseHoverShow'),
-      selection: atom.config.get('haskell-ghc-mod.onSelectionShow'),
-    }
-    const t = map[type]
-    if (t) {
-      return this[`${t}Tooltip`](editor, crange)
-    }
+    const n = type === 'mouse' ? 'haskell-ghc-mod.onMouseHoverShow'
+            : type === 'selection' ? 'haskell-ghc-mod.onSelectionShow'
+            : undefined
+    const t = n && atom.config.get(n)
+    if (t) return this[`${t}Tooltip`](editor, crange)
   }
 
   @handleException
@@ -367,12 +358,18 @@ export class UPIConsumer {
   }
 
   private async checkLint(buffer: AtomTypes.TextBuffer, opt: 'Save' | 'Change', fast: boolean) {
+    const check = atom.config.get(
+      `haskell-ghc-mod.on${opt}Check` as 'haskell-ghc-mod.onSaveCheck' | 'haskell-ghc-mod.onChangeCheck',
+    )
+    const lint = atom.config.get(
+      `haskell-ghc-mod.on${opt}Lint` as 'haskell-ghc-mod.onSaveLint' | 'haskell-ghc-mod.onChangeLint',
+    )
     let res
-    if (atom.config.get(`haskell-ghc-mod.on${opt}Check`) && atom.config.get(`haskell-ghc-mod.on${opt}Lint`)) {
+    if (check && lint) {
       res = await this.process.doCheckAndLint(buffer, fast)
-    } else if (atom.config.get(`haskell-ghc-mod.on${opt}Check`)) {
+    } else if (check) {
       res = await this.process.doCheckBuffer(buffer, fast)
-    } else if (atom.config.get(`haskell-ghc-mod.on${opt}Lint`)) {
+    } else if (lint) {
       res = await this.process.doLintBuffer(buffer)
     }
     if (res) {
@@ -387,7 +384,7 @@ export class UPIConsumer {
 
   private handleProcessError(arg: IErrorCallbackArgs) {
     switch (this.msgBackend) {
-      case MsgBackend.UPI:
+      case 'upi':
         this.processMessages.push({
           message: Util.formatError(arg)
           + '\n\nSee console (View → Developer → Toggle Developer Tools → Console tab) for details.',
@@ -396,10 +393,10 @@ export class UPIConsumer {
         this.consoleReport(arg)
         this.sendMessages()
         break
-      case MsgBackend.Console:
+      case 'console':
         this.consoleReport(arg)
         break
-      case MsgBackend.Popup:
+      case 'popup':
         this.consoleReport(arg)
         atom.notifications.addError(Util.formatError(arg), {
           detail: Util.getErrorDetail(arg),
@@ -411,7 +408,7 @@ export class UPIConsumer {
 
   private handleProcessWarning(warning: string) {
     switch (this.msgBackend) {
-      case MsgBackend.UPI:
+      case 'upi':
         this.processMessages.push({
           message: warning,
           severity: 'ghc-mod',
@@ -419,10 +416,10 @@ export class UPIConsumer {
         Util.warn(warning)
         this.sendMessages()
         break
-      case MsgBackend.Console:
+      case 'console':
         Util.warn(warning)
         break
-      case MsgBackend.Popup:
+      case 'popup':
         Util.warn(warning)
         atom.notifications.addWarning(warning, {
           dismissable: false,
