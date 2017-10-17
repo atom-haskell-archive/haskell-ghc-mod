@@ -1,4 +1,4 @@
-import { Range, Point, TEmitter, Emitter, CompositeDisposable, Directory } from 'atom'
+import { Range, Point, TEmitter, Emitter, CompositeDisposable } from 'atom'
 import * as Util from '../util'
 import { extname } from 'path'
 import Queue = require('promise-queue')
@@ -6,6 +6,7 @@ import { unlit } from 'atom-haskell-utils'
 
 import { GhcModiProcessReal, GHCModCaps, RunArgs, IErrorCallbackArgs } from './ghc-modi-process-real'
 import { createGhcModiProcessReal } from './ghc-modi-process-real-factory'
+import { getSettings } from './settings'
 
 export { IErrorCallbackArgs, RunArgs, GHCModCaps }
 
@@ -316,46 +317,6 @@ export class GhcModiProcess {
     return backend
   }
 
-  private async getSettings(runDir: AtomTypes.Directory) {
-    const readSettings = async (file: AtomTypes.File) => {
-      try {
-        const ex = await file.exists()
-        if (ex) {
-          const contents = await file.read()
-          try {
-            return JSON.parse(contents)
-          } catch (err) {
-            atom.notifications.addError(`Failed to parse ${file.getPath()}`, {
-              detail: err,
-              dismissable: true,
-            })
-            throw err
-          }
-        } else {
-          return {}
-        }
-      } catch (error) {
-        if (error) { Util.warn(error) }
-        return {}
-      }
-    }
-
-    const localSettings = readSettings(runDir.getFile('.haskell-ghc-mod.json'))
-
-    const [projectDir] = atom.project.getDirectories().filter((d) => d.contains(runDir.getPath()))
-    const projectSettings =
-      projectDir ?
-        readSettings(projectDir.getFile('.haskell-ghc-mod.json'))
-        :
-        Promise.resolve({})
-
-    const configDir = new Directory(atom.getConfigDirPath())
-    const globalSettings = readSettings(configDir.getFile('haskell-ghc-mod.json'))
-
-    const [glob, prj, loc] = await Promise.all([globalSettings, projectSettings, localSettings])
-    return { ...glob, ...prj, ...loc }
-  }
-
   private async queueCmd(
     queueName: Commands,
     dir: AtomTypes.Directory,
@@ -371,7 +332,7 @@ export class GhcModiProcess {
     const promise = this.commandQueues[queueName].add(async () => {
       this.emitter.emit('backend-active', undefined)
       try {
-        const settings = await this.getSettings(dir)
+        const settings = await getSettings(dir)
         if (settings.disable) { throw new Error('Ghc-mod disabled in settings') }
         return backend.run({
           ...runArgsFunc(backend.getCaps()),
