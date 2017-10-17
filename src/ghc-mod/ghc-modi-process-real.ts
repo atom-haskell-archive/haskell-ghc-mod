@@ -48,6 +48,10 @@ export class GhcModiProcessReal {
     this.disposables.add(this.emitter)
   }
 
+  public getCaps(): GHCModCaps {
+    return this.caps
+  }
+
   public async run(
     runArgs: RunArgs,
   ) {
