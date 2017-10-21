@@ -1,3 +1,7 @@
+## 2.1.2
+* Fix type\/info fallbacks
+* Minor fixes
+
 ## 2.1.1
 * Update README
 * Add current config to spawn fail report.
