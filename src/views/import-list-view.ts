@@ -4,7 +4,7 @@ import { Panel } from 'atom'
 export async function importListView(
   imports: string[],
 ): Promise<string | undefined> {
-  let panel: Panel | undefined
+  let panel: Panel<SelectListView<string>> | undefined
   let res: string | undefined
   try {
     res = await new Promise<string | undefined>((resolve, reject) => {
