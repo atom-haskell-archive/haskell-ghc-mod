@@ -6,6 +6,8 @@ import * as CP from 'child_process'
 import { EOL } from 'os'
 import { getRootDirFallback, getRootDir, isDirectory } from 'atom-haskell-utils'
 import { RunOptions, IErrorCallbackArgs } from './ghc-mod/ghc-modi-process-real'
+import { GHCModVers } from './ghc-mod/ghc-modi-process-real-factory'
+import { GHCModCaps } from './ghc-mod/interactive-process'
 
 type ExecOpts = CP.ExecFileOptionsWithStringEncoding
 export { getRootDirFallback, getRootDir, isDirectory, ExecOpts }
@@ -84,12 +86,13 @@ export async function execPromise(cmd: string, args: string[], opts: ExecOpts, s
   })
 }
 
-export async function getCabalSandbox(rootPath: string) {
+export async function getCabalSandbox(rootPath: string): Promise<string | undefined> {
   debug('Looking for cabal sandbox...')
   const sbc = await parseSandboxConfig(`${rootPath}${sep}cabal.sandbox.config`)
   // tslint:disable: no-string-literal
   if (sbc && sbc['install-dirs'] && sbc['install-dirs']['bindir']) {
-    const sandbox = sbc['install-dirs']['bindir']
+    // tslint:disable-next-line: no-unsafe-any
+    const sandbox: string = sbc['install-dirs']['bindir']
     debug('Found cabal sandbox: ', sandbox)
     if (isDirectory(sandbox)) {
       return sandbox
@@ -132,7 +135,7 @@ const processOptionsCache = new Map<string, RunOptions>()
 
 export async function getProcessOptions(rootPath?: string): Promise<RunOptions> {
   if (!rootPath) {
-    // tslint:disable-next-line: no-null-keyword
+    // tslint:disable-next-line: no-null-keyword no-unsafe-any
     rootPath = getRootDirFallback(null).getPath()
   }
   // cache
@@ -169,9 +172,9 @@ export async function getProcessOptions(rootPath?: string): Promise<RunOptions> 
 
   const apd = atom.config.get('haskell-ghc-mod.additionalPathDirectories').concat(PATH.split(delimiter))
   const cabalSandbox = atom.config.get('haskell-ghc-mod.cabalSandbox')
-    ? getCabalSandbox(rootPath) : Promise.resolve()
+    ? getCabalSandbox(rootPath) : Promise.resolve(undefined)
   const stackSandbox = atom.config.get('haskell-ghc-mod.stackSandbox')
-    ? getStackSandbox(rootPath, apd, { ...env }) : Promise.resolve()
+    ? getStackSandbox(rootPath, apd, { ...env }) : Promise.resolve(undefined)
   const [cabalSandboxDir, stackSandboxDirs] = await Promise.all([cabalSandbox, stackSandbox])
   const newp = []
   if (cabalSandboxDir) {
@@ -414,25 +417,36 @@ function filterEnv(env: { [name: string]: string | undefined }) {
   return fenv
 }
 
-export function notifySpawnFail(args: { dir: string, err: any, opts: any, vers: any, caps: any }) {
-  const optsclone = JSON.parse(JSON.stringify(args.opts))
-  optsclone.env = filterEnv(optsclone.env)
-  args.opts = optsclone
+export interface SpawnFailArgs {
+  dir: string
+  err: Error & {code?: any}
+  opts?: RunOptions
+  vers?: GHCModVers
+  caps?: GHCModCaps
+}
+
+export function notifySpawnFail(args: Readonly<SpawnFailArgs>) {
+  const debugInfo: SpawnFailArgs = Object.assign({}, args)
+  if (args.opts) {
+    const optsclone: RunOptions = Object.assign({}, args.opts)
+    optsclone.env = filterEnv(optsclone.env)
+    debugInfo.opts = optsclone
+  }
   atom.notifications.addFatalError(
     `Haskell-ghc-mod: ghc-mod failed to launch.
 It is probably missing or misconfigured. ${args.err.code}`,
     {
       detail: `\
-Error was: ${args.err.name}
-${args.err.message}
+Error was: ${debugInfo.err.name}
+${debugInfo.err.message}
 Debug information:
-${JSON.stringify(args, undefined, 2)}
+${JSON.stringify(debugInfo, undefined, 2)}
 Config:
 ${JSON.stringify(atom.config.get('haskell-ghc-mod'),undefined,2)}
 Environment (filtered):
 ${JSON.stringify(filterEnv(process.env), undefined, 2)}
 `,
-      stack: args.err.stack,
+      stack: debugInfo.err.stack,
       dismissable: true,
     },
   )
@@ -446,14 +460,15 @@ export function handleException<T>(
     ...desc,
     async value(...args: any[]) {
       try {
-        // tslint:disable-next-line: no-non-null-assertion
+        // tslint:disable-next-line: no-non-null-assertion no-unsafe-any
         return await desc.value!.call(this, ...args)
       } catch (e) {
-        // tslint:disable-next-line: no-console
         debug(e)
+        // tslint:disable-next-line: no-unsafe-any
         const upi: UPI.IUPIInstance = await (this as any).upi
         upi.setStatus({
           status: 'warning',
+          // tslint:disable-next-line: no-unsafe-any
           detail: e.toString(),
         })
         // TODO: returning a promise that never resolves... ugly, but works?

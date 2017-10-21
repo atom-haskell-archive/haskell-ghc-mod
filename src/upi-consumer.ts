@@ -117,6 +117,7 @@ export class UPIConsumer {
             : type === 'selection' ? 'haskell-ghc-mod.onSelectionShow'
             : undefined
     const t = n && atom.config.get(n)
+    // tslint:disable-next-line:no-unsafe-any
     if (t) return this[`${t}Tooltip`](editor, crange)
   }
 
@@ -225,11 +226,10 @@ export class UPIConsumer {
     const rootDir = await this.process.getRootDir(editor.getBuffer())
     if (!rootDir) { return }
     const uri = rootDir.getFile(fn).getPath() || fn
-    atom.workspace.open(uri, {
+    await atom.workspace.open(uri, {
       initialLine: parseInt(line, 10) - 1,
       initialColumn: parseInt(col, 10) - 1,
-    },
-    )
+    })
   }
 
   @handleException
@@ -295,7 +295,7 @@ export class UPIConsumer {
   private async infoTypeTooltip(e: AtomTypes.TextEditor, p: AtomTypes.Range) {
     try {
       return await this.infoTooltip(e, p)
-    } catch (e) {
+    } catch {
       return this.typeTooltip(e, p)
     }
   }
@@ -303,7 +303,7 @@ export class UPIConsumer {
   private async typeInfoTooltip(e: AtomTypes.TextEditor, p: AtomTypes.Range) {
     try {
       return await this.typeTooltip(e, p)
-    } catch (e) {
+    } catch {
       return this.infoTooltip(e, p)
     }
   }

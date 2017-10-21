@@ -7,7 +7,7 @@ import { SymbolDesc } from '../ghc-mod'
 import SymbolType = UPI.CompletionBackend.SymbolType
 
 export class ModuleInfo {
-  public readonly initialUpdatePromise: Promise<void>
+  private updatePromise: Promise<void>
   private symbols: SymbolDesc[] // module symbols
   private disposables: CompositeDisposable
   private emitter: TEmitter<{
@@ -24,7 +24,7 @@ export class ModuleInfo {
     this.bufferSet = new WeakSet()
     this.emitter = new Emitter()
     this.disposables.add(this.emitter)
-    this.initialUpdatePromise = this.update(rootDir)
+    this.updatePromise = this.update(rootDir)
     this.timeout = setTimeout(this.destroy, this.invalidateInterval)
     this.disposables.add(this.process.onDidDestroy(this.destroy))
   }
@@ -49,7 +49,7 @@ export class ModuleInfo {
     const disposables = new CompositeDisposable()
     disposables.add(bufferInfo.buffer.onDidSave(() => {
       Util.debug(`${this.name} did-save triggered`)
-      this.update(this.rootDir)
+      this.updatePromise = this.update(this.rootDir)
     }))
     disposables.add(bufferInfo.buffer.onDidDestroy(() => {
       disposables.dispose()
@@ -59,7 +59,8 @@ export class ModuleInfo {
     this.disposables.add(disposables)
   }
 
-  public select(importDesc: IImport, symbolTypes?: SymbolType[], skipQualified: boolean = false) {
+  public async select(importDesc: IImport, symbolTypes?: SymbolType[], skipQualified: boolean = false) {
+    await this.updatePromise
     clearTimeout(this.timeout)
     this.timeout = setTimeout(this.destroy, this.invalidateInterval)
     let symbols = this.symbols

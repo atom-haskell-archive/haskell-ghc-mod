@@ -1,22 +1,32 @@
 import { GHCModCaps } from './interactive-process'
 import * as Util from '../util'
-import { GhcModiProcessReal } from './ghc-modi-process-real'
+import { GhcModiProcessReal, RunOptions } from './ghc-modi-process-real'
+
+export type GHCModVers = { vers: number[], comp: string }
 
 export async function createGhcModiProcessReal(rootDir: AtomTypes.Directory): Promise<GhcModiProcessReal> {
-  let opts
-  let vers
-  let caps
+  let opts: RunOptions | undefined
+  let vers: GHCModVers | undefined
+  let caps: GHCModCaps | undefined
   try {
     opts = await Util.getProcessOptions(rootDir.getPath())
     const versP = getVersion(opts)
     const bopts = opts
-    versP.then((v) => { checkComp(bopts, v) })
+    checkComp(bopts, versP).catch((e: Error) => {
+      atom.notifications.addError('Failed to check compiler versions', {
+        detail: e,
+        stack: e.stack,
+        dismissable: true,
+      })
+    })
     vers = await versP
     caps = getCaps(vers)
     return new GhcModiProcessReal(caps, rootDir, opts)
-  } catch (err) {
+  } catch (e) {
+    // tslint:disable-next-line:no-unsafe-any
+    const err: Error & {code: any} = e
     Util.notifySpawnFail({ dir: rootDir.getPath(), err, opts, vers, caps })
-    throw err
+    throw e
   }
 }
 
@@ -90,7 +100,7 @@ Use at your own risk or update your ghc-mod installation`,
   return caps
 }
 
-async function getVersion(opts: Util.ExecOpts) {
+async function getVersion(opts: Util.ExecOpts): Promise<GHCModVers> {
   const timeout = atom.config.get('haskell-ghc-mod.initTimeout') * 1000
   const cmd = atom.config.get('haskell-ghc-mod.ghcModPath')
   const { stdout } = await Util.execPromise(cmd, ['version'], { timeout, ...opts })
@@ -104,7 +114,8 @@ async function getVersion(opts: Util.ExecOpts) {
   return { vers, comp }
 }
 
-async function checkComp(opts: Util.ExecOpts, { comp }: { comp: string }) {
+async function checkComp(opts: Util.ExecOpts, versP: Promise<GHCModVers>) {
+  const {comp} = await versP
   const timeout = atom.config.get('haskell-ghc-mod.initTimeout') * 1000
   const tryWarn = async (cmd: string, args: string[]) => {
     try {

@@ -9,6 +9,7 @@ import * as Util from '../util'
 import { handleException } from '../util'
 import CB = UPI.CompletionBackend
 
+// tslint:disable-next-line:no-unsafe-any
 export class CompletionBackend implements CB.ICompletionBackend {
   private bufferMap: WeakMap<TextBuffer, BufferInfo>
   private dirMap: WeakMap<Directory, Map<string, ModuleInfo>>
@@ -85,10 +86,12 @@ export class CompletionBackend implements CB.ICompletionBackend {
     setImmediate(async () => {
       const { rootDir, moduleMap } = await this.getModuleMap({ bufferInfo })
 
+      // tslint:disable-next-line:no-floating-promises
       this.getModuleInfo({ bufferInfo, rootDir, moduleMap })
 
       const imports = await bufferInfo.getImports()
       for (const imprt of imports) {
+        // tslint:disable-next-line:no-floating-promises
         this.getModuleInfo({ moduleName: imprt.name, bufferInfo, rootDir, moduleMap })
       }
     })
@@ -235,7 +238,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
     const mis = await this.getModuleInfo({ bufferInfo, moduleName })
 
     // tslint:disable: no-null-keyword
-    const symbols = mis.moduleInfo.select(
+    const symbols = await mis.moduleInfo.select(
       {
         qualified: false,
         hiding: false,
@@ -419,9 +422,8 @@ export class CompletionBackend implements CB.ICompletionBackend {
         moduleMap.delete(mn)
         Util.debug(`${moduleName} removed from map`)
       })
-      await moduleInfo.initialUpdatePromise
     }
-    moduleInfo.setBuffer(bufferInfo)
+    await moduleInfo.setBuffer(bufferInfo)
     return { bufferInfo, rootDir, moduleMap, moduleInfo, moduleName }
   }
 

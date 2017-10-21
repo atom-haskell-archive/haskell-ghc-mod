@@ -72,6 +72,13 @@ export class GhcModiProcess {
   public killProcess() {
     for (const bp of this.backend.values()) {
       bp.then((b) => b.killProcess())
+      .catch((e: Error) => {
+        atom.notifications.addError('Error killing ghc-mod process', {
+          detail: e,
+          stack: e.stack,
+          dismissable: true,
+        })
+      })
     }
     this.backend.clear()
   }
@@ -79,6 +86,13 @@ export class GhcModiProcess {
   public destroy() {
     for (const bp of this.backend.values()) {
       bp.then((b) => b.destroy())
+      .catch((e: Error) => {
+        atom.notifications.addError('Error killing ghc-mod process', {
+          detail: e,
+          stack: e.stack,
+          dismissable: true,
+        })
+      })
     }
     this.backend.clear()
     this.emitter.emit('did-destroy', undefined)
@@ -306,7 +320,7 @@ export class GhcModiProcess {
   private async initBackend(rootDir: AtomTypes.Directory): Promise<GhcModiProcessReal> {
     const rootPath = rootDir.getPath()
     const cached = this.backend.get(rootPath)
-    if (cached) { return await cached }
+    if (cached) { return cached }
     const newBackend = createGhcModiProcessReal(rootDir)
     this.backend.set(rootPath, newBackend)
     const backend = await newBackend
@@ -356,6 +370,12 @@ export class GhcModiProcess {
           this.emitter.emit('backend-idle', undefined)
         }
       }
+    }).catch((e: Error) => {
+      atom.notifications.addError('Error in GHCMod command queue', {
+        detail: e,
+        stack: e.stack,
+        dismissable: true,
+      })
     })
     return promise
   }
@@ -368,7 +388,7 @@ export class GhcModiProcess {
     // A dirty hack to make lint work with lhs
     let uri = buffer.getUri()
     const olduri = buffer.getUri()
-    let text
+    let text: string | undefined
     try {
       if ((cmd === 'lint') && (extname(uri) === '.lhs')) {
         uri = uri.slice(0, -1)

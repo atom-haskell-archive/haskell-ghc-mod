@@ -125,6 +125,7 @@ export class InteractiveProcess {
         }
         return await Promise.race([readOutput(), exitEvent(), timeoutEvent()])
       } catch (error) {
+        // tslint:disable-next-line:no-unsafe-any
         if (error.name === 'InteractiveActionTimeout') {
           this.proc.kill()
         }
@@ -144,6 +145,7 @@ export class InteractiveProcess {
     }
     const tml = atom.config.get('haskell-ghc-mod.interactiveInactivityTimeout')
     if (tml) {
+      // tslint:disable-next-line: no-floating-promises
       this.timer = setTimeout(() => { this.kill() }, tml * 60 * 1000)
     }
   }
