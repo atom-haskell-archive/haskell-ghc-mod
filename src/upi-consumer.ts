@@ -136,7 +136,7 @@ export class UPIConsumer {
   }
 
   private tooltipCommand(tooltipfun: (e: AtomTypes.TextEditor, p: AtomTypes.Range) => Promise<UPI.ITooltipData>) {
-    return ({ currentTarget, detail }: IEventDesc) =>
+    return async ({ currentTarget, detail }: IEventDesc) =>
       this.upi.showTooltip({
         editor: currentTarget.getModel(),
         detail,
