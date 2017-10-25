@@ -25,5 +25,6 @@ declare namespace AtomTypes {
     'haskell-ghc-mod.experimental': boolean
     'haskell-ghc-mod.suppressGhcPackagePathWarning': boolean
     'haskell-ghc-mod.ghcModMessages': 'console' | 'upi' | 'popup'
+    'haskell-ghc-mod.maxMemMegs': number
   }
 }

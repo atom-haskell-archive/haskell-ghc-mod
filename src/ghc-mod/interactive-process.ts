@@ -3,6 +3,7 @@ import { debug, warn, mkError, EOT } from '../util'
 import { EOL } from 'os'
 import * as CP from 'child_process'
 import Queue = require('promise-queue')
+import pidusage = require('pidusage')
 
 (Symbol as any).asyncIterator = Symbol.asyncIterator || Symbol.for('Symbol.asyncIterator')
 
@@ -25,7 +26,7 @@ export class InteractiveProcess {
   }>
   private proc: CP.ChildProcess
   private cwd: string
-  private timer: NodeJS.Timer | undefined
+  private timer: number | undefined
   private requestQueue: Queue
 
   constructor(path: string, cmd: string[], options: { cwd: string }, private caps: GHCModCaps) {
@@ -45,7 +46,7 @@ export class InteractiveProcess {
     this.proc.stderr.setMaxListeners(100)
     this.resetTimer()
     this.proc.once('exit', (code) => {
-      this.timer && clearTimeout(this.timer)
+      this.timer && window.clearTimeout(this.timer)
       debug(`ghc-modi for ${options.cwd} ended with ${code}`)
       this.emitter.emit('did-exit', code)
       this.disposables.dispose()
@@ -70,6 +71,16 @@ export class InteractiveProcess {
     return this.requestQueue.add(async () => {
       this.proc.stdout.pause()
       this.proc.stderr.pause()
+
+      pidusage.stat(this.proc.pid, (err, stat) => {
+        if (err) {
+          warn(err)
+          return
+        }
+        if (stat.memory > atom.config.get('haskell-ghc-mod.maxMemMegs') * 1024 * 1024) {
+          this.proc.kill()
+        }
+      })
 
       debug(`Started interactive action block in ${this.cwd}`)
       debug(`Running interactive command ${command} ${args} ${data ? 'with' : 'without'} additional data`)
@@ -146,7 +157,7 @@ export class InteractiveProcess {
     const tml = atom.config.get('haskell-ghc-mod.interactiveInactivityTimeout')
     if (tml) {
       // tslint:disable-next-line: no-floating-promises
-      this.timer = setTimeout(() => { this.kill() }, tml * 60 * 1000)
+      this.timer = window.setTimeout(() => { this.kill() }, tml * 60 * 1000)
     }
   }
 

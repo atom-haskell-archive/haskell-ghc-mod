@@ -185,4 +185,11 @@ ENABLE ONLY IF YOU KNOW WHAT YOU ARE DOING.`,
     ],
     order: 42,
   },
+  maxMemMegs: {
+    type: 'integer',
+    descrition: 'Maximum ghc-mod interactive mode memory usage (in megabytes)',
+    default: 4 * 1024,
+    minimum: 1024,
+    order: 50,
+  },
 }
