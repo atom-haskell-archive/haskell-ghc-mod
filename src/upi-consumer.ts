@@ -152,11 +152,11 @@ export class UPIConsumer {
     const er = this.upi.getEventRange(editor, detail)
     if (er === undefined) { return }
     const { crange, pos } = er
-    const { type } = await this.process.getTypeInBuffer(editor.getBuffer(), crange)
     const symInfo = Util.getSymbolAtPoint(editor, pos)
     if (!symInfo) { return }
     const { scope, range, symbol } = symInfo
     if (scope.startsWith('keyword.operator.')) { return } // can't correctly handle infix notation
+    const { type } = await this.process.getTypeInBuffer(editor.getBuffer(), crange)
     if (editor.getTextInBufferRange([range.end, editor.bufferRangeForBufferRow(range.end.row).end]).match(/=/)) {
       let indent = editor.getTextInBufferRange([[range.start.row, 0], range.start])
       let birdTrack = ''
