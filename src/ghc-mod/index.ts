@@ -136,11 +136,15 @@ export class GhcModiProcess {
   }
 
   public async runBrowse(rootDir: AtomTypes.Directory, modules: string[]): Promise<SymbolDesc[]> {
-    const lines = await this.queueCmd('browse', rootDir, (caps) => ({
-      command: 'browse',
-      dashArgs: caps.browseParents ? ['-d', '-o', '-p'] : ['-d', '-o'],
-      args: caps.browseMain ? modules : modules.filter((v) => v !== 'Main'),
-    }))
+    const lines = await this.queueCmd('browse', rootDir, (caps) => {
+      const args = caps.browseMain ? modules : modules.filter((v) => v !== 'Main')
+      if (args.length === 0) return undefined
+      return {
+        command: 'browse',
+        dashArgs: caps.browseParents ? ['-d', '-o', '-p'] : ['-d', '-o'],
+        args,
+      }
+    })
     return lines.map((s) => {
       // enumFrom :: Enum a => a -> [a] -- from:Enum
       const pattern = /^(.*?) :: (.*?)(?: -- from:(.*))?$/
@@ -337,7 +341,7 @@ export class GhcModiProcess {
     runArgsFunc: (caps: GHCModCaps) => {
       command: string, text?: string, uri?: string, interactive?: boolean,
       dashArgs?: string[], args?: string[]
-    },
+    } | undefined,
   ): Promise<string[]> {
     if (atom.config.get('haskell-ghc-mod.lowMemorySystem')) {
       queueName = 'lowmem'
@@ -348,8 +352,10 @@ export class GhcModiProcess {
       try {
         const settings = await getSettings(dir)
         if (settings.disable) { throw new Error('Ghc-mod disabled in settings') }
+        const runArgs = runArgsFunc(backend.getCaps())
+        if (runArgs === undefined) return []
         return backend.run({
-          ...runArgsFunc(backend.getCaps()),
+          ...runArgs,
           suppressErrors: settings.suppressErrors,
           ghcOptions: settings.ghcOptions,
           ghcModOptions: settings.ghcModOptions,
