@@ -7,17 +7,21 @@ import { SymbolDesc } from '../ghc-mod'
 import SymbolType = UPI.CompletionBackend.SymbolType
 
 export class ModuleInfo {
-  private updatePromise: Promise<void>
-  private symbols: SymbolDesc[] // module symbols
-  private disposables: CompositeDisposable
-  private emitter: TEmitter<{
+  private readonly disposables: CompositeDisposable
+  private readonly emitter: TEmitter<{
     'did-destroy': undefined
   }>
+  private readonly invalidateInterval = 30 * 60 * 1000 // if module unused for 30 minutes, remove it
+  private readonly bufferSet: WeakSet<AtomTypes.TextBuffer>
   private timeout: NodeJS.Timer
-  private invalidateInterval = 30 * 60 * 1000 // if module unused for 30 minutes, remove it
-  private bufferSet: WeakSet<AtomTypes.TextBuffer>
+  private updatePromise: Promise<void>
+  private symbols: SymbolDesc[] // module symbols
 
-  constructor(private name: string, private process: GhcModiProcess, private rootDir: AtomTypes.Directory) {
+  constructor(
+    private readonly name: string,
+    private readonly process: GhcModiProcess,
+    private readonly rootDir: AtomTypes.Directory,
+  ) {
     Util.debug(`${this.name} created`)
     this.symbols = []
     this.disposables = new CompositeDisposable()
