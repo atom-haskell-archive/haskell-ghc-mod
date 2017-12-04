@@ -1,4 +1,4 @@
-# haskell-ghc-mod atom package
+# haskell-ghc-mod atom package ![](https://david-dm.org/atom-haskell/haskell-ghc-mod.svg)
 
 This package is primarily intended as backend for [ide-haskell](https://atom.io/packages/ide-haskell).
 
