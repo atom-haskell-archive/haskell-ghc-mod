@@ -7,7 +7,7 @@ export async function importListView(
   let panel: Panel<SelectListView<string>> | undefined
   let res: string | undefined
   try {
-    res = await new Promise<string | undefined>((resolve, reject) => {
+    res = await new Promise<string | undefined>((resolve) => {
       const select = new SelectListView({
         items: imports,
         // infoMessage: heading,

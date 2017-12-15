@@ -1,8 +1,9 @@
-import { IEventDesc, CompositeDisposable, Range } from 'atom'
+import { CommandEvent, CompositeDisposable, Range, TextBuffer, TextEditor, Point } from 'atom'
 import { GhcModiProcess, IErrorCallbackArgs } from './ghc-mod'
 import { importListView } from './views/import-list-view'
 import * as Util from './util'
-import { handleException } from './util'
+import * as UPI from 'atom-haskell-upi'
+const { handleException } = Util
 
 const messageTypes = {
   error: {},
@@ -111,7 +112,7 @@ export class UPIConsumer {
   }
 
   private async shouldShowTooltip(
-    editor: AtomTypes.TextEditor, crange: AtomTypes.Range, type: UPI.TEventRangeType,
+    editor: TextEditor, crange: Range, type: UPI.TEventRangeType,
   ): Promise<UPI.ITooltipData | undefined> {
     const n = type === 'mouse' ? 'haskell-ghc-mod.onMouseHoverShow'
             : type === 'selection' ? 'haskell-ghc-mod.onSelectionShow'
@@ -119,24 +120,25 @@ export class UPIConsumer {
     const t = n && atom.config.get(n)
     // tslint:disable-next-line:no-unsafe-any
     if (t) return this[`${t}Tooltip`](editor, crange)
+    else return undefined
   }
 
   @handleException
-  private async checkCommand({ currentTarget }: IEventDesc) {
+  private async checkCommand({ currentTarget }: CommandEvent) {
     const editor = currentTarget.getModel()
     const res = await this.process.doCheckBuffer(editor.getBuffer(), atom.config.get('haskell-ghc-mod.alwaysInteractiveCheck'))
     this.setMessages(res)
   }
 
   @handleException
-  private async lintCommand({ currentTarget }: IEventDesc) {
+  private async lintCommand({ currentTarget }: CommandEvent) {
     const editor = currentTarget.getModel()
     const res = await this.process.doLintBuffer(editor.getBuffer())
     this.setMessages(res)
   }
 
-  private tooltipCommand(tooltipfun: (e: AtomTypes.TextEditor, p: AtomTypes.Range) => Promise<UPI.ITooltipData>) {
-    return async ({ currentTarget, detail }: IEventDesc) =>
+  private tooltipCommand(tooltipfun: (e: TextEditor, p: Range) => Promise<UPI.ITooltipData>) {
+    return async ({ currentTarget, detail }: CommandEvent) =>
       this.upi.showTooltip({
         editor: currentTarget.getModel(),
         detail,
@@ -147,7 +149,7 @@ export class UPIConsumer {
   }
 
   @handleException
-  private async insertTypeCommand({ currentTarget, detail }: IEventDesc) {
+  private async insertTypeCommand({ currentTarget, detail }: CommandEvent) {
     const editor = currentTarget.getModel()
     const er = this.upi.getEventRange(editor, detail)
     if (er === undefined) { return }
@@ -157,7 +159,7 @@ export class UPIConsumer {
     const { scope, range, symbol } = symInfo
     if (scope.startsWith('keyword.operator.')) { return } // can't correctly handle infix notation
     const { type } = await this.process.getTypeInBuffer(editor.getBuffer(), crange)
-    if (editor.getTextInBufferRange([range.end, editor.bufferRangeForBufferRow(range.end.row).end]).match(/=/)) {
+    if (editor.getTextInBufferRange([range.end, editor.getBuffer().rangeForRow(range.end.row, false).end]).match(/=/)) {
       let indent = editor.getTextInBufferRange([[range.start.row, 0], range.start])
       let birdTrack = ''
       if (editor.scopeDescriptorForBufferPosition(pos).getScopesArray().includes('meta.embedded.haskell')) {
@@ -176,7 +178,7 @@ export class UPIConsumer {
   }
 
   @handleException
-  private async caseSplitCommand({ currentTarget, detail }: IEventDesc) {
+  private async caseSplitCommand({ currentTarget, detail }: CommandEvent) {
     const editor = currentTarget.getModel()
     const evr = this.upi.getEventRange(editor, detail)
     if (!evr) { return }
@@ -188,7 +190,7 @@ export class UPIConsumer {
   }
 
   @handleException
-  private async sigFillCommand({ currentTarget, detail }: IEventDesc) {
+  private async sigFillCommand({ currentTarget, detail }: CommandEvent) {
     const editor = currentTarget.getModel()
     const evr = this.upi.getEventRange(editor, detail)
     if (!evr) { return }
@@ -214,7 +216,7 @@ export class UPIConsumer {
   }
 
   @handleException
-  private async goToDeclCommand({ currentTarget, detail }: IEventDesc) {
+  private async goToDeclCommand({ currentTarget, detail }: CommandEvent) {
     const editor = currentTarget.getModel()
     const evr = this.upi.getEventRange(editor, detail)
     if (!evr) { return }
@@ -233,7 +235,7 @@ export class UPIConsumer {
   }
 
   @handleException
-  private async insertImportCommand({ currentTarget, detail }: IEventDesc) {
+  private async insertImportCommand({ currentTarget, detail }: CommandEvent) {
     const editor = currentTarget.getModel()
     const buffer = editor.getBuffer()
     const evr = this.upi.getEventRange(editor, detail)
@@ -242,8 +244,8 @@ export class UPIConsumer {
     const lines = await this.process.findSymbolProvidersInBuffer(editor, crange)
     const mod = await importListView(lines)
     if (mod) {
-      const pi = await new Promise<{ pos: AtomTypes.Point, indent: string, end: string }>((resolve) => {
-        buffer.backwardsScan(/^(\s*)(import|module)/, ({ match, range, stop }) => {
+      const pi = await new Promise<{ pos: Point, indent: string, end: string }>((resolve) => {
+        buffer.backwardsScan(/^(\s*)(import|module)/, ({ match, range }) => {
           let indent = ''
           switch (match[2]) {
             case 'import':
@@ -253,7 +255,7 @@ export class UPIConsumer {
               indent = `\n\n${match[1]}`
               break
           }
-          resolve({ pos: buffer.rangeForRow(range.start.row).end, indent, end: '' })
+          resolve({ pos: buffer.rangeForRow(range.start.row, false).end, indent, end: '' })
         })
         // nothing found
         resolve({
@@ -266,7 +268,7 @@ export class UPIConsumer {
     }
   }
 
-  private async typeTooltip(e: AtomTypes.TextEditor, p: AtomTypes.Range) {
+  private async typeTooltip(e: TextEditor, p: Range) {
     const { range, type } = await this.process.getTypeInBuffer(e.getBuffer(), p)
     return {
       range,
@@ -279,7 +281,7 @@ export class UPIConsumer {
     }
   }
 
-  private async infoTooltip(e: AtomTypes.TextEditor, p: AtomTypes.Range) {
+  private async infoTooltip(e: TextEditor, p: Range) {
     const { range, info } = await this.process.getInfoInBuffer(e, p)
     return {
       range,
@@ -292,7 +294,7 @@ export class UPIConsumer {
     }
   }
 
-  private async infoTypeTooltip(e: AtomTypes.TextEditor, p: AtomTypes.Range) {
+  private async infoTypeTooltip(e: TextEditor, p: Range) {
     try {
       return await this.infoTooltip(e, p)
     } catch {
@@ -300,7 +302,7 @@ export class UPIConsumer {
     }
   }
 
-  private async typeInfoTooltip(e: AtomTypes.TextEditor, p: AtomTypes.Range) {
+  private async typeInfoTooltip(e: TextEditor, p: Range) {
     try {
       return await this.typeTooltip(e, p)
     } catch {
@@ -308,7 +310,7 @@ export class UPIConsumer {
     }
   }
 
-  private async typeAndInfoTooltip(e: AtomTypes.TextEditor, p: AtomTypes.Range) {
+  private async typeAndInfoTooltip(e: TextEditor, p: Range) {
     const typeP = this.typeTooltip(e, p).catch(() => undefined)
     const infoP = this.infoTooltip(e, p).catch(() => undefined)
     const [type, info] = await Promise.all([typeP, infoP])
@@ -357,7 +359,7 @@ export class UPIConsumer {
     this.upi.setMessages(this.processMessages.concat(this.lastMessages))
   }
 
-  private async checkLint(buffer: AtomTypes.TextBuffer, opt: 'Save' | 'Change', fast: boolean) {
+  private async checkLint(buffer: TextBuffer, opt: 'Save' | 'Change', fast: boolean) {
     const check = atom.config.get(
       `haskell-ghc-mod.on${opt}Check` as 'haskell-ghc-mod.onSaveCheck' | 'haskell-ghc-mod.onChangeCheck',
     )

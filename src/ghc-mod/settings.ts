@@ -1,4 +1,4 @@
-import { Directory } from 'atom'
+import { File, Directory } from 'atom'
 import * as Util from '../util'
 
 export interface GHCModSettings {
@@ -8,7 +8,7 @@ export interface GHCModSettings {
   ghcModOptions?: string[]
 }
 
-export async function getSettings(runDir: AtomTypes.Directory): Promise<GHCModSettings> {
+export async function getSettings(runDir: Directory): Promise<GHCModSettings> {
   const localSettings = readSettings(runDir.getFile('.haskell-ghc-mod.json'))
 
   const [projectDir] = atom.project.getDirectories().filter((d) => d.contains(runDir.getPath()))
@@ -25,7 +25,7 @@ export async function getSettings(runDir: AtomTypes.Directory): Promise<GHCModSe
   return { ...glob, ...prj, ...loc }
 }
 
-async function readSettings(file: AtomTypes.File): Promise<GHCModSettings> {
+async function readSettings(file: File): Promise<GHCModSettings> {
   try {
     const ex = await file.exists()
     if (ex) {

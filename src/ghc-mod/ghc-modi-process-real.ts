@@ -1,4 +1,4 @@
-import { TEmitter, Emitter, CompositeDisposable } from 'atom'
+import { Directory, Emitter, CompositeDisposable } from 'atom'
 import { InteractiveProcess, GHCModCaps } from './interactive-process'
 import * as Util from '../util'
 const { debug, withTempFile, EOT } = Util
@@ -34,15 +34,16 @@ export interface IErrorCallbackArgs {
 
 export class GhcModiProcessReal {
   private disposables: CompositeDisposable
-  private emitter: TEmitter<{
-    'did-destroy': undefined
+  private emitter: Emitter<{
+    'did-destroy': void
+  },{
     'warning': string
     'error': IErrorCallbackArgs
   }>
   private ghcModOptions: string[] | undefined
   private proc: InteractiveProcess | undefined
 
-  constructor(private caps: GHCModCaps, private rootDir: AtomTypes.Directory, private options: RunOptions) {
+  constructor(private caps: GHCModCaps, private rootDir: Directory, private options: RunOptions) {
     this.disposables = new CompositeDisposable()
     this.emitter = new Emitter()
     this.disposables.add(this.emitter)
@@ -107,7 +108,7 @@ export class GhcModiProcessReal {
   public destroy() {
     debug('GhcModiProcessBase destroying')
     this.killProcess()
-    this.emitter.emit('did-destroy', undefined)
+    this.emitter.emit('did-destroy')
     this.disposables.dispose()
   }
 

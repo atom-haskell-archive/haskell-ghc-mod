@@ -1,18 +1,18 @@
-import { CompositeDisposable, TEmitter, Emitter } from 'atom'
+import { CompositeDisposable, Emitter, TextBuffer, Directory } from 'atom'
 import * as Util from '../util'
-import { GhcModiProcess } from '../ghc-mod'
+import { GhcModiProcess, SymbolDesc } from '../ghc-mod'
 import { BufferInfo, IImport } from './buffer-info'
-import { SymbolDesc } from '../ghc-mod'
+import * as CompletionBackend from 'atom-haskell-upi/completion-backend'
 
-import SymbolType = UPI.CompletionBackend.SymbolType
+import SymbolType = CompletionBackend.SymbolType
 
 export class ModuleInfo {
   private readonly disposables: CompositeDisposable
-  private readonly emitter: TEmitter<{
+  private readonly emitter: Emitter<{
     'did-destroy': undefined
   }>
   private readonly invalidateInterval = 30 * 60 * 1000 // if module unused for 30 minutes, remove it
-  private readonly bufferSet: WeakSet<AtomTypes.TextBuffer>
+  private readonly bufferSet: WeakSet<TextBuffer>
   private timeout: NodeJS.Timer
   private updatePromise: Promise<void>
   private symbols: SymbolDesc[] // module symbols
@@ -20,7 +20,7 @@ export class ModuleInfo {
   constructor(
     private readonly name: string,
     private readonly process: GhcModiProcess,
-    private readonly rootDir: AtomTypes.Directory,
+    private readonly rootDir: Directory,
   ) {
     Util.debug(`${this.name} created`)
     this.symbols = []
@@ -36,7 +36,7 @@ export class ModuleInfo {
   public destroy = () => {
     Util.debug(`${this.name} destroyed`)
     clearTimeout(this.timeout)
-    this.emitter.emit('did-destroy', undefined)
+    this.emitter.emit('did-destroy')
     this.disposables.dispose()
   }
 
@@ -105,7 +105,7 @@ export class ModuleInfo {
     return res
   }
 
-  private async update(rootDir: AtomTypes.Directory) {
+  private async update(rootDir: Directory) {
     Util.debug(`${this.name} updating`)
     this.symbols = await this.process.runBrowse(rootDir, [this.name])
     Util.debug(`${this.name} updated`)

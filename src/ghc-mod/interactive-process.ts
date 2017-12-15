@@ -1,4 +1,4 @@
-import { TEmitter, Emitter, CompositeDisposable } from 'atom'
+import { Emitter, CompositeDisposable } from 'atom'
 import { debug, warn, mkError, EOT } from '../util'
 import { EOL } from 'os'
 import * as CP from 'child_process'
@@ -21,7 +21,7 @@ export interface GHCModCaps {
 
 export class InteractiveProcess {
   private disposables: CompositeDisposable
-  private emitter: TEmitter<{
+  private emitter: Emitter<{}, {
     'did-exit': number
   }>
   private proc: CP.ChildProcess
@@ -105,13 +105,13 @@ export class InteractiveProcess {
           }
           return { stdout, stderr }
         }
-        const exitEvent = async () => new Promise<never>((resolve, reject) => {
-          this.proc.once('exit', (code) => {
+        const exitEvent = async () => new Promise<never>((_resolve, reject) => {
+          this.proc.once('exit', () => {
             warn(stdout.join('\n'))
             reject(mkError('GHCModInteractiveCrash', `${stdout}\n\n${stderr}`))
           })
         })
-        const timeoutEvent = async () => new Promise<never>((resolve, reject) => {
+        const timeoutEvent = async () => new Promise<never>((_resolve, reject) => {
           const tml: number = atom.config.get('haskell-ghc-mod.interactiveActionTimeout')
           if (tml) {
             setTimeout(

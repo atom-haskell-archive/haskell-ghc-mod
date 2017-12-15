@@ -3,6 +3,7 @@ import { CompositeDisposable } from 'atom'
 import { CompletionBackend } from './completion-backend'
 import { UPIConsumer } from './upi-consumer'
 import { defaultErrorHandler } from './util'
+import * as UPI from 'atom-haskell-upi'
 
 let process: GhcModiProcess | undefined
 let disposables: CompositeDisposable | undefined
@@ -13,7 +14,7 @@ const upiPromise = new Promise<UPI.IUPIInstance>((resolve) => resolveUpiPromise 
 
 export { config } from './config'
 
-export function activate(state: never) {
+export function activate(_state: never) {
   process = new GhcModiProcess()
   disposables = new CompositeDisposable()
   tempDisposables = new CompositeDisposable()

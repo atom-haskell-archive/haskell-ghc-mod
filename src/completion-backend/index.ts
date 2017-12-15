@@ -6,8 +6,10 @@ import { BufferInfo } from './buffer-info'
 import { ModuleInfo } from './module-info'
 import { GhcModiProcess } from '../ghc-mod'
 import * as Util from '../util'
-import { handleException } from '../util'
-import CB = UPI.CompletionBackend
+import * as UPI from 'atom-haskell-upi'
+import * as CB from 'atom-haskell-upi/completion-backend'
+
+const { handleException } = Util
 
 // tslint:disable-next-line:no-unsafe-any
 export class CompletionBackend implements CB.ICompletionBackend {
@@ -133,7 +135,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   */
   @handleException
   public async getCompletionsForSymbol(
-    buffer: TextBuffer, prefix: string, position: Point,
+    buffer: TextBuffer, prefix: string, _position: Point,
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
@@ -153,7 +155,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   */
   @handleException
   public async getCompletionsForType(
-    buffer: TextBuffer, prefix: string, position: Point,
+    buffer: TextBuffer, prefix: string, _position: Point,
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
@@ -172,7 +174,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
           symbolType is one of ['class']
   */
   public async getCompletionsForClass(
-    buffer: TextBuffer, prefix: string, position: Point,
+    buffer: TextBuffer, prefix: string, _position: Point,
   ): Promise<CB.ISymbol[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
@@ -190,7 +192,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   module: String, module name
   */
   public async getCompletionsForModule(
-    buffer: TextBuffer, prefix: string, position: Point,
+    buffer: TextBuffer, prefix: string, _position: Point,
   ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
     const rootDir = await this.process.getRootDir(buffer)
@@ -263,7 +265,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   pragma: String, language option
   */
   public async getCompletionsForLanguagePragmas(
-    buffer: TextBuffer, prefix: string, position: Point,
+    buffer: TextBuffer, prefix: string, _position: Point,
   ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 
@@ -287,7 +289,7 @@ export class CompletionBackend implements CB.ICompletionBackend {
   ghcopt: String, compiler option (starts with '-f')
   */
   public async getCompletionsForCompilerOptions(
-    buffer: TextBuffer, prefix: string, position: Point,
+    buffer: TextBuffer, prefix: string, _position: Point,
   ): Promise<string[]> {
     if (!this.isActive) { throw new Error('Backend inactive') }
 

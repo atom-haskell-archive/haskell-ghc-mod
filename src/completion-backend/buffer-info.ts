@@ -1,4 +1,4 @@
-import { CompositeDisposable } from 'atom'
+import { CompositeDisposable, TextBuffer } from 'atom'
 import { parseHsModuleImports, IModuleImports, IImport } from 'atom-haskell-utils'
 
 export { IImport }
@@ -8,7 +8,7 @@ export class BufferInfo {
   private oldText: string = ''
   private oldImports: IModuleImports = { name: 'Main', imports: [] }
 
-  constructor(public readonly buffer: AtomTypes.TextBuffer) {
+  constructor(public readonly buffer: TextBuffer) {
     this.disposables = new CompositeDisposable()
     this.disposables.add(this.buffer.onDidDestroy(this.destroy))
   }

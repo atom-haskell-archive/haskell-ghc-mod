@@ -1,4 +1,4 @@
-import { Range, Point } from 'atom'
+import { Range, Point, TextBuffer, TextEditor } from 'atom'
 import { delimiter, sep, extname } from 'path'
 import * as Temp from 'temp'
 import * as FS from 'fs'
@@ -8,6 +8,7 @@ import { getRootDirFallback, getRootDir, isDirectory } from 'atom-haskell-utils'
 import { RunOptions, IErrorCallbackArgs } from './ghc-mod/ghc-modi-process-real'
 import { GHCModVers } from './ghc-mod/ghc-modi-process-real-factory'
 import { GHCModCaps } from './ghc-mod/interactive-process'
+import * as UPI from 'atom-haskell-upi'
 
 type ExecOpts = CP.ExecFileOptionsWithStringEncoding
 export { getRootDirFallback, getRootDir, isDirectory, ExecOpts }
@@ -98,9 +99,11 @@ export async function getCabalSandbox(rootPath: string): Promise<string | undefi
       return sandbox
     } else {
       warn('Cabal sandbox ', sandbox, ' is not a directory')
+      return undefined
     }
   } else {
     warn('No cabal sandbox found')
+    return undefined
   }
   // tslint:enable: no-string-literal
 }
@@ -128,6 +131,7 @@ export async function getStackSandbox(rootPath: string, apd: string[], env: { [k
     return [lir, sir, ...bp]
   } catch (err) {
     warn('No stack sandbox found because ', err)
+    return undefined
   }
 }
 
@@ -197,7 +201,7 @@ export async function getProcessOptions(rootPath?: string): Promise<RunOptions> 
 }
 
 export function getSymbolAtPoint(
-  editor: AtomTypes.TextEditor, point: AtomTypes.Point,
+  editor: TextEditor, point: Point,
 ) {
   const [scope] = editor.scopeDescriptorForBufferPosition(point).getScopesArray().slice(-1)
   if (scope) {
@@ -207,9 +211,10 @@ export function getSymbolAtPoint(
       return { scope, range, symbol }
     }
   }
+  return undefined
 }
 
-export function getSymbolInRange(editor: AtomTypes.TextEditor, crange: AtomTypes.Range) {
+export function getSymbolInRange(editor: TextEditor, crange: Range) {
   const buffer = editor.getBuffer()
   if (crange.isEmpty()) {
     return getSymbolAtPoint(editor, crange.start)
@@ -283,7 +288,7 @@ export async function parseSandboxConfig(file: string) {
         const [l] = line.split(/--/)
         const m = l.match(/^\s*([\w-]+):\s*(.*)\s*$/)
         if (m) {
-          const [_, name, val] = m
+          const [, name, val] = m
           scope[name] = rv(val)
         } else {
           const newscope = {}
@@ -295,24 +300,25 @@ export async function parseSandboxConfig(file: string) {
     return vars
   } catch (err) {
     warn('Reading cabal sandbox config failed with ', err)
+    return undefined
   }
 }
 
 // A dirty hack to work with tabs
-export function tabShiftForPoint(buffer: AtomTypes.TextBuffer, point: AtomTypes.Point) {
+export function tabShiftForPoint(buffer: TextBuffer, point: Point) {
   const line = buffer.lineForRow(point.row)
   const match = line ? (line.slice(0, point.column).match(/\t/g) || []) : []
   const columnShift = 7 * match.length
   return new Point(point.row, point.column + columnShift)
 }
 
-export function tabShiftForRange(buffer: AtomTypes.TextBuffer, range: AtomTypes.Range) {
+export function tabShiftForRange(buffer: TextBuffer, range: Range) {
   const start = tabShiftForPoint(buffer, range.start)
   const end = tabShiftForPoint(buffer, range.end)
   return new Range(start, end)
 }
 
-export function tabUnshiftForPoint(buffer: AtomTypes.TextBuffer, point: AtomTypes.Point) {
+export function tabUnshiftForPoint(buffer: TextBuffer, point: Point) {
   const line = buffer.lineForRow(point.row)
   let columnl = 0
   let columnr = point.column
@@ -327,7 +333,7 @@ export function tabUnshiftForPoint(buffer: AtomTypes.TextBuffer, point: AtomType
   return new Point(point.row, columnr)
 }
 
-export function tabUnshiftForRange(buffer: AtomTypes.TextBuffer, range: AtomTypes.Range) {
+export function tabUnshiftForRange(buffer: TextBuffer, range: Range) {
   const start = tabUnshiftForPoint(buffer, range.start)
   const end = tabUnshiftForPoint(buffer, range.end)
   return new Range(start, end)
@@ -348,7 +354,7 @@ log:
 ${getDebugLog()}`
 }
 
-export function formatError({ err, runArgs, caps }: IErrorCallbackArgs) {
+export function formatError({ err, runArgs }: IErrorCallbackArgs) {
   if (err.name === 'InteractiveActionTimeout' && runArgs) {
     return `\
 Haskell-ghc-mod: ghc-mod \
@@ -453,7 +459,7 @@ ${JSON.stringify(filterEnv(process.env), undefined, 2)}
 }
 
 export function handleException<T>(
-  target: { upi: UPI.IUPIInstance | Promise<UPI.IUPIInstance> }, key: string,
+  _target: { upi: UPI.IUPIInstance | Promise<UPI.IUPIInstance> }, _key: string,
   desc: TypedPropertyDescriptor<(...args: any[]) => Promise<T>>,
 ): TypedPropertyDescriptor<(...args: any[]) => Promise<T>> {
   return {

@@ -1,10 +1,11 @@
 import { GHCModCaps } from './interactive-process'
 import * as Util from '../util'
 import { GhcModiProcessReal, RunOptions } from './ghc-modi-process-real'
+import { Directory } from 'atom'
 
 export type GHCModVers = { vers: number[], comp: string }
 
-export async function createGhcModiProcessReal(rootDir: AtomTypes.Directory): Promise<GhcModiProcessReal> {
+export async function createGhcModiProcessReal(rootDir: Directory): Promise<GhcModiProcessReal> {
   let opts: RunOptions | undefined
   let vers: GHCModVers | undefined
   let caps: GHCModCaps | undefined
@@ -14,7 +15,7 @@ export async function createGhcModiProcessReal(rootDir: AtomTypes.Directory): Pr
     const bopts = opts
     checkComp(bopts, versP).catch((e: Error) => {
       atom.notifications.addError('Failed to check compiler versions', {
-        detail: e,
+        detail: e.toString(),
         stack: e.stack,
         dismissable: true,
       })
@@ -115,13 +116,14 @@ async function getVersion(opts: Util.ExecOpts): Promise<GHCModVers> {
 }
 
 async function checkComp(opts: Util.ExecOpts, versP: Promise<GHCModVers>) {
-  const {comp} = await versP
+  const { comp } = await versP
   const timeout = atom.config.get('haskell-ghc-mod.initTimeout') * 1000
   const tryWarn = async (cmd: string, args: string[]) => {
     try {
       return (await Util.execPromise(cmd, args, { timeout, ...opts })).stdout.trim()
     } catch (error) {
       Util.warn(error)
+      return undefined
     }
   }
   const [stackghc, pathghc] = await Promise.all([

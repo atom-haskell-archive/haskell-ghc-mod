@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es6",
+        "target": "es2017",
         "module": "commonjs",
         "moduleResolution": "node",
         "isolatedModules": false,
@@ -19,14 +19,18 @@
         "inlineSources": true,
         "inlineSourceMap": true,
         "strictNullChecks": true,
-        "allowJs": true,
-        "experimentalDecorators": true,
-        "lib": [
-          "dom",
-          "es2017",
-          "esnext.asynciterable"
-        ],
-        "strict": true
+        "allowJs": false,
+        "lib":["dom", "es2017", "esnext.asyncIterable"],
+        "strict": true,
+        "importHelpers": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "typeRoots" : [
+          "./typings",
+          "./node_modules/@types"
+        ]
     },
     "exclude": [
         "node_modules"
@@ -34,8 +38,8 @@
     "include": [
         "src/**/*.ts",
         "src/**/*.tsx",
-        "src/**/*.js",
-        "typings/*.d.ts"
+        "src/**/*.js"
     ],
-    "compileOnSave": true
+    "compileOnSave": true,
+    "experimentalDecorators": true
 }
