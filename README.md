@@ -21,10 +21,11 @@ You can find description in [src/completion-backend/index.ts][2]
 
 # License
 
-This software is licensed under MIT license. See LICENSE.md for details.
+Copyright © 2015 Atom-Haskell
 
-Contributors:
+Contributors (by number of commits):
 
+<!-- BEGIN CONTRIBUTORS LIST -->
 * Nikolay Yakimov
 * Daniel Gröber
 * Petr Gladkikh
@@ -34,3 +35,9 @@ Contributors:
 * Jason Jackson
 * Dennis J. McWherter Jr
 * Aaron Wolf
+
+<!-- END CONTRIBUTORS LIST -->
+
+See the [LICENSE.md][LICENSE] for details.
+
+[LICENSE]: https://github.com/atom-haskell/haskell-ghc-mod/blob/master/LICENSE.md
