@@ -1,3 +1,7 @@
+## 2.2.1
+* Depend on tslib
+* suppressRedundantTypeInTypeAndInfoTooltips (issue #169)
+
 ## 2.2.0
 * Choose cabal\/stack based on ide-haskell-cabal settings and option to build ghc-mod when using stack (hidden behind `builderManagement` setting)
 * Make de-\/re-activation more robust
