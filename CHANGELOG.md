@@ -1,3 +1,9 @@
+## 2.2.0
+* Choose cabal\/stack based on ide-haskell-cabal settings and option to build ghc-mod when using stack (hidden behind `builderManagement` setting)
+* Make de-\/re-activation more robust
+* Update license information
+* Update typings; bump dependencies;
+
 ## 2.1.3
 * Abort broswse when nothing to browse
 * Limit ghc-mod's interactive memory consumption (by killing it periodically)
