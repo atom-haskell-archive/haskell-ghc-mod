@@ -26,6 +26,7 @@ export async function buildStack(opts: RunOptions, upi: IUPIInstance | undefined
             } else {
               atom.notifications.addInfo(lines.join('\n'))
             }
+            console.log(lines.join('\n'))
           }
         }
       }

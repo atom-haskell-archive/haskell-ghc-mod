@@ -24,13 +24,17 @@ export async function createGhcModiProcessReal(rootDir: Directory, upi: IUPIInst
     const versP = getVersion(opts)
     const bopts = opts
     // TODO: this gets checked only once, should check on ghc-mod restart?
-    const shouldBuild = await checkComp(bopts, versP, bn).catch((e: Error) => {
-      atom.notifications.addError('Failed to check compiler versions', {
-        detail: e.toString(),
-        stack: e.stack,
-        dismissable: true,
-      })
-      return false
+    const shouldBuild = await checkComp(bopts, versP, bn).catch(async (e: any) => {
+      if (e.code === 'ENOENT') {
+        return askBuild(bn, `Atom couldn't find ghc-mod.`)
+      } else {
+        atom.notifications.addError('Failed to check compiler versions', {
+          detail: e.toString(),
+          stack: e.stack,
+          dismissable: true,
+        })
+        return false
+      }
     })
     if (shouldBuild) {
       const success = await buildStack(bopts, upi)
@@ -154,63 +158,63 @@ async function checkComp(opts: Util.ExecOpts, versP: Promise<GHCModVers>, builde
   Util.debug(`Path GHC version ${pathghc}`)
   const warnStack = ['stack', undefined].includes(builder)
   const warnCabal = ['cabal', 'none', undefined].includes(builder)
+  let shouldBuild = false
   if (pathghc && (pathghc !== comp) && warnCabal) {
-    const warn = `\
+    shouldBuild = shouldBuild || await askBuild(builder, `\
 GHC version in your PATH '${pathghc}' doesn't match with \
 GHC version used to build ghc-mod '${comp}'. This can lead to \
-problems when using Cabal or Plain projects`
-    atom.notifications.addWarning(warn, {
-      dismissable: builder !== undefined,
-    })
-    Util.warn(warn)
+problems when using Cabal or Plain projects`)
   }
   ///////////////////////////// stack //////////////////////////////////////////
   if (stackghc && (stackghc !== comp) && warnStack) {
-    let buttons: Array<{
-      className?: string
-      text?: string
-      onDidClick?(event: MouseEvent): void
-    }> | undefined
-
-    return new Promise<boolean>((resolve) => {
-      let notif: Notification
-      if (builder === 'stack') {
-        // offer to build ghc-mod
-        buttons = [{
-          className: 'icon icon-zap',
-          text: 'Build ghc-mod',
-          onDidClick() {
-            resolve(true)
-            notif && notif.dismiss()
-          },
-        },{
-          className: 'icon icon-x',
-          text: 'No thanks',
-          onDidClick() {
-            resolve(false)
-            notif && notif.dismiss()
-          },
-        }]
-      }
-      const warn = `\
+    shouldBuild = shouldBuild || await askBuild(builder, `\
 GHC version in your Stack '${stackghc}' doesn't match with \
 GHC version used to build ghc-mod '${comp}'. This can lead to \
-problems when using Stack projects. \
-${buttons ? 'Would you like to attempt building ghc-mod?' : ''}`
-      notif = atom.notifications.addWarning(warn, {
-        dismissable: builder !== undefined,
-        buttons,
-      })
-      Util.warn(warn)
-      if (buttons) {
-        const disp = notif.onDidDismiss(() => {
-          disp.dispose()
-          resolve(false)
-        })
-      } else {
-        resolve(false)
-      }
-    })
+problems when using Stack projects.`)
   }
-  return false
+  return shouldBuild
+}
+
+async function askBuild(builder: string | undefined, msg: string) {
+  let buttons: Array<{
+    className?: string
+    text?: string
+    onDidClick?(event: MouseEvent): void
+  }> | undefined
+
+  return new Promise<boolean>((resolve) => {
+    let notif: Notification
+    if (builder === 'stack') {
+      // offer to build ghc-mod
+      buttons = [{
+        className: 'icon icon-zap',
+        text: 'Build ghc-mod',
+        onDidClick() {
+          resolve(true)
+          notif && notif.dismiss()
+        },
+      },{
+        className: 'icon icon-x',
+        text: 'No thanks',
+        onDidClick() {
+          resolve(false)
+          notif && notif.dismiss()
+        },
+      }]
+    }
+    const warn = `${msg} ${buttons ? 'Would you like to attempt building ghc-mod?' : ''}`
+    notif = atom.notifications.addWarning(warn, {
+      dismissable: builder !== undefined,
+      buttons,
+    })
+    Util.warn(msg)
+    if (buttons) {
+      const disp = notif.onDidDismiss(() => {
+        disp.dispose()
+        resolve(false)
+      })
+    } else {
+      resolve(false)
+    }
+  })
 }
