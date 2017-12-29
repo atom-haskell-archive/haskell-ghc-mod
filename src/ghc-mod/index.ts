@@ -5,6 +5,7 @@ import { extname } from 'path'
 import Queue = require('promise-queue')
 import { unlit } from 'atom-haskell-utils'
 import * as CompletionBackend from 'atom-haskell-upi/completion-backend'
+import * as UPI from 'atom-haskell-upi'
 
 import { GhcModiProcessReal, GHCModCaps, RunArgs, IErrorCallbackArgs } from './ghc-modi-process-real'
 import { createGhcModiProcessReal } from './ghc-modi-process-real-factory'
@@ -36,7 +37,7 @@ export class GhcModiProcess {
   private bufferDirMap: WeakMap<TextBuffer, Directory>
   private commandQueues: {[K in Commands]: Queue}
 
-  constructor() {
+  constructor(private upiPromise: Promise<UPI.IUPIInstance>) {
     this.disposables = new CompositeDisposable()
     this.emitter = new Emitter()
     this.disposables.add(this.emitter)
@@ -324,11 +325,15 @@ export class GhcModiProcess {
     return cr.concat(lr)
   }
 
+  private async getUPI() {
+    return Promise.race([this.upiPromise, Promise.resolve(undefined)])
+  }
+
   private async initBackend(rootDir: Directory): Promise<GhcModiProcessReal> {
     const rootPath = rootDir.getPath()
     const cached = this.backend.get(rootPath)
     if (cached) { return cached }
-    const newBackend = createGhcModiProcessReal(rootDir)
+    const newBackend = createGhcModiProcessReal(rootDir, await this.getUPI())
     this.backend.set(rootPath, newBackend)
     const backend = await newBackend
     this.disposables.add(
@@ -357,8 +362,16 @@ export class GhcModiProcess {
         if (settings.disable) { throw new Error('Ghc-mod disabled in settings') }
         const runArgs = runArgsFunc(backend.getCaps())
         if (runArgs === undefined) return []
+        const upi = await this.getUPI()
+        let builder: string | undefined
+        if (upi) {
+          // TODO: this is used twice, the second time in ghc-mod-process-real-factory.ts, should probably fix that
+          const b = await upi.getOthersConfigParam<{ name: string }>('ide-haskell-cabal', 'builder')
+          if (b) builder = b.name
+        }
         return backend.run({
           ...runArgs,
+          builder,
           suppressErrors: settings.suppressErrors,
           ghcOptions: settings.ghcOptions,
           ghcModOptions: settings.ghcModOptions,

@@ -17,6 +17,7 @@ export interface RunArgs {
   suppressErrors?: boolean
   ghcOptions?: string[]
   ghcModOptions?: string[]
+  builder: string | undefined
 }
 
 export interface RunOptions {
@@ -43,7 +44,11 @@ export class GhcModiProcessReal {
   private ghcModOptions: string[] | undefined
   private proc: InteractiveProcess | undefined
 
-  constructor(private caps: GHCModCaps, private rootDir: Directory, private options: RunOptions) {
+  constructor(
+    private caps: GHCModCaps,
+    private rootDir: Directory,
+    private options: RunOptions,
+  ) {
     this.disposables = new CompositeDisposable()
     this.emitter = new Emitter()
     this.disposables.add(this.emitter)
@@ -57,7 +62,7 @@ export class GhcModiProcessReal {
     runArgs: RunArgs,
   ) {
     let { interactive, dashArgs, args, suppressErrors, ghcOptions, ghcModOptions } = runArgs
-    const { command, text, uri } = runArgs
+    const { command, text, uri, builder } = runArgs
     if (!args) { args = [] }
     if (!dashArgs) { dashArgs = [] }
     if (!suppressErrors) { suppressErrors = false }
@@ -66,6 +71,28 @@ export class GhcModiProcessReal {
     ghcModOptions = ghcModOptions.concat(...ghcOptions.map((opt) => ['--ghc-option', opt]))
     if (atom.config.get('haskell-ghc-mod.lowMemorySystem')) {
       interactive = atom.config.get('haskell-ghc-mod.enableGhcModi')
+    }
+    if (builder) {
+      switch (builder) {
+        case 'cabal':
+          // in case this looks wrong, remember, we want to disable stack
+          // and use cabal, so we're setting stack path to emptystring
+          ghcModOptions.push('--with-stack','')
+          break
+        case 'stack':
+          // same, if this looks strange, it's not
+          ghcModOptions.push('--with-cabal','')
+          break
+        case 'none':
+          // here we want to use neither?
+          ghcModOptions.push('--with-stack','')
+          ghcModOptions.push('--with-cabal','')
+          break
+        default:
+          atom.notifications.addWarning(
+            `Haskell-ghc-mod: unknown builder ${builder}, falling back to autodetection`,
+          )
+      }
     }
     if (this.caps.optparse) {
       args = dashArgs.concat(['--']).concat(args)

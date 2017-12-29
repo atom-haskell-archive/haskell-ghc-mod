@@ -2,18 +2,28 @@ import { GHCModCaps } from './interactive-process'
 import * as Util from '../util'
 import { GhcModiProcessReal, RunOptions } from './ghc-modi-process-real'
 import { Directory } from 'atom'
+import { IUPIInstance } from 'atom-haskell-upi'
 
 export type GHCModVers = { vers: number[], comp: string }
 
-export async function createGhcModiProcessReal(rootDir: Directory): Promise<GhcModiProcessReal> {
+export async function createGhcModiProcessReal(rootDir: Directory, upi: IUPIInstance | undefined): Promise<GhcModiProcessReal> {
   let opts: RunOptions | undefined
   let vers: GHCModVers | undefined
   let caps: GHCModCaps | undefined
+  let builder: { name: string } | undefined
   try {
+    if (upi) {
+      // TODO: this is used twice, the second time in ghc-mod/index.ts, should probably fix that
+      builder = await upi.getOthersConfigParam<{ name: string }>('ide-haskell-cabal', 'builder')
+    }
+    const bn = builder && builder.name
+    Util.debug(`Using builder ${bn}`)
+    // TODO: Should prefer stack sandbox when using stack and cabal sanbdox when using cabal!
     opts = await Util.getProcessOptions(rootDir.getPath())
     const versP = getVersion(opts)
     const bopts = opts
-    checkComp(bopts, versP).catch((e: Error) => {
+    // TODO: this gets checked only once, should check on ghc-mod restart?
+    checkComp(bopts, versP, bn).catch((e: Error) => {
       atom.notifications.addError('Failed to check compiler versions', {
         detail: e.toString(),
         stack: e.stack,
@@ -115,7 +125,7 @@ async function getVersion(opts: Util.ExecOpts): Promise<GHCModVers> {
   return { vers, comp }
 }
 
-async function checkComp(opts: Util.ExecOpts, versP: Promise<GHCModVers>) {
+async function checkComp(opts: Util.ExecOpts, versP: Promise<GHCModVers>, builder: string | undefined) {
   const { comp } = await versP
   const timeout = atom.config.get('haskell-ghc-mod.initTimeout') * 1000
   const tryWarn = async (cmd: string, args: string[]) => {
@@ -132,20 +142,26 @@ async function checkComp(opts: Util.ExecOpts, versP: Promise<GHCModVers>) {
   ])
   Util.debug(`Stack GHC version ${stackghc}`)
   Util.debug(`Path GHC version ${pathghc}`)
-  if (stackghc && (stackghc !== comp)) {
+  const warnStack = ['stack', undefined].includes(builder)
+  const warnCabal = ['cabal', 'none', undefined].includes(builder)
+  if (stackghc && (stackghc !== comp) && warnStack) {
     const warn = `\
 GHC version in your Stack '${stackghc}' doesn't match with \
 GHC version used to build ghc-mod '${comp}'. This can lead to \
 problems when using Stack projects`
-    atom.notifications.addWarning(warn)
+    atom.notifications.addWarning(warn, {
+      dismissable: builder !== undefined,
+    })
     Util.warn(warn)
   }
-  if (pathghc && (pathghc !== comp)) {
+  if (pathghc && (pathghc !== comp) && warnCabal) {
     const warn = `\
 GHC version in your PATH '${pathghc}' doesn't match with \
 GHC version used to build ghc-mod '${comp}'. This can lead to \
 problems when using Cabal or Plain projects`
-    atom.notifications.addWarning(warn)
+    atom.notifications.addWarning(warn, {
+      dismissable: builder !== undefined,
+    })
     Util.warn(warn)
   }
 }

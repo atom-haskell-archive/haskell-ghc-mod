@@ -16,7 +16,7 @@ export { config } from './config'
 
 export function activate(_state: never) {
   upiPromise = new Promise<UPI.IUPIInstance>((resolve) => resolveUpiPromise = resolve)
-  process = new GhcModiProcess()
+  process = new GhcModiProcess(upiPromise)
   disposables = new CompositeDisposable()
   tempDisposables = new CompositeDisposable()
   disposables.add(tempDisposables)
