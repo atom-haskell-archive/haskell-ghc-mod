@@ -1,4 +1,4 @@
-import { CommandEvent, CompositeDisposable, Range, TextBuffer, TextEditor, Point } from 'atom'
+import { CommandEvent, CompositeDisposable, Range, TextBuffer, TextEditor, Point, TextEditorElement } from 'atom'
 import { GhcModiProcess, IErrorCallbackArgs } from './ghc-mod'
 import { importListView } from './views/import-list-view'
 import * as Util from './util'
@@ -28,6 +28,8 @@ const mainMenu = {
     { label: 'Stop Backend', command: 'haskell-ghc-mod:shutdown-backend' },
   ],
 }
+
+type TECommandEvent = CommandEvent<TextEditorElement>
 
 export class UPIConsumer {
   public upi: UPI.IUPIInstance
@@ -124,21 +126,21 @@ export class UPIConsumer {
   }
 
   @handleException
-  private async checkCommand({ currentTarget }: CommandEvent) {
+  private async checkCommand({ currentTarget }: TECommandEvent) {
     const editor = currentTarget.getModel()
     const res = await this.process.doCheckBuffer(editor.getBuffer(), atom.config.get('haskell-ghc-mod.alwaysInteractiveCheck'))
     this.setMessages(res)
   }
 
   @handleException
-  private async lintCommand({ currentTarget }: CommandEvent) {
+  private async lintCommand({ currentTarget }: TECommandEvent) {
     const editor = currentTarget.getModel()
     const res = await this.process.doLintBuffer(editor.getBuffer())
     this.setMessages(res)
   }
 
   private tooltipCommand(tooltipfun: (e: TextEditor, p: Range) => Promise<UPI.ITooltipData>) {
-    return async ({ currentTarget, detail }: CommandEvent) =>
+    return async ({ currentTarget, detail }: TECommandEvent) =>
       this.upi.showTooltip({
         editor: currentTarget.getModel(),
         detail,
@@ -149,7 +151,7 @@ export class UPIConsumer {
   }
 
   @handleException
-  private async insertTypeCommand({ currentTarget, detail }: CommandEvent) {
+  private async insertTypeCommand({ currentTarget, detail }: TECommandEvent) {
     const editor = currentTarget.getModel()
     const er = this.upi.getEventRange(editor, detail)
     if (er === undefined) { return }
@@ -178,7 +180,7 @@ export class UPIConsumer {
   }
 
   @handleException
-  private async caseSplitCommand({ currentTarget, detail }: CommandEvent) {
+  private async caseSplitCommand({ currentTarget, detail }: TECommandEvent) {
     const editor = currentTarget.getModel()
     const evr = this.upi.getEventRange(editor, detail)
     if (!evr) { return }
@@ -190,7 +192,7 @@ export class UPIConsumer {
   }
 
   @handleException
-  private async sigFillCommand({ currentTarget, detail }: CommandEvent) {
+  private async sigFillCommand({ currentTarget, detail }: TECommandEvent) {
     const editor = currentTarget.getModel()
     const evr = this.upi.getEventRange(editor, detail)
     if (!evr) { return }
@@ -216,7 +218,7 @@ export class UPIConsumer {
   }
 
   @handleException
-  private async goToDeclCommand({ currentTarget, detail }: CommandEvent) {
+  private async goToDeclCommand({ currentTarget, detail }: TECommandEvent) {
     const editor = currentTarget.getModel()
     const evr = this.upi.getEventRange(editor, detail)
     if (!evr) { return }
@@ -235,7 +237,7 @@ export class UPIConsumer {
   }
 
   @handleException
-  private async insertImportCommand({ currentTarget, detail }: CommandEvent) {
+  private async insertImportCommand({ currentTarget, detail }: TECommandEvent) {
     const editor = currentTarget.getModel()
     const buffer = editor.getBuffer()
     const evr = this.upi.getEventRange(editor, detail)

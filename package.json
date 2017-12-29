@@ -44,12 +44,12 @@
     }
   },
   "devDependencies": {
-    "@types/atom": "^1.22.3",
+    "@types/atom": "^1.23.0",
     "@types/fuzzaldrin": "^2.1.1",
-    "@types/node": "^8.5.1",
+    "@types/node": "^8.5.2",
     "@types/pidusage": "^1.1.1",
     "@types/temp": "^0.8.31",
-    "@types/underscore": "^1.8.5",
+    "@types/underscore": "^1.8.6",
     "atom-haskell-tslint-rules": "0.1.1",
     "tslint": "^5.8.0",
     "typescript": "^2.6.2"
