@@ -1,10 +1,12 @@
-declare namespace AtomTypes {
-  interface ConfigInterface {
+export {}
+declare module "atom" {
+  interface ConfigValues {
     'haskell-ghc-mod': Object
     'haskell-ghc-mod.ghcModPath': string
     'haskell-ghc-mod.enableGhcModi': boolean
     'haskell-ghc-mod.lowMemorySystem': boolean
     'haskell-ghc-mod.debug': boolean
+    'haskell-ghc-mod.builderManagement': boolean
     'haskell-ghc-mod.additionalPathDirectories': Array<string>
     'haskell-ghc-mod.cabalSandbox': boolean
     'haskell-ghc-mod.stackSandbox': boolean
