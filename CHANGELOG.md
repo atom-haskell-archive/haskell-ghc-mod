@@ -1,3 +1,6 @@
+## 2.2.2
+* Tweaks and fixes to builder manager
+
 ## 2.2.1
 * Depend on tslib
 * suppressRedundantTypeInTypeAndInfoTooltips (issue #169)
