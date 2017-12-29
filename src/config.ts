@@ -36,6 +36,14 @@ features, which can help with weird stack errors`,
     default: false,
     order: 999,
   },
+  builderManagement: {
+    type: 'boolean',
+    description: `Experimental option to force ghc-mod into using cabal or \
+stack based on ide-haskell-cabal settings; also enables an option to build \
+ghc-mod when using stack`,
+    default: false,
+    order: 900,
+  },
   additionalPathDirectories: {
     type: 'array',
     default: [],

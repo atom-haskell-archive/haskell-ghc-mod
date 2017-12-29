@@ -13,7 +13,7 @@ export async function createGhcModiProcessReal(rootDir: Directory, upi: IUPIInst
   let caps: GHCModCaps | undefined
   let builder: { name: string } | undefined
   try {
-    if (upi) {
+    if (upi && atom.config.get('haskell-ghc-mod.builderManagement')) {
       // TODO: this is used twice, the second time in ghc-mod/index.ts, should probably fix that
       builder = await upi.getOthersConfigParam<{ name: string }>('ide-haskell-cabal', 'builder')
     }

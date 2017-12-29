@@ -364,7 +364,7 @@ export class GhcModiProcess {
         if (runArgs === undefined) return []
         const upi = await this.getUPI()
         let builder: string | undefined
-        if (upi) {
+        if (upi && atom.config.get('haskell-ghc-mod.builderManagement')) {
           // TODO: this is used twice, the second time in ghc-mod-process-real-factory.ts, should probably fix that
           const b = await upi.getOthersConfigParam<{ name: string }>('ide-haskell-cabal', 'builder')
           if (b) builder = b.name
