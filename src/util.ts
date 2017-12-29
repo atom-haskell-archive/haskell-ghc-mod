@@ -483,3 +483,17 @@ export function handleException<T>(
     },
   }
 }
+
+export function versAtLeast(vers: { [key: number]: number | undefined }, b: number[]) {
+  for (let i = 0; i < b.length; i++) {
+    const v = b[i]
+    const t = vers[i]
+    const vv = t !== undefined ? t : 0
+    if (vv > v) {
+      return true
+    } else if (vv < v) {
+      return false
+    }
+  }
+  return true
+}

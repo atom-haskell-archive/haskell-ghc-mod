@@ -68,17 +68,7 @@ function getCaps({ vers }: { vers: number[] }): GHCModCaps {
     browseMain: false,
   }
 
-  const atLeast = (b: number[]) => {
-    for (let i = 0; i < b.length; i++) {
-      const v = b[i]
-      if (vers[i] > v) {
-        return true
-      } else if (vers[i] < v) {
-        return false
-      }
-    }
-    return true
-  }
+  const atLeast = (x: number[]) => Util.versAtLeast(vers, x)
 
   const exact = (b: number[]) => {
     for (let i = 0; i < b.length; i++) {

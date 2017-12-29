@@ -9,8 +9,16 @@ export async function buildStack(opts: RunOptions, upi: IUPIInstance | undefined
   const messages: IResultItem[] = []
   const disp = new CompositeDisposable()
   try {
+    const vers = await Util.execPromise('stack', ['--numeric-version'], opts)
+      .then(({ stdout }) => stdout.split('.').map(n => parseInt(n, 10)))
+      .catch(() => undefined)
+    const hasCopyCompiler = vers ? Util.versAtLeast(vers, [1,6,1]) : false
     return await new Promise<boolean>((resolve, reject) => {
-      const proc = CP.spawn('stack', ['--copy-compiler-tool', 'build', 'ghc-mod'], opts)
+      const args = ['build']
+      if (hasCopyCompiler) args.push('--copy-compiler-tool')
+      args.push('ghc-mod')
+      Util.warn(`Running stack ${args.join(' ')}`)
+      const proc = CP.spawn('stack', args, opts)
       const buffered = () => {
         let buffer = ''
         return (data: Buffer) => {
