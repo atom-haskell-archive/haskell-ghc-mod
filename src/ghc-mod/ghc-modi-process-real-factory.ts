@@ -1,8 +1,9 @@
 import { GHCModCaps } from './interactive-process'
 import * as Util from '../util'
 import { GhcModiProcessReal, RunOptions } from './ghc-modi-process-real'
-import { Directory } from 'atom'
+import { Directory, Notification } from 'atom'
 import { IUPIInstance } from 'atom-haskell-upi'
+import { buildStack } from './build-stack'
 
 export type GHCModVers = { vers: number[], comp: string }
 
@@ -23,13 +24,22 @@ export async function createGhcModiProcessReal(rootDir: Directory, upi: IUPIInst
     const versP = getVersion(opts)
     const bopts = opts
     // TODO: this gets checked only once, should check on ghc-mod restart?
-    checkComp(bopts, versP, bn).catch((e: Error) => {
+    const shouldBuild = await checkComp(bopts, versP, bn).catch((e: Error) => {
       atom.notifications.addError('Failed to check compiler versions', {
         detail: e.toString(),
         stack: e.stack,
         dismissable: true,
       })
+      return false
     })
+    if (shouldBuild) {
+      const success = await buildStack(bopts, upi)
+      if (success) {
+        return createGhcModiProcessReal(rootDir, upi)
+      } else {
+        atom.notifications.addWarning('Building ghc-mod failed, continuing as-is')
+      }
+    }
     vers = await versP
     caps = getCaps(vers)
     return new GhcModiProcessReal(caps, rootDir, opts)
@@ -144,16 +154,6 @@ async function checkComp(opts: Util.ExecOpts, versP: Promise<GHCModVers>, builde
   Util.debug(`Path GHC version ${pathghc}`)
   const warnStack = ['stack', undefined].includes(builder)
   const warnCabal = ['cabal', 'none', undefined].includes(builder)
-  if (stackghc && (stackghc !== comp) && warnStack) {
-    const warn = `\
-GHC version in your Stack '${stackghc}' doesn't match with \
-GHC version used to build ghc-mod '${comp}'. This can lead to \
-problems when using Stack projects`
-    atom.notifications.addWarning(warn, {
-      dismissable: builder !== undefined,
-    })
-    Util.warn(warn)
-  }
   if (pathghc && (pathghc !== comp) && warnCabal) {
     const warn = `\
 GHC version in your PATH '${pathghc}' doesn't match with \
@@ -164,4 +164,48 @@ problems when using Cabal or Plain projects`
     })
     Util.warn(warn)
   }
+  ///////////////////////////// stack //////////////////////////////////////////
+  if (stackghc && (stackghc !== comp) && warnStack) {
+    const warn = `\
+GHC version in your Stack '${stackghc}' doesn't match with \
+GHC version used to build ghc-mod '${comp}'. This can lead to \
+problems when using Stack projects. \
+Would you like to attempt building ghc-mod?`
+    let buttons: Array<{
+      className?: string
+      text?: string
+      onDidClick?(event: MouseEvent): void
+    }> | undefined
+    return new Promise<boolean>((resolve) => {
+      let notif: Notification
+      if (builder === 'stack') {
+        // offer to build ghc-mod
+        buttons = [{
+          className: 'icon icon-zap',
+          text: 'Build ghc-mod',
+          onDidClick() {
+            resolve(true)
+            notif && notif.dismiss()
+          },
+        },{
+          className: 'icon icon-x',
+          text: 'No thanks',
+          onDidClick() {
+            resolve(false)
+            notif && notif.dismiss()
+          },
+        }]
+      }
+      notif = atom.notifications.addWarning(warn, {
+        dismissable: builder !== undefined,
+        buttons,
+      })
+      Util.warn(warn)
+      const disp = notif.onDidDismiss(() => {
+        disp.dispose()
+        resolve(false)
+      })
+    })
+  }
+  return false
 }
