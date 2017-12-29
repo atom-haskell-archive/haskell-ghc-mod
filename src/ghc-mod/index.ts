@@ -333,8 +333,13 @@ export class GhcModiProcess {
     const rootPath = rootDir.getPath()
     const cached = this.backend.get(rootPath)
     if (cached) { return cached }
+    const backend = this.createBackend(rootDir)
+    this.backend.set(rootPath, backend)
+    return backend
+  }
+
+  private async createBackend(rootDir: Directory): Promise<GhcModiProcessReal> {
     const newBackend = createGhcModiProcessReal(rootDir, await this.getUPI())
-    this.backend.set(rootPath, newBackend)
     const backend = await newBackend
     this.disposables.add(
       backend.onError((arg) => this.emitter.emit('error', arg)),
