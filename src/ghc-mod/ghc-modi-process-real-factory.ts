@@ -166,16 +166,12 @@ problems when using Cabal or Plain projects`
   }
   ///////////////////////////// stack //////////////////////////////////////////
   if (stackghc && (stackghc !== comp) && warnStack) {
-    const warn = `\
-GHC version in your Stack '${stackghc}' doesn't match with \
-GHC version used to build ghc-mod '${comp}'. This can lead to \
-problems when using Stack projects. \
-Would you like to attempt building ghc-mod?`
     let buttons: Array<{
       className?: string
       text?: string
       onDidClick?(event: MouseEvent): void
     }> | undefined
+
     return new Promise<boolean>((resolve) => {
       let notif: Notification
       if (builder === 'stack') {
@@ -196,15 +192,24 @@ Would you like to attempt building ghc-mod?`
           },
         }]
       }
+      const warn = `\
+GHC version in your Stack '${stackghc}' doesn't match with \
+GHC version used to build ghc-mod '${comp}'. This can lead to \
+problems when using Stack projects. \
+${buttons ? 'Would you like to attempt building ghc-mod?' : ''}`
       notif = atom.notifications.addWarning(warn, {
         dismissable: builder !== undefined,
         buttons,
       })
       Util.warn(warn)
-      const disp = notif.onDidDismiss(() => {
-        disp.dispose()
+      if (buttons) {
+        const disp = notif.onDidDismiss(() => {
+          disp.dispose()
+          resolve(false)
+        })
+      } else {
         resolve(false)
-      })
+      }
     })
   }
   return false
