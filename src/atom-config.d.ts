@@ -22,6 +22,7 @@ declare module "atom" {
     'haskell-ghc-mod.onSelectionShow': '' | 'type' | 'info' | 'infoType' | 'typeInfo' | 'typeAndInfo'
     'haskell-ghc-mod.maxBrowseProcesses': number
     'haskell-ghc-mod.highlightTooltips': boolean
+    'haskell-ghc-mod.suppressRedundantTypeInTypeAndInfoTooltips': boolean
     'haskell-ghc-mod.highlightMessages': boolean
     'haskell-ghc-mod.hlintOptions': string[]
     'haskell-ghc-mod.experimental': boolean

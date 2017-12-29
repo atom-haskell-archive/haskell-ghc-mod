@@ -155,6 +155,13 @@ amount of memory.`,
     description: 'Show highlighting for type/info tooltips',
     order: 40,
   },
+  suppressRedundantTypeInTypeAndInfoTooltips: {
+    type: 'boolean',
+    default: true,
+    description: `In tooltips with type AND info, suppress type if \
+it's the same as info`,
+    order: 41,
+  },
   highlightMessages: {
     type: 'boolean',
     default: true,

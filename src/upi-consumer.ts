@@ -320,7 +320,12 @@ export class UPIConsumer {
     let text: string
     if (type && info) {
       range = type.range.union(info.range)
-      text = `:: ${type.text.text}\n${info.text.text}`
+      const sup = atom.config.get('haskell-ghc-mod.suppressRedundantTypeInTypeAndInfoTooltips')
+      if (sup && info.text.text.includes(`:: ${type.text.text}`)) {
+        text = info.text.text
+      } else {
+        text = `:: ${type.text.text}\n${info.text.text}`
+      }
     } else if (type) {
       range = type.range
       text = `:: ${type.text.text}`
