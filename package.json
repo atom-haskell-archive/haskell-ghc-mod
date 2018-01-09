@@ -3,21 +3,13 @@
   "main": "./lib/haskell-ghc-mod",
   "version": "2.2.2",
   "description": "Provides backends for ide-haskell and autocomplete-haskell",
-  "keywords": [
-    "ide-haskell",
-    "ide",
-    "haskell",
-    "ghc-mod",
-    "backend"
-  ],
+  "keywords": ["ide-haskell", "ide", "haskell", "ghc-mod", "backend"],
   "repository": "https://github.com/atom-haskell/haskell-ghc-mod",
   "license": "MIT",
   "engines": {
-    "atom": ">=1.19.0 <2.0.0"
+    "atom": ">=1.23.0 <2.0.0"
   },
-  "activationHooks": [
-    "language-haskell:grammar-used"
-  ],
+  "activationHooks": ["language-haskell:grammar-used"],
   "dependencies": {
     "atom-haskell-utils": "^1.0.1",
     "atom-select-list": "^0.7.0",
@@ -51,7 +43,8 @@
     "@types/pidusage": "^1.1.1",
     "@types/temp": "^0.8.31",
     "@types/underscore": "^1.8.6",
-    "atom-haskell-tslint-rules": "0.1.1",
+    "atom-haskell-tslint-rules": "^0.1.2",
+    "prettier": "^1.9.2",
     "tslint": "^5.8.0",
     "typescript": "^2.6.2"
   }

@@ -15,7 +15,9 @@ let upiPromise: Promise<UPI.IUPIInstance>
 export { config } from './config'
 
 export function activate(_state: never) {
-  upiPromise = new Promise<UPI.IUPIInstance>((resolve) => resolveUpiPromise = resolve)
+  upiPromise = new Promise<UPI.IUPIInstance>(
+    (resolve) => (resolveUpiPromise = resolve),
+  )
   process = new GhcModiProcess(upiPromise)
   disposables = new CompositeDisposable()
   tempDisposables = new CompositeDisposable()
@@ -30,7 +32,8 @@ export function activate(_state: never) {
 
   disposables.add(
     atom.commands.add('atom-workspace', {
-      'haskell-ghc-mod:shutdown-backend': () => process && process.killProcess(),
+      'haskell-ghc-mod:shutdown-backend': () =>
+        process && process.killProcess(),
     }),
   )
 }
@@ -45,7 +48,9 @@ export function deactivate() {
 }
 
 export function provideCompletionBackend() {
-  if (!process) { return undefined }
+  if (!process) {
+    return undefined
+  }
   if (!completionBackend) {
     completionBackend = new CompletionBackend(process, upiPromise)
   }
@@ -53,7 +58,9 @@ export function provideCompletionBackend() {
 }
 
 export function consumeUPI(service: UPI.IUPIRegistration) {
-  if (!process || !disposables) { return undefined }
+  if (!process || !disposables) {
+    return undefined
+  }
   tempDisposables && tempDisposables.dispose()
   tempDisposables = undefined
   const upiConsumer = new UPIConsumer(service, process)

@@ -1,5 +1,9 @@
 import { CompositeDisposable, TextBuffer } from 'atom'
-import { parseHsModuleImports, IModuleImports, IImport } from 'atom-haskell-utils'
+import {
+  parseHsModuleImports,
+  IModuleImports,
+  IImport,
+} from 'atom-haskell-utils'
 
 export { IImport }
 

@@ -5,14 +5,17 @@ import { EOL } from 'os'
 import * as Util from '../util'
 import { RunOptions } from './ghc-modi-process-real'
 
-export async function buildStack(opts: RunOptions, upi: IUPIInstance | undefined): Promise<boolean> {
+export async function buildStack(
+  opts: RunOptions,
+  upi: IUPIInstance | undefined,
+): Promise<boolean> {
   const messages: IResultItem[] = []
   const disp = new CompositeDisposable()
   try {
     const vers = await Util.execPromise('stack', ['--numeric-version'], opts)
-      .then(({ stdout }) => stdout.split('.').map(n => parseInt(n, 10)))
+      .then(({ stdout }) => stdout.split('.').map((n) => parseInt(n, 10)))
       .catch(() => undefined)
-    const hasCopyCompiler = vers ? Util.versAtLeast(vers, [1,6,1]) : false
+    const hasCopyCompiler = vers ? Util.versAtLeast(vers, [1, 6, 1]) : false
     return await new Promise<boolean>((resolve, reject) => {
       const args = ['build']
       if (hasCopyCompiler) args.push('--copy-compiler-tool')
@@ -25,10 +28,13 @@ export async function buildStack(opts: RunOptions, upi: IUPIInstance | undefined
           const output = data.toString('utf8')
           const [first, ...tail] = output.split(EOL)
           buffer += first
-          if (tail.length > 0) { // it means there's at least one newline
-            const lines = [buffer, ...(tail.slice(0, -1))]
+          if (tail.length > 0) {
+            // it means there's at least one newline
+            const lines = [buffer, ...tail.slice(0, -1)]
             buffer = tail.slice(-1)[0]
-            messages.push(...lines.map(message => ({ message, severity: 'build' })))
+            messages.push(
+              ...lines.map((message) => ({ message, severity: 'build' })),
+            )
             if (upi) {
               upi.setMessages(messages)
             } else {
@@ -41,25 +47,31 @@ export async function buildStack(opts: RunOptions, upi: IUPIInstance | undefined
       proc.stdout.on('data', buffered())
       proc.stderr.on('data', buffered())
       if (upi) {
-        disp.add(upi.addPanelControl({
-          element: 'ide-haskell-button',
-          opts: {
-            classes: ['cancel'],
-            events: {
-              click: () => {
-                proc.kill('SIGTERM')
-                proc.kill('SIGKILL')
+        disp.add(
+          upi.addPanelControl({
+            element: 'ide-haskell-button',
+            opts: {
+              classes: ['cancel'],
+              events: {
+                click: () => {
+                  proc.kill('SIGTERM')
+                  proc.kill('SIGKILL')
+                },
               },
             },
-          },
-        }))
+          }),
+        )
       }
       proc.once('exit', (code, signal) => {
         if (code === 0) {
           resolve(true)
         } else {
-          reject(new Error(`Stack build exited with nonzero exit status ${code} due to ${signal}`))
-          Util.warn(messages.map(m => m.message).join('\n'))
+          reject(
+            new Error(
+              `Stack build exited with nonzero exit status ${code} due to ${signal}`,
+            ),
+          )
+          Util.warn(messages.map((m) => m.message).join('\n'))
         }
       })
     })
@@ -67,7 +79,7 @@ export async function buildStack(opts: RunOptions, upi: IUPIInstance | undefined
     Util.warn(e)
     atom.notifications.addError(e.toString(), {
       dismissable: true,
-      detail: messages.map(m => m.message).join('\n'),
+      detail: messages.map((m) => m.message).join('\n'),
     })
     return false
   } finally {

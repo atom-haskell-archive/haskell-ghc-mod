@@ -1,12 +1,11 @@
-const tooltipActions =
-  [
-    { value: '', description: 'Nothing' },
-    { value: 'type', description: 'Type' },
-    { value: 'info', description: 'Info' },
-    { value: 'infoType', description: 'Info, fallback to Type' },
-    { value: 'typeInfo', description: 'Type, fallback to Info' },
-    { value: 'typeAndInfo', description: 'Type and Info' },
-  ]
+const tooltipActions = [
+  { value: '', description: 'Nothing' },
+  { value: 'type', description: 'Type' },
+  { value: 'info', description: 'Info' },
+  { value: 'infoType', description: 'Info, fallback to Type' },
+  { value: 'typeInfo', description: 'Type, fallback to Info' },
+  { value: 'typeAndInfo', description: 'Type and Info' },
+]
 
 export const config = {
   ghcModPath: {
@@ -18,16 +17,14 @@ export const config = {
   enableGhcModi: {
     type: 'boolean',
     default: true,
-    description:
-    `Using GHC Modi is suggested and noticeably faster, \
+    description: `Using GHC Modi is suggested and noticeably faster, \
 but if experiencing problems, disabling it can sometimes help.`,
     order: 70,
   },
   lowMemorySystem: {
     type: 'boolean',
     default: false,
-    description:
-    `Avoid spawning more than one ghc-mod process; also disables parallel \
+    description: `Avoid spawning more than one ghc-mod process; also disables parallel \
 features, which can help with weird stack errors`,
     order: 70,
   },
@@ -191,7 +188,8 @@ ENABLE ONLY IF YOU KNOW WHAT YOU ARE DOING.`,
   },
   ghcModMessages: {
     type: 'string',
-    description: 'How to show warnings/errors reported by ghc-mod (requires restart)',
+    description:
+      'How to show warnings/errors reported by ghc-mod (requires restart)',
     default: 'console',
     enum: [
       { value: 'console', description: 'Developer Console' },

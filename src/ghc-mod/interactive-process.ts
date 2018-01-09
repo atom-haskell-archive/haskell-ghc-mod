@@ -4,32 +4,40 @@ import { EOL } from 'os'
 import * as CP from 'child_process'
 import Queue = require('promise-queue')
 import pidusage = require('pidusage')
-
-(Symbol as any).asyncIterator = Symbol.asyncIterator || Symbol.for('Symbol.asyncIterator')
+;(Symbol as any).asyncIterator =
+  Symbol.asyncIterator || Symbol.for('Symbol.asyncIterator')
 
 export interface GHCModCaps {
-  version: number[],
-  fileMap: boolean,
-  quoteArgs: boolean,
-  optparse: boolean,
-  typeConstraints: boolean,
-  browseParents: boolean,
-  interactiveCaseSplit: boolean,
-  importedFrom: boolean,
+  version: number[]
+  fileMap: boolean
+  quoteArgs: boolean
+  optparse: boolean
+  typeConstraints: boolean
+  browseParents: boolean
+  interactiveCaseSplit: boolean
+  importedFrom: boolean
   browseMain: boolean
 }
 
 export class InteractiveProcess {
   private disposables: CompositeDisposable
-  private emitter: Emitter<{}, {
-    'did-exit': number
-  }>
+  private emitter: Emitter<
+    {},
+    {
+      'did-exit': number
+    }
+  >
   private proc: CP.ChildProcess
   private cwd: string
   private timer: number | undefined
   private requestQueue: Queue
 
-  constructor(path: string, cmd: string[], options: { cwd: string }, private caps: GHCModCaps) {
+  constructor(
+    path: string,
+    cmd: string[],
+    options: { cwd: string },
+    private caps: GHCModCaps,
+  ) {
     this.caps = caps
     this.disposables = new CompositeDisposable()
     this.emitter = new Emitter()
@@ -37,7 +45,10 @@ export class InteractiveProcess {
     this.cwd = options.cwd
     this.requestQueue = new Queue(1, 100)
 
-    debug(`Spawning new ghc-modi instance for ${options.cwd} with options = `, options)
+    debug(
+      `Spawning new ghc-modi instance for ${options.cwd} with options = `,
+      options,
+    )
     this.proc = CP.spawn(path, cmd, options)
     this.proc.stdout.setEncoding('utf-8')
     this.proc.stderr.setEncoding('utf-8')
@@ -66,8 +77,10 @@ export class InteractiveProcess {
   }
 
   public async interact(
-    command: string, args: string[], data?: string,
-  ): Promise<{ stdout: string[], stderr: string[] }> {
+    command: string,
+    args: string[],
+    data?: string,
+  ): Promise<{ stdout: string[]; stderr: string[] }> {
     return this.requestQueue.add(async () => {
       this.proc.stdout.pause()
       this.proc.stderr.pause()
@@ -77,13 +90,20 @@ export class InteractiveProcess {
           warn(err)
           return
         }
-        if (stat.memory > atom.config.get('haskell-ghc-mod.maxMemMegs') * 1024 * 1024) {
+        if (
+          stat.memory >
+          atom.config.get('haskell-ghc-mod.maxMemMegs') * 1024 * 1024
+        ) {
           this.proc.kill()
         }
       })
 
       debug(`Started interactive action block in ${this.cwd}`)
-      debug(`Running interactive command ${command} ${args} ${data ? 'with' : 'without'} additional data`)
+      debug(
+        `Running interactive command ${command} ${args} ${
+          data ? 'with' : 'without'
+        } additional data`,
+      )
       let ended = false
       try {
         const isEnded = () => ended
@@ -105,31 +125,36 @@ export class InteractiveProcess {
           }
           return { stdout, stderr }
         }
-        const exitEvent = async () => new Promise<never>((_resolve, reject) => {
-          this.proc.once('exit', () => {
-            warn(stdout.join('\n'))
-            reject(mkError('GHCModInteractiveCrash', `${stdout}\n\n${stderr}`))
+        const exitEvent = async () =>
+          new Promise<never>((_resolve, reject) => {
+            this.proc.once('exit', () => {
+              warn(stdout.join('\n'))
+              reject(
+                mkError('GHCModInteractiveCrash', `${stdout}\n\n${stderr}`),
+              )
+            })
           })
-        })
-        const timeoutEvent = async () => new Promise<never>((_resolve, reject) => {
-          const tml: number = atom.config.get('haskell-ghc-mod.interactiveActionTimeout')
-          if (tml) {
-            setTimeout(
-              () => {
-                reject(mkError('InteractiveActionTimeout', `${stdout}\n\n${stderr}`))
-              },
-              tml * 1000,
+        const timeoutEvent = async () =>
+          new Promise<never>((_resolve, reject) => {
+            const tml: number = atom.config.get(
+              'haskell-ghc-mod.interactiveActionTimeout',
             )
-          }
-        })
+            if (tml) {
+              setTimeout(() => {
+                reject(
+                  mkError('InteractiveActionTimeout', `${stdout}\n\n${stderr}`),
+                )
+              }, tml * 1000)
+            }
+          })
 
-        const args2 =
-          this.caps.quoteArgs ?
-            ['ascii-escape', command].concat(args.map((x) => `\x02${x}\x03`))
-            :
-            [command, ...args]
+        const args2 = this.caps.quoteArgs
+          ? ['ascii-escape', command].concat(args.map((x) => `\x02${x}\x03`))
+          : [command, ...args]
         debug(`Running ghc-modi command ${command}`, ...args)
-        this.proc.stdin.write(`${args2.join(' ').replace(/(?:\r?\n|\r)/g, ' ')}${EOL}`)
+        this.proc.stdin.write(
+          `${args2.join(' ').replace(/(?:\r?\n|\r)/g, ' ')}${EOL}`,
+        )
         if (data) {
           debug('Writing data to stdin...')
           this.proc.stdin.write(`${data}${EOT}`)
@@ -156,21 +181,25 @@ export class InteractiveProcess {
     }
     const tml = atom.config.get('haskell-ghc-mod.interactiveInactivityTimeout')
     if (tml) {
-      // tslint:disable-next-line: no-floating-promises
-      this.timer = window.setTimeout(() => { this.kill() }, tml * 60 * 1000)
+      this.timer = window.setTimeout(() => {
+        // tslint:disable-next-line: no-floating-promises
+        this.kill()
+      }, tml * 60 * 1000)
     }
   }
 
   private async waitReadable(stream: NodeJS.ReadableStream) {
-    return new Promise((resolve) => stream.once('readable', () => {
-      resolve()
-    }))
+    return new Promise((resolve) =>
+      stream.once('readable', () => {
+        resolve()
+      }),
+    )
   }
 
   private async *readgen(out: NodeJS.ReadableStream, isEnded: () => boolean) {
     let buffer = ''
     while (!isEnded()) {
-      const read = out.read() as (string | null)
+      const read = out.read() as string | null
       // tslint:disable-next-line: no-null-keyword
       if (read !== null) {
         buffer += read
@@ -183,6 +212,8 @@ export class InteractiveProcess {
         await this.waitReadable(out)
       }
     }
-    if (buffer) { out.unshift(buffer) }
+    if (buffer) {
+      out.unshift(buffer)
+    }
   }
 }

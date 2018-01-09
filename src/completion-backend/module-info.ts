@@ -46,24 +46,36 @@ export class ModuleInfo {
 
   public async setBuffer(bufferInfo: BufferInfo) {
     const name = await bufferInfo.getModuleName()
-    if (name !== this.name) { return }
-    if (this.bufferSet.has(bufferInfo.buffer)) { return }
+    if (name !== this.name) {
+      return
+    }
+    if (this.bufferSet.has(bufferInfo.buffer)) {
+      return
+    }
     this.bufferSet.add(bufferInfo.buffer)
     Util.debug(`${this.name} buffer is set`)
     const disposables = new CompositeDisposable()
-    disposables.add(bufferInfo.buffer.onDidSave(() => {
-      Util.debug(`${this.name} did-save triggered`)
-      this.updatePromise = this.update(this.rootDir)
-    }))
-    disposables.add(bufferInfo.buffer.onDidDestroy(() => {
-      disposables.dispose()
-      this.bufferSet.delete(bufferInfo.buffer)
-      this.disposables.remove(disposables)
-    }))
+    disposables.add(
+      bufferInfo.buffer.onDidSave(() => {
+        Util.debug(`${this.name} did-save triggered`)
+        this.updatePromise = this.update(this.rootDir)
+      }),
+    )
+    disposables.add(
+      bufferInfo.buffer.onDidDestroy(() => {
+        disposables.dispose()
+        this.bufferSet.delete(bufferInfo.buffer)
+        this.disposables.remove(disposables)
+      }),
+    )
     this.disposables.add(disposables)
   }
 
-  public async select(importDesc: IImport, symbolTypes?: SymbolType[], skipQualified: boolean = false) {
+  public async select(
+    importDesc: IImport,
+    symbolTypes?: SymbolType[],
+    skipQualified: boolean = false,
+  ) {
     await this.updatePromise
     clearTimeout(this.timeout)
     this.timeout = setTimeout(this.destroy, this.invalidateInterval)
@@ -72,14 +84,18 @@ export class ModuleInfo {
       const il = importDesc.importList
       symbols = symbols.filter((s) => {
         const inImportList = il.includes(s.name)
-        const parentInImportList = il.some((i) => (typeof i !== 'string') && (s.parent === i.parent))
+        const parentInImportList = il.some(
+          (i) => typeof i !== 'string' && s.parent === i.parent,
+        )
         const shouldShow = inImportList || parentInImportList
         return importDesc.hiding !== shouldShow // XOR
       })
     }
     const res = []
     for (const symbol of symbols) {
-      if (symbolTypes && !symbolTypes.includes(symbol.symbolType)) { continue }
+      if (symbolTypes && !symbolTypes.includes(symbol.symbolType)) {
+        continue
+      }
       const specific = {
         name: symbol.name,
         typeSignature: symbol.typeSignature,

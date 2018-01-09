@@ -1,5 +1,5 @@
 export {}
-declare module "atom" {
+declare module 'atom' {
   interface ConfigValues {
     'haskell-ghc-mod': Object
     'haskell-ghc-mod.ghcModPath': string
@@ -18,8 +18,20 @@ declare module "atom" {
     'haskell-ghc-mod.onChangeCheck': boolean
     'haskell-ghc-mod.onChangeLint': boolean
     'haskell-ghc-mod.alwaysInteractiveCheck': boolean
-    'haskell-ghc-mod.onMouseHoverShow': '' | 'type' | 'info' | 'infoType' | 'typeInfo' | 'typeAndInfo'
-    'haskell-ghc-mod.onSelectionShow': '' | 'type' | 'info' | 'infoType' | 'typeInfo' | 'typeAndInfo'
+    'haskell-ghc-mod.onMouseHoverShow':
+      | ''
+      | 'type'
+      | 'info'
+      | 'infoType'
+      | 'typeInfo'
+      | 'typeAndInfo'
+    'haskell-ghc-mod.onSelectionShow':
+      | ''
+      | 'type'
+      | 'info'
+      | 'infoType'
+      | 'typeInfo'
+      | 'typeAndInfo'
     'haskell-ghc-mod.maxBrowseProcesses': number
     'haskell-ghc-mod.highlightTooltips': boolean
     'haskell-ghc-mod.suppressRedundantTypeInTypeAndInfoTooltips': boolean

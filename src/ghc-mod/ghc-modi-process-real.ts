@@ -35,12 +35,15 @@ export interface IErrorCallbackArgs {
 
 export class GhcModiProcessReal {
   private disposables: CompositeDisposable
-  private emitter: Emitter<{
-    'did-destroy': void
-  },{
-    'warning': string
-    'error': IErrorCallbackArgs
-  }>
+  private emitter: Emitter<
+    {
+      'did-destroy': void
+    },
+    {
+      warning: string
+      error: IErrorCallbackArgs
+    }
+  >
   private ghcModOptions: string[] | undefined
   private proc: InteractiveProcess | undefined
 
@@ -58,17 +61,34 @@ export class GhcModiProcessReal {
     return this.caps
   }
 
-  public async run(
-    runArgs: RunArgs,
-  ) {
-    let { interactive, dashArgs, args, suppressErrors, ghcOptions, ghcModOptions } = runArgs
+  public async run(runArgs: RunArgs) {
+    let {
+      interactive,
+      dashArgs,
+      args,
+      suppressErrors,
+      ghcOptions,
+      ghcModOptions,
+    } = runArgs
     const { command, text, uri, builder } = runArgs
-    if (!args) { args = [] }
-    if (!dashArgs) { dashArgs = [] }
-    if (!suppressErrors) { suppressErrors = false }
-    if (!ghcOptions) { ghcOptions = [] }
-    if (!ghcModOptions) { ghcModOptions = [] }
-    ghcModOptions = ghcModOptions.concat(...ghcOptions.map((opt) => ['--ghc-option', opt]))
+    if (!args) {
+      args = []
+    }
+    if (!dashArgs) {
+      dashArgs = []
+    }
+    if (!suppressErrors) {
+      suppressErrors = false
+    }
+    if (!ghcOptions) {
+      ghcOptions = []
+    }
+    if (!ghcModOptions) {
+      ghcModOptions = []
+    }
+    ghcModOptions = ghcModOptions.concat(
+      ...ghcOptions.map((opt) => ['--ghc-option', opt]),
+    )
     if (atom.config.get('haskell-ghc-mod.lowMemorySystem')) {
       interactive = atom.config.get('haskell-ghc-mod.enableGhcModi')
     }
@@ -77,16 +97,16 @@ export class GhcModiProcessReal {
         case 'cabal':
           // in case this looks wrong, remember, we want to disable stack
           // and use cabal, so we're setting stack path to emptystring
-          ghcModOptions.push('--with-stack','')
+          ghcModOptions.push('--with-stack', '')
           break
         case 'stack':
           // same, if this looks strange, it's not
-          ghcModOptions.push('--with-cabal','')
+          ghcModOptions.push('--with-cabal', '')
           break
         case 'none':
           // here we want to use neither?
-          ghcModOptions.push('--with-stack','')
-          ghcModOptions.push('--with-cabal','')
+          ghcModOptions.push('--with-stack', '')
+          ghcModOptions.push('--with-cabal', '')
           break
         default:
           atom.notifications.addWarning(
@@ -151,14 +171,20 @@ export class GhcModiProcessReal {
     return this.emitter.on('error', callback)
   }
 
-  private async spawnProcess(ghcModOptions: string[]): Promise<InteractiveProcess | undefined> {
-    if (!atom.config.get('haskell-ghc-mod.enableGhcModi')) { return undefined }
+  private async spawnProcess(
+    ghcModOptions: string[],
+  ): Promise<InteractiveProcess | undefined> {
+    if (!atom.config.get('haskell-ghc-mod.enableGhcModi')) {
+      return undefined
+    }
     debug(`Checking for ghc-modi in ${this.rootDir.getPath()}`)
     if (this.proc) {
       if (!_.isEqual(this.ghcModOptions, ghcModOptions)) {
         debug(
           `Found running ghc-modi instance for ${this.rootDir.getPath()}, but ghcModOptions don't match. Old: `,
-          this.ghcModOptions, ' new: ', ghcModOptions,
+          this.ghcModOptions,
+          ' new: ',
+          ghcModOptions,
         )
         await this.proc.kill()
         return this.spawnProcess(ghcModOptions)
@@ -166,10 +192,18 @@ export class GhcModiProcessReal {
       debug(`Found running ghc-modi instance for ${this.rootDir.getPath()}`)
       return this.proc
     }
-    debug(`Spawning new ghc-modi instance for ${this.rootDir.getPath()} with`, this.options)
+    debug(
+      `Spawning new ghc-modi instance for ${this.rootDir.getPath()} with`,
+      this.options,
+    )
     const modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     this.ghcModOptions = ghcModOptions
-    this.proc = new InteractiveProcess(modPath, ghcModOptions.concat(['legacy-interactive']), this.options, this.caps)
+    this.proc = new InteractiveProcess(
+      modPath,
+      ghcModOptions.concat(['legacy-interactive']),
+      this.options,
+      this.caps,
+    )
     this.proc.onceExit((code) => {
       debug(`ghc-modi for ${this.rootDir.getPath()} ended with ${code}`)
       this.proc = undefined
@@ -177,11 +211,19 @@ export class GhcModiProcessReal {
     return this.proc
   }
 
-  private runModCmd = async (
-    {
-      ghcModOptions, command, text, uri, args,
-    }: { ghcModOptions: string[], command: string, text?: string, uri?: string, args: string[] },
-  ) => {
+  private runModCmd = async ({
+    ghcModOptions,
+    command,
+    text,
+    uri,
+    args,
+  }: {
+    ghcModOptions: string[]
+    command: string
+    text?: string
+    uri?: string
+    args: string[]
+  }) => {
     const modPath = atom.config.get('haskell-ghc-mod.ghcModPath')
     let stdin
     const cmd = [...ghcModOptions]
@@ -194,16 +236,25 @@ export class GhcModiProcessReal {
       cmd.push(uri)
     }
     cmd.push(...args)
-    const { stdout, stderr } = await Util.execPromise(modPath, cmd, this.options, stdin)
+    const { stdout, stderr } = await Util.execPromise(
+      modPath,
+      cmd,
+      this.options,
+      stdin,
+    )
     return {
       stdout: stdout.split(EOL).slice(0, -1),
       stderr: stderr.split(EOL),
     }
   }
 
-  private runModiCmd = async (
-    o: { ghcModOptions: string[], command: string, text?: string, uri?: string, args: string[] },
-  ) => {
+  private runModiCmd = async (o: {
+    ghcModOptions: string[]
+    command: string
+    text?: string
+    uri?: string
+    args: string[]
+  }) => {
     const { ghcModOptions, command, text, args } = o
     let { uri } = o
     debug(`Trying to run ghc-modi in ${this.rootDir.getPath()}`)
@@ -213,7 +264,9 @@ export class GhcModiProcessReal {
       return this.runModCmd(o)
     }
     debug('Success. Resuming...')
-    if (uri && !this.caps.quoteArgs) { uri = this.rootDir.relativize(uri) }
+    if (uri && !this.caps.quoteArgs) {
+      uri = this.rootDir.relativize(uri)
+    }
     try {
       if (uri && text) {
         await proc.interact('map-file', [uri], text)

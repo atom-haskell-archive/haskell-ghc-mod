@@ -1,5 +1,12 @@
-import { Range, Point, Emitter, CompositeDisposable,
-TextBuffer, Directory, TextEditor } from 'atom'
+import {
+  Range,
+  Point,
+  Emitter,
+  CompositeDisposable,
+  TextBuffer,
+  Directory,
+  TextEditor,
+} from 'atom'
 import * as Util from '../util'
 import { extname } from 'path'
 import Queue = require('promise-queue')
@@ -7,35 +14,50 @@ import { unlit } from 'atom-haskell-utils'
 import * as CompletionBackend from 'atom-haskell-upi/completion-backend'
 import * as UPI from 'atom-haskell-upi'
 
-import { GhcModiProcessReal, GHCModCaps, RunArgs, IErrorCallbackArgs } from './ghc-modi-process-real'
+import {
+  GhcModiProcessReal,
+  GHCModCaps,
+  RunArgs,
+  IErrorCallbackArgs,
+} from './ghc-modi-process-real'
 import { createGhcModiProcessReal } from './ghc-modi-process-real-factory'
 import { getSettings } from './settings'
 
 export { IErrorCallbackArgs, RunArgs, GHCModCaps }
 
-type Commands = 'checklint' | 'browse' | 'typeinfo' | 'find' | 'init' | 'list' | 'lowmem'
+type Commands =
+  | 'checklint'
+  | 'browse'
+  | 'typeinfo'
+  | 'find'
+  | 'init'
+  | 'list'
+  | 'lowmem'
 
 export interface SymbolDesc {
-  name: string,
-  symbolType: CompletionBackend.SymbolType,
-  typeSignature?: string,
+  name: string
+  symbolType: CompletionBackend.SymbolType
+  typeSignature?: string
   parent?: string
 }
 
 export class GhcModiProcess {
   private backend: Map<string, Promise<GhcModiProcessReal>>
   private disposables: CompositeDisposable
-  private emitter: Emitter<{
-    'did-destroy': undefined
-    'backend-active': undefined
-    'backend-idle': undefined
-  }, {
-    'warning': string
-    'error': IErrorCallbackArgs
-    'queue-idle': { queue: Commands }
-  }>
+  private emitter: Emitter<
+    {
+      'did-destroy': undefined
+      'backend-active': undefined
+      'backend-idle': undefined
+    },
+    {
+      warning: string
+      error: IErrorCallbackArgs
+      'queue-idle': { queue: Commands }
+    }
+  >
   private bufferDirMap: WeakMap<TextBuffer, Directory>
-  private commandQueues: {[K in Commands]: Queue}
+  private commandQueues: { [K in Commands]: Queue }
 
   constructor(private upiPromise: Promise<UPI.IUPIInstance>) {
     this.disposables = new CompositeDisposable()
@@ -44,7 +66,10 @@ export class GhcModiProcess {
     this.bufferDirMap = new WeakMap()
     this.backend = new Map()
 
-    if (process.env.GHC_PACKAGE_PATH && !atom.config.get('haskell-ghc-mod.suppressGhcPackagePathWarning')) {
+    if (
+      process.env.GHC_PACKAGE_PATH &&
+      !atom.config.get('haskell-ghc-mod.suppressGhcPackagePathWarning')
+    ) {
       Util.warnGHCPackagePath()
     }
 
@@ -57,8 +82,12 @@ export class GhcModiProcess {
       list: new Queue(1),
       lowmem: new Queue(1),
     }
-    this.disposables.add(atom.config.onDidChange('haskell-ghc-mod.maxBrowseProcesses', ({ newValue }) =>
-      this.commandQueues.browse = new Queue(newValue as number)),
+    this.disposables.add(
+      atom.config.onDidChange(
+        'haskell-ghc-mod.maxBrowseProcesses',
+        ({ newValue }) =>
+          (this.commandQueues.browse = new Queue(newValue as number)),
+      ),
     )
   }
 
@@ -75,8 +104,7 @@ export class GhcModiProcess {
 
   public killProcess() {
     for (const bp of this.backend.values()) {
-      bp.then((b) => b.killProcess())
-      .catch((e: Error) => {
+      bp.then((b) => b.killProcess()).catch((e: Error) => {
         atom.notifications.addError('Error killing ghc-mod process', {
           detail: e.toString(),
           stack: e.stack,
@@ -89,8 +117,7 @@ export class GhcModiProcess {
 
   public destroy() {
     for (const bp of this.backend.values()) {
-      bp.then((b) => b.destroy())
-      .catch((e: Error) => {
+      bp.then((b) => b.destroy()).catch((e: Error) => {
         atom.notifications.addError('Error killing ghc-mod process', {
           detail: e.toString(),
           stack: e.stack,
@@ -128,7 +155,9 @@ export class GhcModiProcess {
   }
 
   public async runList(buffer: TextBuffer) {
-    return this.queueCmd('list', await this.getRootDir(buffer), () => ({ command: 'list' }))
+    return this.queueCmd('list', await this.getRootDir(buffer), () => ({
+      command: 'list',
+    }))
   }
 
   public async runLang(dir: Directory) {
@@ -139,9 +168,14 @@ export class GhcModiProcess {
     return this.queueCmd('init', dir, () => ({ command: 'flag' }))
   }
 
-  public async runBrowse(rootDir: Directory, modules: string[]): Promise<SymbolDesc[]> {
+  public async runBrowse(
+    rootDir: Directory,
+    modules: string[],
+  ): Promise<SymbolDesc[]> {
     const lines = await this.queueCmd('browse', rootDir, (caps) => {
-      const args = caps.browseMain ? modules : modules.filter((v) => v !== 'Main')
+      const args = caps.browseMain
+        ? modules
+        : modules.filter((v) => v !== 'Main')
       if (args.length === 0) return undefined
       return {
         command: 'browse',
@@ -180,10 +214,10 @@ export class GhcModiProcess {
     })
   }
 
-  public async getTypeInBuffer(
-    buffer: TextBuffer, crange: Range,
-  ) {
-    if (!buffer.getUri()) { throw new Error('No URI for buffer') }
+  public async getTypeInBuffer(buffer: TextBuffer, crange: Range) {
+    if (!buffer.getUri()) {
+      throw new Error('No URI for buffer')
+    }
     crange = Util.tabShiftForRange(buffer, crange)
     const rootDir = await this.getRootDir(buffer)
     const lines = await this.queueCmd('typeinfo', rootDir, (caps) => ({
@@ -192,21 +226,28 @@ export class GhcModiProcess {
       uri: buffer.getUri(),
       text: buffer.isModified() ? buffer.getText() : undefined,
       dashArgs: caps.typeConstraints ? ['-c'] : [],
-      args: [crange.start.row + 1, crange.start.column + 1].map((v) => v.toString()),
+      args: [crange.start.row + 1, crange.start.column + 1].map((v) =>
+        v.toString(),
+      ),
     }))
 
     const rx = /^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+"([^]*)"$/ // [^] basically means "anything", incl. newlines
     for (const line of lines) {
       const match = line.match(rx)
-      if (!match) { continue }
+      if (!match) {
+        continue
+      }
       const [rowstart, colstart, rowend, colend, type] = match.slice(1)
-      const range =
-        Range.fromObject([
-          [parseInt(rowstart, 10) - 1, parseInt(colstart, 10) - 1],
-          [parseInt(rowend, 10) - 1, parseInt(colend, 10) - 1],
-        ])
-      if (range.isEmpty()) { continue }
-      if (!range.containsRange(crange)) { continue }
+      const range = Range.fromObject([
+        [parseInt(rowstart, 10) - 1, parseInt(colstart, 10) - 1],
+        [parseInt(rowend, 10) - 1, parseInt(colend, 10) - 1],
+      ])
+      if (range.isEmpty()) {
+        continue
+      }
+      if (!range.containsRange(crange)) {
+        continue
+      }
       return {
         range: Util.tabUnshiftForRange(buffer, range),
         type: type.replace(/\\"/g, '"'),
@@ -216,7 +257,9 @@ export class GhcModiProcess {
   }
 
   public async doCaseSplit(buffer: TextBuffer, crange: Range) {
-    if (!buffer.getUri()) { throw new Error('No URI for buffer') }
+    if (!buffer.getUri()) {
+      throw new Error('No URI for buffer')
+    }
     crange = Util.tabShiftForRange(buffer, crange)
     const rootDir = await this.getRootDir(buffer)
     const lines = await this.queueCmd('typeinfo', rootDir, (caps) => ({
@@ -224,7 +267,9 @@ export class GhcModiProcess {
       command: 'split',
       uri: buffer.getUri(),
       text: buffer.isModified() ? buffer.getText() : undefined,
-      args: [crange.start.row + 1, crange.start.column + 1].map((v) => v.toString()),
+      args: [crange.start.row + 1, crange.start.column + 1].map((v) =>
+        v.toString(),
+      ),
     }))
 
     const rx = /^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+"([^]*)"$/ // [^] basically means "anything", incl. newlines
@@ -237,8 +282,7 @@ export class GhcModiProcess {
       }
       const [rowstart, colstart, rowend, colend, text] = match.slice(1)
       res.push({
-        range:
-        Range.fromObject([
+        range: Range.fromObject([
           [parseInt(rowstart, 10) - 1, parseInt(colstart, 10) - 1],
           [parseInt(rowend, 10) - 1, parseInt(colend, 10) - 1],
         ]),
@@ -249,7 +293,9 @@ export class GhcModiProcess {
   }
 
   public async doSigFill(buffer: TextBuffer, crange: Range) {
-    if (!buffer.getUri()) { throw new Error('No URI for buffer') }
+    if (!buffer.getUri()) {
+      throw new Error('No URI for buffer')
+    }
     crange = Util.tabShiftForRange(buffer, crange)
     const rootDir = await this.getRootDir(buffer)
     const lines = await this.queueCmd('typeinfo', rootDir, (caps) => ({
@@ -257,18 +303,23 @@ export class GhcModiProcess {
       command: 'sig',
       uri: buffer.getUri(),
       text: buffer.isModified() ? buffer.getText() : undefined,
-      args: [crange.start.row + 1, crange.start.column + 1].map((v) => v.toString()),
+      args: [crange.start.row + 1, crange.start.column + 1].map((v) =>
+        v.toString(),
+      ),
     }))
-    if (lines.length < 2) { throw new Error(`Could not understand response: ${lines.join('\n')}`) }
+    if (lines.length < 2) {
+      throw new Error(`Could not understand response: ${lines.join('\n')}`)
+    }
     const rx = /^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/ // position rx
     const match = lines[1].match(rx)
-    if (!match) { throw new Error(`Could not understand response: ${lines.join('\n')}`) }
+    if (!match) {
+      throw new Error(`Could not understand response: ${lines.join('\n')}`)
+    }
     const [rowstart, colstart, rowend, colend] = match.slice(1)
-    const range =
-      Range.fromObject([
-        [parseInt(rowstart, 10) - 1, parseInt(colstart, 10) - 1],
-        [parseInt(rowend, 10) - 1, parseInt(colend, 10) - 1],
-      ])
+    const range = Range.fromObject([
+      [parseInt(rowstart, 10) - 1, parseInt(colstart, 10) - 1],
+      [parseInt(rowend, 10) - 1, parseInt(colend, 10) - 1],
+    ])
     return {
       type: lines[0],
       range,
@@ -278,21 +329,29 @@ export class GhcModiProcess {
 
   public async getInfoInBuffer(editor: TextEditor, crange: Range) {
     const buffer = editor.getBuffer()
-    if (!buffer.getUri()) { throw new Error('No URI for buffer') }
+    if (!buffer.getUri()) {
+      throw new Error('No URI for buffer')
+    }
     const symInfo = Util.getSymbolInRange(editor, crange)
-    if (!symInfo) { throw new Error('Couldn\'t get symbol for info') }
+    if (!symInfo) {
+      throw new Error("Couldn't get symbol for info")
+    }
     const { symbol, range } = symInfo
 
-    const lines = await this.queueCmd('typeinfo', await this.getRootDir(buffer), () => ({
-      interactive: true,
-      command: 'info',
-      uri: buffer.getUri(),
-      text: buffer.isModified() ? buffer.getText() : undefined,
-      args: [symbol],
-    }))
+    const lines = await this.queueCmd(
+      'typeinfo',
+      await this.getRootDir(buffer),
+      () => ({
+        interactive: true,
+        command: 'info',
+        uri: buffer.getUri(),
+        text: buffer.isModified() ? buffer.getText() : undefined,
+        args: [symbol],
+      }),
+    )
 
     const info = lines.join('\n')
-    if ((info === 'Cannot show info') || !info) {
+    if (info === 'Cannot show info' || !info) {
       throw new Error('No info')
     } else {
       return { range, info }
@@ -302,7 +361,9 @@ export class GhcModiProcess {
   public async findSymbolProvidersInBuffer(editor: TextEditor, crange: Range) {
     const buffer = editor.getBuffer()
     const symInfo = Util.getSymbolInRange(editor, crange)
-    if (!symInfo) { throw new Error('Couldn\'t get symbol for import') }
+    if (!symInfo) {
+      throw new Error("Couldn't get symbol for import")
+    }
     const { symbol } = symInfo
 
     return this.queueCmd('find', await this.getRootDir(buffer), () => ({
@@ -321,7 +382,10 @@ export class GhcModiProcess {
   }
 
   public async doCheckAndLint(buffer: TextBuffer, fast: boolean) {
-    const [cr, lr] = await Promise.all([this.doCheckBuffer(buffer, fast), this.doLintBuffer(buffer)])
+    const [cr, lr] = await Promise.all([
+      this.doCheckBuffer(buffer, fast),
+      this.doLintBuffer(buffer),
+    ])
     return cr.concat(lr)
   }
 
@@ -332,7 +396,9 @@ export class GhcModiProcess {
   private async initBackend(rootDir: Directory): Promise<GhcModiProcessReal> {
     const rootPath = rootDir.getPath()
     const cached = this.backend.get(rootPath)
-    if (cached) { return cached }
+    if (cached) {
+      return cached
+    }
     const backend = this.createBackend(rootDir)
     this.backend.set(rootPath, backend)
     return backend
@@ -351,10 +417,18 @@ export class GhcModiProcess {
   private async queueCmd(
     queueName: Commands,
     dir: Directory,
-    runArgsFunc: (caps: GHCModCaps) => {
-      command: string, text?: string, uri?: string, interactive?: boolean,
-      dashArgs?: string[], args?: string[]
-    } | undefined,
+    runArgsFunc: (
+      caps: GHCModCaps,
+    ) =>
+      | {
+          command: string
+          text?: string
+          uri?: string
+          interactive?: boolean
+          dashArgs?: string[]
+          args?: string[]
+        }
+      | undefined,
   ): Promise<string[]> {
     if (atom.config.get('haskell-ghc-mod.lowMemorySystem')) {
       queueName = 'lowmem'
@@ -364,14 +438,19 @@ export class GhcModiProcess {
       this.emitter.emit('backend-active')
       try {
         const settings = await getSettings(dir)
-        if (settings.disable) { throw new Error('Ghc-mod disabled in settings') }
+        if (settings.disable) {
+          throw new Error('Ghc-mod disabled in settings')
+        }
         const runArgs = runArgsFunc(backend.getCaps())
         if (runArgs === undefined) return []
         const upi = await this.getUPI()
         let builder: string | undefined
         if (upi && atom.config.get('haskell-ghc-mod.builderManagement')) {
           // TODO: this is used twice, the second time in ghc-mod-process-real-factory.ts, should probably fix that
-          const b = await upi.getOthersConfigParam<{ name: string }>('ide-haskell-cabal', 'builder')
+          const b = await upi.getOthersConfigParam<{ name: string }>(
+            'ide-haskell-cabal',
+            'builder',
+          )
           if (b) builder = b.name
         }
         return backend.run({
@@ -386,38 +465,48 @@ export class GhcModiProcess {
         throw err
       }
     })
-    promise.then(() => {
-      const qe = (qn: Commands) => {
-        const q = this.commandQueues[qn]
-        return (q.getQueueLength() + q.getPendingLength()) === 0
-      }
-      if (qe(queueName)) {
-        this.emitter.emit('queue-idle', { queue: queueName })
-        if (Object.keys(this.commandQueues).every(qe)) {
-          this.emitter.emit('backend-idle')
+    promise
+      .then(() => {
+        const qe = (qn: Commands) => {
+          const q = this.commandQueues[qn]
+          return q.getQueueLength() + q.getPendingLength() === 0
         }
-      }
-    }).catch((e: Error) => {
-      atom.notifications.addError('Error in GHCMod command queue', {
-        detail: e.toString(),
-        stack: e.stack,
-        dismissable: true,
+        if (qe(queueName)) {
+          this.emitter.emit('queue-idle', { queue: queueName })
+          if (Object.keys(this.commandQueues).every(qe)) {
+            this.emitter.emit('backend-idle')
+          }
+        }
       })
-    })
+      .catch((e: Error) => {
+        atom.notifications.addError('Error in GHCMod command queue', {
+          detail: e.toString(),
+          stack: e.stack,
+          dismissable: true,
+        })
+      })
     return promise
   }
 
-  private async doCheckOrLintBuffer(cmd: 'check' | 'lint', buffer: TextBuffer, fast: boolean) {
+  private async doCheckOrLintBuffer(
+    cmd: 'check' | 'lint',
+    buffer: TextBuffer,
+    fast: boolean,
+  ) {
     let dashArgs
-    if (buffer.isEmpty()) { return [] }
-    if (!buffer.getUri()) { return [] }
+    if (buffer.isEmpty()) {
+      return []
+    }
+    if (!buffer.getUri()) {
+      return []
+    }
 
     // A dirty hack to make lint work with lhs
     let uri = buffer.getUri()
     const olduri = buffer.getUri()
     let text: string | undefined
     try {
-      if ((cmd === 'lint') && (extname(uri) === '.lhs')) {
+      if (cmd === 'lint' && extname(uri) === '.lhs') {
         uri = uri.slice(0, -1)
         text = await unlit(olduri, buffer.getText())
       } else if (buffer.isModified()) {
@@ -426,14 +515,18 @@ export class GhcModiProcess {
     } catch (error) {
       // TODO: Reject
       const m = (error as Error).message.match(/^(.*?):([0-9]+): *(.*) *$/)
-      if (!m) { throw error }
+      if (!m) {
+        throw error
+      }
       const [uri2, line, mess] = m.slice(1)
-      return [{
-        uri: uri2,
-        position: new Point(parseInt(line, 10) - 1, 0),
-        message: mess,
-        severity: 'lint',
-      }]
+      return [
+        {
+          uri: uri2,
+          position: new Point(parseInt(line, 10) - 1, 0),
+          message: mess,
+          severity: 'lint',
+        },
+      ]
     }
     // end of dirty hack
 
@@ -463,7 +556,9 @@ export class GhcModiProcess {
     for (const line of lines) {
       const match = line.match(rx)
       if (!match) {
-        if (line.trim().length) { Util.warn(`ghc-mod says: ${line}`) }
+        if (line.trim().length) {
+          Util.warn(`ghc-mod says: ${line}`)
+        }
         continue
       }
       const [file2, row, col, warning, message] = match.slice(1)
@@ -482,12 +577,7 @@ export class GhcModiProcess {
 
       const file = uri.endsWith(file2) ? olduri : file2
       const severity =
-        cmd === 'lint' ?
-          'lint'
-          : warning === 'Warning' ?
-            'warning'
-            :
-            'error'
+        cmd === 'lint' ? 'lint' : warning === 'Warning' ? 'warning' : 'error'
       const messPos = new Point(parseInt(row, 10) - 1, parseInt(col, 10) - 1)
       const position = Util.tabUnshiftForPoint(buffer, messPos)
       let myuri
