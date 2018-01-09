@@ -12,12 +12,16 @@ export async function buildStack(
   const messages: IResultItem[] = []
   const disp = new CompositeDisposable()
   try {
-    const vers = await Util.execPromise('stack', ['--numeric-version'], opts)
+    const vers = await Util.execPromise(
+      'stack',
+      ['--no-install-ghc', '--numeric-version'],
+      opts,
+    )
       .then(({ stdout }) => stdout.split('.').map((n) => parseInt(n, 10)))
       .catch(() => undefined)
     const hasCopyCompiler = vers ? Util.versAtLeast(vers, [1, 6, 1]) : false
     return await new Promise<boolean>((resolve, reject) => {
-      const args = ['build']
+      const args = ['--no-install-ghc', 'build']
       if (hasCopyCompiler) args.push('--copy-compiler-tool')
       args.push('ghc-mod')
       Util.warn(`Running stack ${args.join(' ')}`)

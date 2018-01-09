@@ -167,7 +167,7 @@ async function checkComp(
     }
   }
   const [stackghc, pathghc] = await Promise.all([
-    tryWarn('stack', ['ghc', '--', '--numeric-version']),
+    tryWarn('stack', ['--no-install-ghc', 'ghc', '--', '--numeric-version']),
     tryWarn('ghc', ['--numeric-version']),
   ])
   Util.debug(`Stack GHC version ${stackghc}`)

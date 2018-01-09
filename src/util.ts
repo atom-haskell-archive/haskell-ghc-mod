@@ -140,7 +140,13 @@ export async function getStackSandbox(
   try {
     const out = await execPromise(
       'stack',
-      ['path', '--snapshot-install-root', '--local-install-root', '--bin-path'],
+      [
+        '--no-install-ghc',
+        'path',
+        '--snapshot-install-root',
+        '--local-install-root',
+        '--bin-path',
+      ],
       {
         encoding: 'utf8',
         cwd: rootPath,
