@@ -1,3 +1,9 @@
+## 2.2.3
+
+-   Handle lint and check messages separately
+-   Add --no-install-ghc to stack invocations
+-   Check stack version for --copy-compiler-tool support
+
 ## 2.2.2
 * Tweaks and fixes to builder manager
 
