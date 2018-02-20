@@ -381,14 +381,6 @@ export class GhcModiProcess {
     return this.doCheckOrLintBuffer('lint', buffer, false)
   }
 
-  public async doCheckAndLint(buffer: TextBuffer, fast: boolean) {
-    const [cr, lr] = await Promise.all([
-      this.doCheckBuffer(buffer, fast),
-      this.doLintBuffer(buffer),
-    ])
-    return cr.concat(lr)
-  }
-
   private async getUPI() {
     return Promise.race([this.upiPromise, Promise.resolve(undefined)])
   }

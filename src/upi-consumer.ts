@@ -38,12 +38,16 @@ const mainMenu = {
 }
 
 type TECommandEvent = CommandEvent<TextEditorElement>
+type TLastMessages = {
+  check: UPI.IResultItem[]
+  lint: UPI.IResultItem[]
+}
 
 export class UPIConsumer {
   public upi: UPI.IUPIInstance
   private disposables: CompositeDisposable = new CompositeDisposable()
   private processMessages: UPI.IResultItem[] = []
-  private lastMessages: UPI.IResultItem[] = []
+  private lastMessages: TLastMessages = { check: [], lint: [] }
   private msgBackend = atom.config.get('haskell-ghc-mod.ghcModMessages')
 
   private contextCommands = {
@@ -170,14 +174,14 @@ export class UPIConsumer {
       editor.getBuffer(),
       atom.config.get('haskell-ghc-mod.alwaysInteractiveCheck'),
     )
-    this.setMessages(res)
+    this.setMessages('check', res)
   }
 
   @handleException
   private async lintCommand({ currentTarget }: TECommandEvent) {
     const editor = currentTarget.getModel()
     const res = await this.process.doLintBuffer(editor.getBuffer())
-    this.setMessages(res)
+    this.setMessages('lint', res)
   }
 
   private tooltipCommand(
@@ -455,15 +459,21 @@ export class UPIConsumer {
     }
   }
 
-  private setMessages(messages: UPI.IResultItem[]) {
-    this.lastMessages = messages.map(this.setHighlighter())
+  private setMessages(type: keyof TLastMessages, messages: UPI.IResultItem[]) {
+    this.lastMessages[type] = messages.map(this.setHighlighter())
     this.sendMessages()
   }
 
   private sendMessages() {
-    this.upi.setMessages(this.processMessages.concat(this.lastMessages))
+    this.upi.setMessages(
+      this.processMessages.concat(
+        this.lastMessages.check,
+        this.lastMessages.lint,
+      ),
+    )
   }
 
+  @handleException
   private async checkLint(
     buffer: TextBuffer,
     opt: 'Save' | 'Change',
@@ -475,17 +485,22 @@ export class UPIConsumer {
     const lint = atom.config.get(`haskell-ghc-mod.on${opt}Lint` as
       | 'haskell-ghc-mod.onSaveLint'
       | 'haskell-ghc-mod.onChangeLint')
-    let res
-    if (check && lint) {
-      res = await this.process.doCheckAndLint(buffer, fast)
-    } else if (check) {
-      res = await this.process.doCheckBuffer(buffer, fast)
-    } else if (lint) {
-      res = await this.process.doLintBuffer(buffer)
+    const promises = []
+    if (check) {
+      promises.push(
+        this.process.doCheckBuffer(buffer, fast).then((res) => {
+          this.setMessages('check', res)
+        }),
+      )
     }
-    if (res) {
-      this.setMessages(res)
+    if (lint) {
+      promises.push(
+        this.process.doLintBuffer(buffer).then((res) => {
+          this.setMessages('lint', res)
+        }),
+      )
     }
+    await Promise.all(promises)
   }
 
   private consoleReport(arg: IErrorCallbackArgs) {
