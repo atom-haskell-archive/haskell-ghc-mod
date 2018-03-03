@@ -9,7 +9,6 @@ import * as CB from 'atom-haskell-upi/completion-backend'
 
 const { handleException } = Util
 
-// tslint:disable-next-line:no-unsafe-any
 export class CompletionBackend implements CB.ICompletionBackend {
   private bufferMap: WeakMap<TextBuffer, BufferInfo>
   private dirMap: WeakMap<Directory, Map<string, ModuleInfo>>

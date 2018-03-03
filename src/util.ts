@@ -113,7 +113,6 @@ export async function getCabalSandbox(
   const sbc = await parseSandboxConfig(`${rootPath}${sep}cabal.sandbox.config`)
   // tslint:disable: no-string-literal
   if (sbc && sbc['install-dirs'] && sbc['install-dirs']['bindir']) {
-    // tslint:disable-next-line: no-unsafe-any
     const sandbox: string = sbc['install-dirs']['bindir']
     debug('Found cabal sandbox: ', sandbox)
     if (isDirectory(sandbox)) {
@@ -182,7 +181,7 @@ export async function getProcessOptions(
   rootPath?: string,
 ): Promise<RunOptions> {
   if (!rootPath) {
-    // tslint:disable-next-line: no-null-keyword no-unsafe-any
+    // tslint:disable-next-line: no-null-keyword
     rootPath = getRootDirFallback(null).getPath()
   }
   // cache
@@ -530,15 +529,13 @@ export function handleException<T>(
     ...desc,
     async value(...args: any[]) {
       try {
-        // tslint:disable-next-line: no-non-null-assertion no-unsafe-any
+        // tslint:disable-next-line: no-non-null-assertion
         return await desc.value!.call(this, ...args)
       } catch (e) {
         debug(e)
-        // tslint:disable-next-line: no-unsafe-any
         const upi: UPI.IUPIInstance = await (this as any).upi
         upi.setStatus({
           status: 'warning',
-          // tslint:disable-next-line: no-unsafe-any
           detail: e.toString(),
         })
         // TODO: returning a promise that never resolves... ugly, but works?

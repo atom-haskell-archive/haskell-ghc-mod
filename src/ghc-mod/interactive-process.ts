@@ -161,7 +161,6 @@ export class InteractiveProcess {
         }
         return await Promise.race([readOutput(), exitEvent(), timeoutEvent()])
       } catch (error) {
-        // tslint:disable-next-line:no-unsafe-any
         if (error.name === 'InteractiveActionTimeout') {
           this.proc.kill()
         }

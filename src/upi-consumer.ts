@@ -162,7 +162,6 @@ export class UPIConsumer {
         ? 'haskell-ghc-mod.onMouseHoverShow'
         : type === 'selection' ? 'haskell-ghc-mod.onSelectionShow' : undefined
     const t = n && atom.config.get(n)
-    // tslint:disable-next-line:no-unsafe-any
     if (t) return this[`${t}Tooltip`](editor, crange)
     else return undefined
   }

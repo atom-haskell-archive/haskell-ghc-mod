@@ -35,7 +35,6 @@ async function readSettings(file: File): Promise<GHCModSettings> {
     if (ex) {
       const contents = await file.read()
       try {
-        // tslint:disable-next-line:no-unsafe-any
         return JSON.parse(contents)
       } catch (err) {
         atom.notifications.addError(`Failed to parse ${file.getPath()}`, {

@@ -58,7 +58,6 @@ export async function createGhcModiProcessReal(
     caps = getCaps(vers)
     return new GhcModiProcessReal(caps, rootDir, opts)
   } catch (e) {
-    // tslint:disable-next-line:no-unsafe-any
     const err: Error & { code: any } = e
     Util.notifySpawnFail({ dir: rootDir.getPath(), err, opts, vers, caps })
     throw e

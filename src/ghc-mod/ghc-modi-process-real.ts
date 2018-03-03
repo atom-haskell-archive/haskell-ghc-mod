@@ -141,7 +141,6 @@ export class GhcModiProcessReal {
       return stdout.map((line) => line.replace(/\0/g, '\n'))
     } catch (err) {
       debug(err)
-      // tslint:disable-next-line: no-unsafe-any
       this.emitter.emit('error', { runArgs, err, caps: this.caps })
       return []
     }

@@ -13,19 +13,19 @@
   "repository": "https://github.com/atom-haskell/haskell-ghc-mod",
   "license": "MIT",
   "engines": {
-    "atom": ">=1.23.0 <2.0.0"
+    "atom": ">=1.24.0 <2.0.0"
   },
   "activationHooks": [
     "language-haskell:grammar-used"
   ],
   "dependencies": {
-    "atom-haskell-utils": "^1.0.1",
-    "atom-select-list": "^0.7.0",
+    "atom-haskell-utils": "^1.0.2",
+    "atom-select-list": "^0.7.1",
     "fuzzaldrin": "^2.1.0",
     "pidusage": "^1.2.0",
-    "promise-queue": "^2.2.3",
+    "promise-queue": "^2.2.5",
     "temp": "^0.8.3",
-    "tslib": "^1.8.1",
+    "tslib": "^1.9.0",
     "underscore": "^1.8.3"
   },
   "consumedServices": {
@@ -45,15 +45,15 @@
     }
   },
   "devDependencies": {
-    "@types/atom": "^1.23.0",
+    "@types/atom": "~1.24.1",
     "@types/fuzzaldrin": "^2.1.1",
     "@types/node": "^8.5.2",
     "@types/pidusage": "^1.1.1",
     "@types/temp": "^0.8.31",
-    "@types/underscore": "^1.8.6",
-    "atom-haskell-tslint-rules": "^0.1.2",
-    "prettier": "^1.9.2",
-    "tslint": "^5.8.0",
-    "typescript": "^2.6.2"
+    "@types/underscore": "^1.8.7",
+    "atom-haskell-tslint-rules": "^0.2.2",
+    "prettier": "^1.11.1",
+    "tslint": "^5.9.1",
+    "typescript": "~2.7.2"
   }
 }
