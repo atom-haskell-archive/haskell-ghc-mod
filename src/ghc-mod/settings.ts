@@ -31,9 +31,8 @@ export async function getSettings(runDir: Directory): Promise<GHCModSettings> {
 
 async function readSettings(file: File): Promise<GHCModSettings> {
   try {
-    const ex = await file.exists()
-    if (ex) {
-      const contents = await file.read()
+    const contents = await file.read()
+    if (contents !== null) {
       try {
         return JSON.parse(contents)
       } catch (err) {
