@@ -494,6 +494,7 @@ export interface SpawnFailArgs {
 }
 
 export function notifySpawnFail(args: Readonly<SpawnFailArgs>) {
+  if (spawnFailENOENT(args) || spawnFailEACCESS(args)) return
   const debugInfo: SpawnFailArgs = Object.assign({}, args)
   if (args.opts) {
     const optsclone: RunOptions = Object.assign({}, args.opts)
@@ -518,6 +519,55 @@ ${JSON.stringify(filterEnv(process.env), undefined, 2)}
       dismissable: true,
     },
   )
+}
+
+function spawnFailENOENT(args: Readonly<SpawnFailArgs>): boolean {
+  if (args.err.code === 'ENOENT') {
+    const exePath = atom.config.get('haskell-ghc-mod.ghcModPath')
+    const not = atom.notifications.addError(
+      `Atom couldn't find ghc-mod executable`,
+      {
+        detail: `Atom tried to find ${exePath} in "${args.opts &&
+          args.opts.env.PATH}" but failed.`,
+        dismissable: true,
+        buttons: [
+          {
+            className: 'icon-globe',
+            text: 'Open installation guide',
+            async onDidClick() {
+              const opener = await import('opener')
+              not.dismiss()
+              opener(
+                'https://atom-haskell.github.io/installation/installing-binary-dependencies/',
+              )
+            },
+          },
+        ],
+      },
+    )
+    return true
+  }
+  return false
+}
+
+function spawnFailEACCESS(args: Readonly<SpawnFailArgs>): boolean {
+  if (args.err.code === 'EACCES') {
+    const exePath = atom.config.get('haskell-ghc-mod.ghcModPath')
+    const isDir = FS.existsSync(exePath) && FS.statSync(exePath).isDirectory()
+    if (isDir) {
+      atom.notifications.addError(`Atom couldn't run ghc-mod executable`, {
+        detail: `Atom tried to run ${exePath} but it was a directory. Check haskell-ghc-mod package settings.`,
+        dismissable: true,
+      })
+    } else {
+      atom.notifications.addError(`Atom couldn't run ghc-mod executable`, {
+        detail: `Atom tried to run ${exePath} but it wasn't executable. Check access rights.`,
+        dismissable: true,
+      })
+    }
+    return true
+  }
+  return false
 }
 
 export function handleException<T>(
