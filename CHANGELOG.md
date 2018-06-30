@@ -1,3 +1,13 @@
+## 2.2.4
+
+-   Define asyncIterator more carefully
+-   Use atom-ts-spec-runner
+-   Catch tooltip errors
+-   Fix null-strictness check
+-   Handle some common ghc-mod related errors
+-   Add minimal spec
+-   Bump dependencies
+
 ## 2.2.3
 
 -   Handle lint and check messages separately
