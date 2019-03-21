@@ -88,7 +88,7 @@ export class InteractiveProcess {
       this.proc.stdout.pause()
       this.proc.stderr.pause()
 
-      pidusage.stat(this.proc.pid, (err, stat) => {
+      pidusage(this.proc.pid, (err, stat) => {
         if (err) {
           warn(err)
           return

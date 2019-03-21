@@ -572,10 +572,7 @@ export class GhcModiProcess {
         cmd === 'lint' ? 'lint' : warning === 'Warning' ? 'warning' : 'error'
       const messPos = new Point(parseInt(row, 10) - 1, parseInt(col, 10) - 1)
       const position = Util.tabUnshiftForPoint(buffer, messPos)
-      const relpath = rootDir.relativize(file)
-      const myuri = isAbsolute(relpath)
-        ? relpath
-        : rootDir.getFile(relpath).getPath()
+      const myuri = isAbsolute(file) ? file : rootDir.getFile(file).getPath()
       res.push({
         uri: myuri,
         position,

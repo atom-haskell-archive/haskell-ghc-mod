@@ -160,7 +160,9 @@ export class UPIConsumer {
     const n =
       type === 'mouse'
         ? 'haskell-ghc-mod.onMouseHoverShow'
-        : type === 'selection' ? 'haskell-ghc-mod.onSelectionShow' : undefined
+        : type === 'selection'
+        ? 'haskell-ghc-mod.onSelectionShow'
+        : undefined
     const t = n && atom.config.get(n)
     try {
       if (t) return await this[`${t}Tooltip`](editor, crange)
