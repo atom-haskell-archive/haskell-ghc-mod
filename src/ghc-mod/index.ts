@@ -8,7 +8,7 @@ import {
   TextEditor,
 } from 'atom'
 import * as Util from '../util'
-import { extname } from 'path'
+import { extname, isAbsolute } from 'path'
 import Queue = require('promise-queue')
 import { unlit } from 'atom-haskell-utils'
 import * as CompletionBackend from 'atom-haskell-upi/completion-backend'
@@ -572,12 +572,10 @@ export class GhcModiProcess {
         cmd === 'lint' ? 'lint' : warning === 'Warning' ? 'warning' : 'error'
       const messPos = new Point(parseInt(row, 10) - 1, parseInt(col, 10) - 1)
       const position = Util.tabUnshiftForPoint(buffer, messPos)
-      let myuri
-      try {
-        myuri = rootDir.getFile(rootDir.relativize(file)).getPath()
-      } catch (error) {
-        myuri = file
-      }
+      const relpath = rootDir.relativize(file)
+      const myuri = isAbsolute(relpath)
+        ? relpath
+        : rootDir.getFile(relpath).getPath()
       res.push({
         uri: myuri,
         position,
