@@ -1,3 +1,8 @@
+## 2.2.5
+
+-   Update dependencies
+-   Don't relativize and absolute paths in messages
+
 ## 2.2.4
 
 -   Define asyncIterator more carefully
