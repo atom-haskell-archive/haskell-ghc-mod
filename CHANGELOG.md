@@ -1,3 +1,7 @@
+## 2.2.6
+
+-   Limit pidusage version range
+
 ## 2.2.5
 
 -   Update dependencies
