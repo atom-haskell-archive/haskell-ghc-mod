@@ -1,3 +1,9 @@
+# Deprecation & archival notice
+
+GHC-Mod has been unsupported for several years now. This package still might work with older GHC releases (where GHC-Mod still works), but overall its usefulness is questionable. Hence, this repository is deprecated and archived.
+
+If you want to discuss haskell-ghc-mod, feel free to open an issue on <https://github.com/atom-haskell/ide-haskell/issues>.
+
 # haskell-ghc-mod atom package ![](https://david-dm.org/atom-haskell/haskell-ghc-mod.svg)
 
 This package is primarily intended as backend for [ide-haskell](https://atom.io/packages/ide-haskell).
